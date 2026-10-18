@@ -38,9 +38,8 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci
-      # Universal Binary：同時支援 Apple Silicon 與 Intel
-      # 設定 APPLE_CERTIFICATE 等 secrets 後，Tauri 會自動簽章與公證
-      - run: npx tauri build --target universal-apple-darwin --bundles dmg
+      # 只有真的設定了 Apple secrets 才傳給 Tauri；空字串會被當成「有憑證」而匯入失敗
+      - name: Configure Apple signing (optional)
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -48,6 +47,14 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -n "${!v}" ]; then
+              { echo "$v<<__COPYC_EOF__"; printf '%s\n' "${!v}"; echo "__COPYC_EOF__"; } >> "$GITHUB_ENV"
+            fi
+          done
+      # Universal Binary：同時支援 Apple Silicon 與 Intel；未設定憑證時使用 ad-hoc 簽章
+      - run: npx tauri build --target universal-apple-darwin --bundles dmg
       # 固定檔名，官網的 releases/latest/download/<檔名> 才能永遠指向最新版
       - name: Stage release files
         run: |
