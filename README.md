@@ -92,6 +92,7 @@ CopyC 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）�
 ```bash
 npm install
 npm run dev        # 開發模式
+npm run build      # 建置桌面 App（等同 tauri build；在 Cloudflare Pages 上自動略過）
 npm test           # Rust 單元測試（內容識別、敏感判斷、連按判斷、設定、縮圖…）
 ```
 
@@ -129,7 +130,7 @@ pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword
 ### 部署到 Cloudflare Pages
 
 方式一（推薦，免 secrets）：在 Cloudflare Dashboard 進入 **Workers & Pages → Create → Pages → Connect to Git**，選擇這個 repo，設定如下：
-- Build command：留空
+- Build command：留空，或保留自動偵測的 `npm run build`。在 Cloudflare 上（`CF_PAGES=1`）它會直接略過，不會去建置桌面 App。
 - Build output directory：`website`
 
 方式二（GitHub Actions）：在 repo 設定兩個 secrets：

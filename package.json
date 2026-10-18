@@ -6,10 +6,11 @@
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",
-    "build": "tauri build",
+    "build": "node scripts/build.mjs",
     "build:mac": "tauri build --target universal-apple-darwin --bundles dmg",
     "build:win": "tauri build --bundles nsis",
-    "test": "cargo test --manifest-path src-tauri/Cargo.toml"
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "build:app": "tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.12.3"
