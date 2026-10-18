@@ -35,18 +35,18 @@ use windows::{
         },
         UI::{
             Shell::{
-                DragQueryFileW, SHGetFileInfoW, SHQueryUserNotificationState, HDROP, QUNS_BUSY,
+                DragQueryFileW, SHGetFileInfoW, SHQueryUserNotificationState, HDROP,
                 QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN, SHFILEINFOW, SHGFI_ICON,
                 SHGFI_LARGEICON,
             },
             WindowsAndMessaging::{
                 CreateWindowExW, DefWindowProcW, DestroyIcon, DispatchMessageW, GetClassNameW,
                 GetForegroundWindow, GetIconInfo, GetMessageW, GetShellWindow, GetWindowLongPtrW,
-                GetWindowRect, GetWindowThreadProcessId, RegisterClassW, SetWindowLongPtrW,
-                SetWindowPos, ShowWindow, TranslateMessage, GWL_EXSTYLE, HICON, HWND_MESSAGE,
+                GetWindowRect, GetWindowThreadProcessId, IsZoomed, RegisterClassW, SetWindowLongPtrW,
+                SetWindowPos, ShowWindow, TranslateMessage, GWL_EXSTYLE, GWL_STYLE, HICON, HWND_MESSAGE,
                 HWND_TOPMOST, ICONINFO, MSG, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
                 SWP_SHOWWINDOW, SW_HIDE, SW_SHOWNOACTIVATE, WINDOW_EX_STYLE, WINDOW_STYLE,
-                WM_CLIPBOARDUPDATE, WNDCLASSW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+                WM_CLIPBOARDUPDATE, WNDCLASSW, WS_CAPTION, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
             },
         },
     },
@@ -245,11 +245,15 @@ pub fn foreground_app() -> Option<AppInfo> {
     (!hwnd.is_invalid()).then_some(hwnd).and_then(window_app)
 }
 
-/// 全螢幕獨佔判斷：系統通知狀態（D3D 全螢幕、簡報模式、忙碌）或前景視窗完整覆蓋所在螢幕。
+/// 全螢幕獨佔判斷：系統通知狀態（D3D 全螢幕、簡報模式），或前景視窗是「沒有標題列、
+/// 也不是最大化」且完整覆蓋所在螢幕的視窗（瀏覽器 F11、影片播放器、無邊框遊戲）。
+///
+/// 一般最大化視窗會往外多出約 8px 邊框；工作列自動隱藏或副螢幕沒有工作列時，
+/// 它也會蓋滿整個螢幕，只看矩形會被誤判成全螢幕，所以要另外排除。
 pub fn is_fullscreen() -> bool {
     unsafe {
         if let Ok(state) = SHQueryUserNotificationState() {
-            if state == QUNS_RUNNING_D3D_FULL_SCREEN || state == QUNS_PRESENTATION_MODE || state == QUNS_BUSY {
+            if state == QUNS_RUNNING_D3D_FULL_SCREEN || state == QUNS_PRESENTATION_MODE {
                 return true;
             }
         }
@@ -261,6 +265,10 @@ pub fn is_fullscreen() -> bool {
         let n = GetClassNameW(hwnd, &mut class).max(0) as usize;
         let class = String::from_utf16_lossy(&class[..n]);
         if matches!(class.as_str(), "Progman" | "WorkerW" | "Shell_TrayWnd") {
+            return false;
+        }
+        let style = GetWindowLongPtrW(hwnd, GWL_STYLE) as u32;
+        if IsZoomed(hwnd).as_bool() || style & WS_CAPTION.0 == WS_CAPTION.0 {
             return false;
         }
         let mut rect = RECT::default();

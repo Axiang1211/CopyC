@@ -173,12 +173,18 @@ pub fn is_fullscreen() -> bool {
     let k_pid = CFString::from_static_string("kCGWindowOwnerPID");
     let k_layer = CFString::from_static_string("kCGWindowLayer");
     let k_bounds = CFString::from_static_string("kCGWindowBounds");
+    let k_alpha = CFString::from_static_string("kCGWindowAlpha");
     let number = |d: &CFDictionary<CFString, CFType>, k: &CFString| {
         d.find(k).and_then(|v| v.downcast::<CFNumber>()).and_then(|n| n.to_i64())
     };
 
     windows.iter().any(|w| {
         if number(&w, &k_pid) != Some(pid as i64) || number(&w, &k_layer) != Some(0) {
+            return false;
+        }
+        // 透明的覆蓋層（截圖、標註工具）不算
+        let alpha = w.find(&k_alpha).and_then(|v| v.downcast::<CFNumber>()).and_then(|n| n.to_f64());
+        if alpha.is_some_and(|a| a < 0.01) {
             return false;
         }
         let Some(bounds) = w.find(&k_bounds).and_then(|v| v.downcast::<CFDictionary>()) else { return false };
