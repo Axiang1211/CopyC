@@ -9,6 +9,45 @@ function restart(el, cls) {
   el.classList.add(cls);
 }
 
+/* ---------------- 語言 ---------------- */
+
+const EN = document.documentElement.lang.startsWith('en');
+const T = EN
+  ? {
+      dlMac: 'Download for macOS',
+      dlWin: 'Download for Windows',
+      color: (v) => `Copied color: ${v}`,
+      hex: 'HEX color',
+      link: 'Link copied',
+      text: (p) => `Copied: “${p}”`,
+      stats: (c, l) => `${c} characters · ${l} line${l > 1 ? 's' : ''}`,
+      again: 'Copied!',
+      badge: (n) => `Confirmed ×${n}`,
+      relax: 'Relax — it’s safely on your clipboard.',
+      brewing: 'The first cup is still brewing — first release coming soon ☕',
+      latest: (tag, date) => `Latest ${tag} · released ${date} · Free, no ads — click to download.`,
+      locale: 'en-US',
+      menuOpen: 'Open menu',
+      menuClose: 'Close menu',
+    }
+  : {
+      dlMac: '下載 macOS 版',
+      dlWin: '下載 Windows 版',
+      color: (v) => `你已成功複製色碼：${v}`,
+      hex: 'HEX 色碼',
+      link: '你已成功複製連結',
+      text: (p) => `你已成功複製：「${p}」`,
+      stats: (c, l) => `共 ${c} 字元 · ${l} 行`,
+      again: '你已成功複製！',
+      badge: (n) => `已確認 ×${n} 次`,
+      relax: '放心吧！內容已經安全躺在剪貼簿裡了',
+      brewing: '第一杯正在沖泡中，首個版本即將發布 ☕',
+      latest: (tag, date) => `最新版本 ${tag} · ${date} 發布 · 免費、無廣告，點擊直接下載。`,
+      locale: 'zh-TW',
+      menuOpen: '開啟選單',
+      menuClose: '關閉選單',
+    };
+
 /* ---------------- 平台偵測 ---------------- */
 
 const ua = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
@@ -20,7 +59,7 @@ if (os !== 'other') {
   const card = $(`.platform-wrap[data-os="${os}"]`);
   card.classList.add('is-recommended');
   $('.recommend', card).hidden = false;
-  $('#hero-download-label').textContent = isMac ? '下載 macOS 版' : '下載 Windows 版';
+  $('#hero-download-label').textContent = isMac ? T.dlMac : T.dlWin;
 }
 
 /* ---------------- 頁面 HUD：跟 App 一樣的回饋 ---------------- */
@@ -52,13 +91,13 @@ function render(text, n) {
     hudLead.classList.add('is-color');
     hudLead.style.setProperty('--c', flat);
     hudLead.innerHTML = '';
-    hudTitle.textContent = `你已成功複製色碼：${flat.toUpperCase()}`;
-    hudDetail.textContent = 'HEX 色碼';
+    hudTitle.textContent = T.color(flat.toUpperCase());
+    hudDetail.textContent = T.hex;
   } else if (/^https?:\/\/\S+$/i.test(flat)) {
     const url = new URL(flat);
     hudLead.classList.add('is-url');
     hudLead.innerHTML = GLOBE;
-    hudTitle.textContent = '你已成功複製連結';
+    hudTitle.textContent = T.link;
     const domain = document.createElement('b');
     domain.textContent = url.host;
     const rest = url.pathname + url.search;
@@ -67,16 +106,16 @@ function render(text, n) {
     const chars = [...flat];
     const preview = chars.slice(0, 25).join('') + (chars.length > 25 ? '…' : '');
     hudLead.innerHTML = CHECK;
-    hudTitle.textContent = `你已成功複製：「${preview}」`;
-    hudDetail.textContent = `共 ${[...text].length} 字元 · ${text.split(/\r?\n/).length} 行`;
+    hudTitle.textContent = T.text(preview);
+    hudDetail.textContent = T.stats([...text].length, text.split(/\r?\n/).length);
   }
 
   if (n > 1) {
-    hudTitle.textContent = '你已成功複製！';
-    hudBadge.textContent = `已確認 ×${n} 次`;
+    hudTitle.textContent = T.again;
+    hudBadge.textContent = T.badge(n);
     hudBadge.hidden = false;
     restart(hudBadge, 'bump');
-    hudDetail.textContent = '放心吧！內容已經安全躺在剪貼簿裡了';
+    hudDetail.textContent = T.relax;
   } else {
     hudBadge.hidden = true;
   }
@@ -202,10 +241,12 @@ function movePill(link) {
   pill.style.setProperty('--w', `${link.offsetWidth}px`);
   pill.style.setProperty('--o', 1);
 }
+const cta = $('.nav-cta');
 function activate(id) {
   const link = links.find((a) => a.dataset.spy === id);
   links.forEach((a) => a.classList.toggle('is-active', a === link));
   movePill(link);
+  cta.classList.toggle('is-active', cta.dataset.spyCta === id);
 }
 const spy = new IntersectionObserver(
   (entries) => entries.forEach((e) => e.isIntersecting && activate(e.target.id)),
@@ -221,7 +262,7 @@ const drawer = $('#drawer');
 const scrim = $('#drawer-scrim');
 function setDrawer(open) {
   burger.setAttribute('aria-expanded', String(open));
-  burger.setAttribute('aria-label', open ? '關閉選單' : '開啟選單');
+  burger.setAttribute('aria-label', open ? T.menuClose : T.menuOpen);
   drawer.classList.toggle('is-open', open);
   scrim.hidden = !open;
 }
@@ -273,7 +314,7 @@ if (storeId) {
       headers: { Accept: 'application/vnd.github+json' },
     });
     if (res.status === 404) {
-      line.textContent = '第一杯正在沖泡中，首個版本即將發布 ☕';
+      line.textContent = T.brewing;
       $$('[data-asset]').forEach((a) => {
         a.href = `https://github.com/${repo}/releases`;
         a.removeAttribute('download');
@@ -282,8 +323,8 @@ if (storeId) {
     }
     if (!res.ok) return;
     const rel = await res.json();
-    const date = new Date(rel.published_at).toLocaleDateString('zh-TW');
-    line.textContent = `最新版本 ${rel.tag_name} · ${date} 發布 · 免費、無廣告，點擊直接下載。`;
+    const date = new Date(rel.published_at).toLocaleDateString(T.locale);
+    line.textContent = T.latest(rel.tag_name, date);
     const sizes = new Map(rel.assets.map((a) => [a.name, a.size]));
     $$('[data-asset]').forEach((a) => {
       const size = sizes.get(a.dataset.asset);

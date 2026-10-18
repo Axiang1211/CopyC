@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>CopyC — Every copy comes with a cup of Kopi</title>
+    <meta name="description" content="CopyC shows a tiny “Copied!” pill the moment you press Ctrl+C / ⌘C. Free for Windows and macOS. Copy sounds like Kopi — Malay for coffee." />
+    <link rel="canonical" href="https://www.copyc.app.dreamsworld.top/en/" />
+    <link rel="alternate" hreflang="zh-Hant" href="https://www.copyc.app.dreamsworld.top/" />
+    <link rel="alternate" hreflang="en" href="https://www.copyc.app.dreamsworld.top/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://www.copyc.app.dreamsworld.top/" />
+    <meta name="theme-color" content="#2A1C14" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CopyC — Every copy comes with a cup of Kopi" />
+    <meta property="og:description" content="No more copy anxiety. Press Ctrl+C and CopyC tells you right away: Copied! Free for Windows and macOS." />
+    <meta property="og:url" content="https://www.copyc.app.dreamsworld.top/en/" />
+    <meta property="og:image" content="https://www.copyc.app.dreamsworld.top/assets/logo-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+    <link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="module" src="../main.js"></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "CopyC",
+        "operatingSystem": "Windows 10, Windows 11, macOS 11+",
+        "applicationCategory": "UtilitiesApplication",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "url": "https://www.copyc.app.dreamsworld.top/en/",
+        "image": "https://www.copyc.app.dreamsworld.top/assets/logo-512.png"
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="hud-layer" aria-live="polite">
+      <div class="hud" id="hud" role="status">
+        <span class="hud-lead" id="hud-lead"></span>
+        <span class="hud-copy">
+          <span class="hud-title"><span id="hud-title"></span><span class="hud-badge" id="hud-badge" hidden></span></span>
+          <span class="hud-detail" id="hud-detail"></span>
+        </span>
+      </div>
+    </div>
+    <header class="nav" id="nav">
+      <a class="nav-brand" href="#intro" aria-label="CopyC home">
+        <img src="../assets/logo.svg" alt="" width="36" height="36" />
+        <span>CopyC</span>
+      </a>
+      <nav class="nav-links" id="nav-links" aria-label="Page navigation">
+        <span class="nav-pill" id="nav-pill" aria-hidden="true"></span>
+        <a href="#intro" data-spy="intro">Intro</a>
+        <a href="#story" data-spy="story">The name</a>
+        <a href="#features" data-spy="features">Features</a>
+      </nav>
+      <a class="lang-switch" href="../" hreflang="zh-Hant" lang="zh-Hant" aria-label="繁體中文版">中文</a>
+      <a class="btn btn-primary nav-cta" href="#download" data-spy-cta="download">
+        <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+        Free download
+      </a>
+      <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+        <span></span><span></span>
+      </button>
+    </header>
+    <div class="drawer-scrim" id="drawer-scrim" hidden></div>
+    <aside class="drawer" id="drawer" aria-label="Menu">
+      <a href="#intro">Intro</a>
+      <a href="#story">The name</a>
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+      <a class="drawer-lang" href="../" hreflang="zh-Hant" lang="zh-Hant">繁體中文</a>
+    </aside>
+
+    <main id="main">
+      <section class="hero gutter" id="intro">
+        <div class="hero-text">
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Copy ≈ Kopi · Windows &amp; macOS</p>
+          <h1>Every copy<br />comes with a cup of <em>Kopi</em>.</h1>
+          <p class="lede">
+            The moment you press <kbd class="kbd-inline" data-mod>Ctrl</kbd> + <kbd class="kbd-inline">C</kbd>, CopyC serves a tiny pill at the top of your screen: “Copied!”
+            No more pressing it five times, no more wondering whether anything reached your clipboard.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="#download" id="hero-download">
+              <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+              <span id="hero-download-label">Free download</span>
+            </a>
+            <a class="btn btn-ghost btn-lg" href="#features">
+              <span class="play" aria-hidden="true"><svg class="icon-optical-play" viewBox="0 0 24 24"><path d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.9-6.2a.8.8 0 0 0 0-1.4L9.2 5.1A.8.8 0 0 0 8 5.8z"/></svg></span>
+              See how it works
+            </a>
+          </div>
+          <ul class="facts" aria-label="Highlights">
+            <li><strong class="num">&lt; 10</strong><span>MB installer</span></li>
+            <li><strong class="num">0</strong><span>keylogging · offline</span></li>
+            <li><strong class="num">1.4</strong><span>sec, then it fades</span></li>
+          </ul>
+        </div>
+        <div class="demo" id="demo">
+          <div class="demo-card tilt" id="demo-card">
+            <span class="tilt-glow" aria-hidden="true"></span>
+            <div class="demo-bar" aria-hidden="true"><i></i><i></i><i></i><span>have-a-sip.txt</span></div>
+            <p class="demo-hint">Select any line below and press <kbd data-mod>Ctrl</kbd> <kbd>C</kbd> — or just tap the cup.</p>
+            <ul class="samples">
+              <li>
+                <span class="sample-text" tabindex="0">One Kopi C, less sugar please, uncle!</span>
+                <button class="cup-btn" type="button" data-copy="One Kopi C, less sugar please, uncle!" aria-label="Copy this text">
+                  <img src="../assets/cup.svg" alt="" />
+                </button>
+              </li>
+              <li>
+                <span class="sample-text mono" tabindex="0">#C8894D</span>
+                <button class="cup-btn" type="button" data-copy="#C8894D" aria-label="Copy color">
+                  <img src="../assets/cup.svg" alt="" />
+                </button>
+              </li>
+              <li>
+                <span class="sample-text" tabindex="0">https://www.copyc.app.dreamsworld.top/</span>
+                <button class="cup-btn" type="button" data-copy="https://www.copyc.app.dreamsworld.top/" aria-label="Copy URL">
+                  <img src="../assets/cup.svg" alt="" />
+                </button>
+              </li>
+            </ul>
+            <p class="demo-foot">Tip: copy a few times in a row for a little surprise <span aria-hidden="true">✦</span></p>
+          </div>
+          <img class="mascot" src="../assets/logo.svg" alt="CopyC mascot: a blue-haired girl peeking out of a kopi cup" width="220" height="220" />
+        </div>
+      </section>
+      <section class="story" id="story">
+        <div class="gutter story-inner">
+          <div class="story-text">
+            <p class="eyebrow light">The name</p>
+            <h2>Copy, meet Kopi.</h2>
+            <p>
+              <strong>Kopi</strong> is Malay for coffee — and it sounds almost exactly like <strong>Copy</strong>.
+              Order a <strong>Kopi C</strong> at a Nanyang kopitiam and the uncle brings you coffee with evaporated milk and sugar.
+              So our copy tool became <strong>CopyC</strong>.
+            </p>
+            <p>Every time you hit copy, it’s like ordering your usual Kopi: no second thoughts, and someone answers right away — “Coming up!”</p>
+          </div>
+
+          <div class="menu-board" role="table" aria-label="Kopitiam menu: CopyC features">
+            <div class="menu-head" role="row">
+              <span role="columnheader">KOPITIAM MENU</span>
+              <span role="columnheader">COPYC EDITION</span>
+            </div>
+            <div class="menu-row" role="row">
+              <span class="menu-drink" role="cell"><b>Kopi</b><small>The classic</small></span>
+              <span class="menu-dots" aria-hidden="true"></span>
+              <span class="menu-feature" role="cell">Copied!</span>
+            </div>
+            <div class="menu-row is-signature" role="row">
+              <span class="menu-drink" role="cell"><b>Kopi C</b><small>Evaporated milk · signature</small></span>
+              <span class="menu-dots" aria-hidden="true"></span>
+              <span class="menu-feature" role="cell">Plus a preview: length, thumbnail, file name</span>
+            </div>
+            <div class="menu-row" role="row">
+              <span class="menu-drink" role="cell"><b>Kopi O</b><small>No milk</small></span>
+              <span class="menu-dots" aria-hidden="true"></span>
+              <span class="menu-feature" role="cell">Privacy mode: just “✓ Copied”</span>
+            </div>
+            <div class="menu-row" role="row">
+              <span class="menu-drink" role="cell"><b>Kopi Kosong</b><small>No sugar</small></span>
+              <span class="menu-dots" aria-hidden="true"></span>
+              <span class="menu-feature" role="cell">Secret masking: passwords become ••••••••</span>
+            </div>
+            <div class="menu-row" role="row">
+              <span class="menu-drink" role="cell"><b>Kopi Peng</b><small>On ice</small></span>
+              <span class="menu-dots" aria-hidden="true"></span>
+              <span class="menu-feature" role="cell">Full-screen calm: just a tiny dot</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="features gutter" id="features">
+        <div class="section-head">
+          <p class="eyebrow">Features</p>
+          <h2>A small cup with everything in it.</h2>
+          <p class="section-sub">Tap a strip. Each one is there so you can copy and stop worrying.</p>
+        </div>
+
+        <div class="accordion" id="accordion">
+          <article class="strip is-active" style="--tone: var(--caramel-deep)">
+            <button class="strip-head" type="button" aria-expanded="true">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/></svg></span>
+              <span class="strip-name">Smart preview</span>
+            </button>
+            <div class="strip-body">
+              <h3>See what you copied at a glance</h3>
+              <p>Text shows the first 25 characters and its length, screenshots show a thumbnail and resolution, files show their name and system icon, colors get a matching swatch and links highlight the domain.</p>
+              <div class="mini-hud"><span class="mini-lead lead-color" style="--c:#C8894D"></span><span><b>Copied color: #C8894D</b><small>HEX color</small></span></div>
+            </div>
+          </article>
+          <article class="strip" style="--tone: var(--terracotta)">
+            <button class="strip-head" type="button" aria-expanded="false">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h10v10H7z" /><path d="M4 10V4h6M20 14v6h-6"/></svg></span>
+              <span class="strip-name">Repeat bonus</span>
+            </button>
+            <div class="strip-body">
+              <h3>Mash Ctrl+C — no flicker</h3>
+              <p>Copy the same thing again within a second and the pill doesn’t close and reopen. It gives a little shake instead: “Confirmed ×3 — relax!”</p>
+              <div class="mini-hud"><span class="mini-lead lead-check"></span><span><b>Copied!<i class="mini-badge">Confirmed ×3</i></b><small>Relax — it’s safely on your clipboard.</small></span></div>
+            </div>
+          </article>
+          <article class="strip" style="--tone: var(--roast)">
+            <button class="strip-head" type="button" aria-expanded="false">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg></span>
+              <span class="strip-name">Privacy</span>
+            </button>
+            <div class="strip-body">
+              <h3>Passwords never hit the screen</h3>
+              <p>Anything copied from password managers like 1Password or Bitwarden — or anything that looks like a strong password — is masked automatically. Sharing your screen in a meeting? Turn on privacy mode. CopyC never goes online; your clipboard stays on your computer.</p>
+              <div class="mini-hud"><span class="mini-lead lead-lock"></span><span><b>Copied something secret <i class="mini-mask">••••••••</i></b><small>(privacy mask on)</small></span></div>
+            </div>
+          </article>
+          <article class="strip" style="--tone: var(--kopi)">
+            <button class="strip-head" type="button" aria-expanded="false">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19.5 14.3A7.8 7.8 0 0 1 9.7 4.5a7.8 7.8 0 1 0 9.8 9.8z"/></svg></span>
+              <span class="strip-name">Do not disturb</span>
+            </button>
+            <div class="strip-body">
+              <h3>Quiet during games, movies and slides</h3>
+              <p>When something is full screen, CopyC shrinks to a tiny dot — or pauses entirely. The pill never steals focus, and clicks pass right through it.</p>
+              <div class="mini-hud is-dot"><span class="mini-dot"></span><span><b>Just a tiny dot</b><small>Your flow stays unbroken</small></span></div>
+            </div>
+          </article>
+          <article class="strip" style="--tone: var(--sky-deep)">
+            <button class="strip-head" type="button" aria-expanded="false">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/></svg></span>
+              <span class="strip-name">Two spots</span>
+            </button>
+            <div class="strip-body">
+              <h3>Top pill, or next to your cursor</h3>
+              <p>Mode A drops from the top of the screen like a dynamic island; mode B pops a small bubble just above your cursor, so your eyes never leave your work. Any screen corner works too.</p>
+              <div class="mini-hud"><span class="mini-lead lead-check"></span><span><b>Copied: “Project report v2…”</b><small>142 characters · 3 lines</small></span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="download gutter" id="download" data-repo="Axiang1211/CopyC" data-ms-store-id="">
+        <div class="section-head">
+          <p class="eyebrow">Download</p>
+          <h2>Fancy a cup? Pick your platform.</h2>
+          <p class="section-sub" id="release-line">Free, no ads. Click to download the latest version.</p>
+        </div>
+
+        <div class="platforms">
+          <!-- Windows -->
+          <div class="platform-wrap" data-os="windows">
+            <article class="platform">
+              <span class="recommend" hidden>For you</span>
+              <div class="platform-top">
+                <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5.3 10.4 4.3v7.1H3zM11.4 4.1 21 2.8v8.6h-9.6zM3 12.6h7.4v7.1L3 18.7zM11.4 12.6H21v8.6l-9.6-1.3z"/></svg></span>
+                <div>
+                  <h3>Windows</h3>
+                  <p>Windows 10 / 11 · 64-bit</p>
+                </div>
+              </div>
+
+              <a class="btn btn-primary btn-block" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
+                <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+                <span>Download .exe installer</span>
+              </a>
+              <a class="store-btn" id="ms-store" aria-disabled="true" tabindex="-1">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H6.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/><path d="M9.5 12h2.2v2.2H9.5zM12.3 12h2.2v2.2h-2.2zM9.5 14.8h2.2V17H9.5zM12.3 14.8h2.2V17h-2.2z" fill="currentColor" stroke="none"/></svg>
+                <span><small>Get it from</small><b>Microsoft Store</b></span>
+                <em class="soon" id="ms-store-status">Coming soon</em>
+              </a>
+            </article>
+            <div class="tray">
+              <button class="tray-toggle" type="button" aria-expanded="false">Install tips <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
+              <div class="tray-body"><div class="tray-inner">
+                <ol>
+                  <li>After installing, CopyC lives in the system tray (bottom right) and starts with Windows.</li>
+                  <li>If SmartScreen says “Windows protected your PC”, click “More info → Run anyway”.</li>
+                  <li>Right-click the cup icon in the tray to change the position, duration and privacy mode.</li>
+                </ol>
+              </div></div>
+            </div>
+          </div>
+
+          <!-- macOS -->
+          <div class="platform-wrap" data-os="macos">
+            <article class="platform">
+              <span class="recommend" hidden>For you</span>
+              <div class="platform-top">
+                <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8s-1.9-.8-3.1-.8C6.8 7.3 5.3 8.2 4.5 9.7c-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.1.8c1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.7-1-2.7-4.1zM14.1 5.6c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z" fill="currentColor" stroke="none"/></svg></span>
+                <div>
+                  <h3>macOS</h3>
+                  <p>macOS 11+ · Apple Silicon and Intel</p>
+                </div>
+              </div>
+              <a class="btn btn-primary btn-block" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-macos-universal.dmg" download data-asset="CopyC-macos-universal.dmg">
+                <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+                <span>Download .dmg</span>
+              </a>
+              <p class="platform-note">When the cup icon shows up in the menu bar, CopyC is looking after your clipboard.</p>
+            </article>
+            <div class="tray">
+              <button class="tray-toggle" type="button" aria-expanded="false">Install tips <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
+              <div class="tray-body"><div class="tray-inner">
+                <ol>
+                  <li>Open the .dmg and drag CopyC into Applications.</li>
+                  <li>If macOS blocks the first launch, right-click CopyC in Finder → Open.</li>
+                  <li>CopyC lives in the menu bar only — it won’t appear in the Dock.</li>
+                </ol>
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="all-releases">
+          Looking for release notes or older versions? Visit
+          <a href="https://github.com/Axiang1211/CopyC/releases" rel="noopener">GitHub Releases</a>
+          · Source code on <a href="https://github.com/Axiang1211/CopyC" rel="noopener">GitHub</a>
+        </p>
+      </section>
+      <section class="faq gutter" id="faq">
+        <div class="section-head">
+          <p class="eyebrow">FAQ</p>
+          <h2>Ask the uncle before you order.</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>Does CopyC send what I copy to the internet?</summary>
+            <p>No. CopyC never connects to the internet. What you copy is only used to draw the pill on your own computer, and the last 3 items live in memory only — they’re gone when you quit.</p>
+          </details>
+          <details>
+            <summary>Does it work by watching my keyboard?</summary>
+            <p>No. CopyC listens for the system’s clipboard-change events and never records keystrokes. That’s why it works with shortcuts, right-click menus and “copy” buttons on web pages — and why pressing Ctrl+C with nothing selected doesn’t set it off.</p>
+          </details>
+          <details>
+            <summary>Why do I see a security warning when installing?</summary>
+            <p>The installers aren’t signed with a paid code-signing certificate yet, so Windows SmartScreen and macOS Gatekeeper warn you. Follow the “Install tips” under each download card; the warning goes away once CopyC is on the Microsoft Store.</p>
+          </details>
+          <details>
+            <summary>Why “CopyC”?</summary>
+            <p>“Copy” sounds almost exactly like “Kopi”, Malay for coffee — and Kopi C is the Nanyang coffee-shop classic with evaporated milk. Copying something should feel like ordering your usual Kopi.</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer gutter">
+      <div class="footer-brand">
+        <img src="../assets/logo.svg" alt="" width="44" height="44" />
+        <div>
+          <b>CopyC</b>
+          <span>Copy ≈ Kopi · every copy gets a reply.</span>
+        </div>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="#download">Download</a>
+        <a href="https://github.com/Axiang1211/CopyC" rel="noopener">GitHub</a>
+        <a href="https://github.com/Axiang1211/CopyC/issues" rel="noopener">Report an issue</a>
+      </nav>
+      <p class="footer-copy">© <span class="num" id="year">2026</span> DreamsWorld · copyc.app.dreamsworld.top</p>
+    </footer>
+  </body>
+</html>

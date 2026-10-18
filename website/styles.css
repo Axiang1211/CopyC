@@ -362,6 +362,36 @@ kbd.is-pressed {
   display: none;
   height: 42px;
 }
+/* 捲到下載區時，下載鍵本身就是當前位置的高亮 */
+.nav-cta.is-active {
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--caramel);
+}
+.lang-switch {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text-2);
+  font: 700 13px/1 var(--sans);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: color 200ms ease, background 200ms ease, transform 300ms var(--spring);
+}
+.lang-switch:hover {
+  color: var(--text);
+  background: var(--milk);
+}
+.lang-switch:active {
+  transform: scale(0.94);
+}
+.drawer a.drawer-lang {
+  margin-top: auto;
+  font: 600 16px/1.2 var(--sans);
+  color: var(--text-2);
+}
 .nav.is-compact .nav-cta {
   height: 38px;
 }
@@ -1236,19 +1266,24 @@ kbd.is-pressed {
   display: grid;
   gap: 28px;
 }
+/* 桌面：卡片列與托盤列各自共用一條水平基準線（subgrid），
+   展開其中一個托盤也不會把另一張卡片撐高 */
 @media (min-width: 860px) {
-  /* 兩張卡片等高：標題、下載鍵、托盤三條水平基準線對齊 */
   .platforms {
     grid-template-columns: 1fr 1fr;
-    align-items: stretch;
+    grid-template-rows: auto auto;
+    column-gap: 28px;
+    row-gap: 0;
+    align-items: start;
   }
-}
-.platform-wrap {
-  display: flex;
-  flex-direction: column;
-}
-.platform-wrap > .platform {
-  flex: 1;
+  .platform-wrap {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+  }
+  .platform-wrap > .platform {
+    align-self: stretch;
+  }
 }
 .platform-wrap.is-recommended {
   order: -1;
@@ -1600,5 +1635,32 @@ kbd.is-pressed {
   .mascot {
     top: -40px;
     width: 120px;
+  }
+}
+
+/* ---------- 英文版 ---------- */
+html[lang="en"] {
+  --serif: "Fraunces", Georgia, "Noto Serif TC", serif;
+}
+/* 英文字直排改成整行旋轉，不逐字斷行 */
+html[lang="en"] .strip-name {
+  width: auto;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  word-break: normal;
+  letter-spacing: 0.04em;
+}
+html[lang="en"] .strip.is-active .strip-name {
+  writing-mode: horizontal-tb;
+  transform: none;
+}
+html[lang="en"] .menu-row {
+  grid-template-columns: 140px 1fr auto;
+}
+@media (max-width: 759px) {
+  html[lang="en"] .strip-name {
+    writing-mode: horizontal-tb;
+    transform: none;
   }
 }
