@@ -46,6 +46,12 @@ $makepri = Find-SdkTool "makepri.exe"
 $priConfig = Join-Path $OutDir "priconfig.xml"
 & $makepri createconfig /cf $priConfig /dq en-US /pv 10.0.0 /o
 if ($LASTEXITCODE -ne 0) { throw "makepri createconfig 失敗" }
+# 預設設定會把非預設縮放比例拆成 resources.scale-*.pri（給資源套件 / bundle 用）；
+# 我們只出單一 .msix，所以移除 <packaging>，讓所有尺寸都索引在同一個 resources.pri
+[xml]$cfg = Get-Content $priConfig
+$packaging = $cfg.SelectSingleNode("//packaging")
+if ($packaging) { [void]$packaging.ParentNode.RemoveChild($packaging) }
+$cfg.Save((Resolve-Path $priConfig).Path)
 & $makepri new /pr $layout /cf $priConfig /mn "$layout/AppxManifest.xml" /of "$layout/resources.pri" /o
 if ($LASTEXITCODE -ne 0) { throw "makepri new 失敗" }
 
