@@ -6,3 +6,4 @@ dist/
 .DS_Store
 # 影片渲染輸出（音訊、影格、MP4）不進版本庫，用 marketing/video 的腳本重新產生
 marketing/video/out/
+marketing/video/.cache/
