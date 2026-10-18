@@ -557,6 +557,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "copyc"
+version = "1.0.0"
+dependencies = [
+ "arboard",
+ "base64 0.22.1",
+ "core-foundation",
+ "image",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "parking_lot",
+ "regex",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "tauri-plugin-single-instance",
+ "windows",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -673,28 +695,6 @@ name = "ctor"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "914a755b7c2d4af2bdcff7ce1739e2db9a1b81a9b07123d8015786ae03c0980d"
-
-[[package]]
-name = "ctrl-c"
-version = "1.0.0"
-dependencies = [
- "arboard",
- "base64 0.22.1",
- "core-foundation",
- "image",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "parking_lot",
- "regex",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "tauri-plugin-single-instance",
- "windows",
-]
 
 [[package]]
 name = "darling"

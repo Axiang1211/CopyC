@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ctrl-C 的 MSIX 封裝清單。scripts/build-msix.ps1 會替換 __VERSION__ / __ARCH__ / __PUBLISHER__。
+<!-- CopyC 的 MSIX 封裝清單。scripts/build-msix.ps1 會替換 __VERSION__ / __ARCH__ / __PUBLISHER__。
      Publisher 必須與簽章憑證的 Subject 完全一致。 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -8,11 +8,11 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap desktop rescap">
 
-  <Identity Name="CtrlC.Toast" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="__ARCH__" />
+  <Identity Name="CopyC" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="__ARCH__" />
 
   <Properties>
-    <DisplayName>Ctrl-C</DisplayName>
-    <PublisherDisplayName>Ctrl-C</PublisherDisplayName>
+    <DisplayName>CopyC</DisplayName>
+    <PublisherDisplayName>CopyC</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>每一次成功複製都有回應的桌面小工具。</Description>
   </Properties>
@@ -31,17 +31,17 @@
   </Capabilities>
 
   <Applications>
-    <Application Id="CtrlC" Executable="ctrl-c.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="CopyC" Executable="copyc.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Ctrl-C"
+        DisplayName="CopyC"
         Description="複製即時回饋工具"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png" />
       <Extensions>
         <!-- MSIX 沙盒內無法寫入登錄檔 Run 機碼，開機自動啟動改用 StartupTask -->
-        <desktop:Extension Category="windows.startupTask" Executable="ctrl-c.exe" EntryPoint="Windows.FullTrustApplication">
-          <desktop:StartupTask TaskId="CtrlCStartup" Enabled="true" DisplayName="Ctrl-C" />
+        <desktop:Extension Category="windows.startupTask" Executable="copyc.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="CopyCStartup" Enabled="true" DisplayName="CopyC" />
         </desktop:Extension>
       </Extensions>
     </Application>

@@ -97,7 +97,7 @@ struct HoverEvent {
 
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
     let win = WebviewWindowBuilder::new(app, HUD_LABEL, WebviewUrl::App("hud.html".into()))
-        .title("Ctrl-C")
+        .title("CopyC")
         .inner_size(HUD_W, HUD_H)
         .decorations(false)
         .transparent(true)

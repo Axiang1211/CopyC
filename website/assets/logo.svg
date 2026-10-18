@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A9D2FA"/>
+      <stop offset="1" stop-color="#6FA6EE"/>
+    </linearGradient>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFAF2"/>
+      <stop offset="1" stop-color="#EEDDC6"/>
+    </linearGradient>
+    <radialGradient id="bg" cx=".5" cy=".42" r=".6">
+      <stop offset="0" stop-color="#FFF9F0"/>
+      <stop offset="1" stop-color="#F3E5D2"/>
+    </radialGradient>
+    <linearGradient id="eye" x1="0" y1="0" x2="0" y2="1">
+      <stop offset=".55" stop-color="#1E3A7B"/>
+      <stop offset="1" stop-color="#C9485B"/>
+    </linearGradient>
+    <clipPath id="above-rim"><rect x="0" y="0" width="1024" height="650"/></clipPath>
+  </defs>
+
+  <!-- 底盤 -->
+  <circle cx="512" cy="512" r="470" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="456" fill="none" stroke="#A9C8F5" stroke-width="14"/>
+  <circle cx="512" cy="512" r="430" fill="none" stroke="#F2C04A" stroke-width="3" stroke-dasharray="2 18" stroke-linecap="round" opacity=".7"/>
+
+  <!-- 閃光 -->
+  <g fill="#F6C945">
+    <path d="M212 300l14 34 34 14-34 14-14 34-14-34-34-14 34-14z"/>
+    <path d="M790 820l10 24 24 10-24 10-10 24-10-24-24-10 24-10z"/>
+  </g>
+  <g fill="#7FB2F0">
+    <path d="M818 250l9 21 21 9-21 9-9 21-9-21-21-9 21-9z"/>
+    <path d="M250 760l7 16 16 7-16 7-7 16-7-16-16-7 16-7z"/>
+  </g>
+
+  <g stroke="#1E3A7B" stroke-width="13" stroke-linejoin="round" stroke-linecap="round">
+    <!-- 雙馬尾（在頭後） -->
+    <path d="M300 360c-80 10-118 110-104 220 8 64 30 104 70 128l40-30c-26-60-20-150 14-214z" fill="url(#hair)"/>
+    <path d="M724 360c80 10 118 110 104 220-8 64-30 104-70 128l-40-30c26-60 20-150-14-214z" fill="url(#hair)"/>
+
+    <g clip-path="url(#above-rim)">
+      <!-- 臉 -->
+      <ellipse cx="512" cy="500" rx="212" ry="196" fill="#FFF3EA"/>
+      <!-- 頭髮與瀏海 -->
+      <path d="M292 548C266 384 360 258 512 258s246 126 220 290
+               Q720 500 704 502 Q684 450 652 414 Q640 470 604 492 Q590 430 556 404 Q548 456 516 478
+               Q496 428 468 404 Q440 462 416 490 Q398 446 376 414 Q346 456 332 504 Q312 506 292 548z" fill="url(#hair)"/>
+      <!-- 鬢髮 -->
+      <path d="M300 470q-6 70 22 120q8-60 20-86z" fill="url(#hair)"/>
+      <path d="M724 470q6 70-22 120q-8-60-20-86z" fill="url(#hair)"/>
+      <!-- 呆毛 -->
+      <path d="M498 262c-18-76 74-110 118-62c-46-14-86 6-96 62z" fill="url(#hair)"/>
+      <!-- 眼睛 -->
+      <g>
+        <ellipse cx="430" cy="528" rx="44" ry="54" fill="url(#eye)"/>
+        <ellipse cx="594" cy="528" rx="44" ry="54" fill="url(#eye)"/>
+      </g>
+      <!-- 嘴 -->
+      <path d="M476 596q36 56 72 0z" fill="#E77F8E"/>
+      <path d="M492 618q20 14 40 0q-20-10-40 0z" fill="#F7B3BC" stroke="none"/>
+    </g>
+  </g>
+
+  <!-- 眼睛高光與星星 -->
+  <g fill="#fff">
+    <circle cx="446" cy="508" r="17"/>
+    <circle cx="610" cy="508" r="17"/>
+    <circle cx="414" cy="548" r="7"/>
+    <circle cx="578" cy="548" r="7"/>
+  </g>
+  <g fill="#F6C945">
+    <path d="M418 520l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
+    <path d="M582 520l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
+  </g>
+  <!-- 臉紅 -->
+  <g fill="#F7A9A9" opacity=".55">
+    <ellipse cx="380" cy="590" rx="30" ry="18"/>
+    <ellipse cx="644" cy="590" rx="30" ry="18"/>
+  </g>
+  <!-- 頭髮光澤 -->
+  <g fill="#fff" opacity=".85">
+    <ellipse cx="410" cy="340" rx="22" ry="14" transform="rotate(-25 410 340)"/>
+    <circle cx="446" cy="324" r="7"/>
+  </g>
+
+  <!-- 黃色緞帶 -->
+  <g fill="#F6D45B" stroke="#1E3A7B" stroke-width="11" stroke-linejoin="round">
+    <path d="M300 372l-52-48 8 74z"/>
+    <path d="M300 372l46-52 6 72z"/>
+    <path d="M724 372l52-48-8 74z"/>
+    <path d="M724 372l-46-52-6 72z"/>
+  </g>
+
+  <!-- Kopi 杯 -->
+  <g stroke="#1E3A7B" stroke-width="13" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M736 700c96-6 108 136-8 148" fill="none" stroke-width="40" stroke="#1E3A7B"/>
+    <path d="M736 700c96-6 108 136-8 148" fill="none" stroke-width="18" stroke="#FFF6EA"/>
+    <path d="M276 650h472l-34 196c-8 46-44 72-90 72H400c-46 0-82-26-90-72z" fill="url(#cup)"/>
+    <ellipse cx="512" cy="650" rx="236" ry="30" fill="#7A5236"/>
+  </g>
+  <ellipse cx="512" cy="644" rx="180" ry="14" fill="#C8894D" opacity=".75"/>
+  <!-- 小手扶杯緣 -->
+  <g fill="#FFF3EA" stroke="#1E3A7B" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M338 662c-4-34 16-50 38-50s40 16 36 50z"/>
+    <path d="M612 662c-4-34 16-50 38-50s40 16 36 50z"/>
+  </g>
+  <g fill="none" stroke="#1E3A7B" stroke-width="7" stroke-linecap="round">
+    <path d="M362 632v18M386 630v20"/>
+    <path d="M638 630v20M662 632v18"/>
+  </g>
+  <!-- 勾勾：複製成功 -->
+  <path d="M452 770l42 40 82-88" fill="none" stroke="#6F4E37" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -41,9 +41,6 @@ const PLATFORM_LABEL = { macos: 'macOS', windows: 'Windows', linux: 'Linux（開
 
 function applyPlatform(platform) {
   document.body.dataset.platform = platform;
-  const brand = platform === 'macos' ? '⌘ Cmd-C' : 'Ctrl-C';
-  $('#brand-name').textContent = brand;
-  $('#about-name').textContent = brand;
   $('#hero-platform').textContent = PLATFORM_LABEL[platform] ?? platform;
   $('#autostart-hint').textContent =
     platform === 'macos' ? '登入後自動常駐於頂部選單列' : '開機後自動常駐於右下角系統匣';

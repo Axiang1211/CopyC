@@ -28,7 +28,7 @@ const STATUS_WINDOW_LEVEL: isize = 25;
 
 /// 關閉 App Nap：常駐背景的工具若被系統節流，輪詢會延遲到數秒才觸發。
 pub fn platform_setup() {
-    let reason = NSString::from_str("Ctrl-C 正在監聽剪貼簿變更");
+    let reason = NSString::from_str("CopyC 正在監聽剪貼簿變更");
     let token = NSProcessInfo::processInfo()
         .beginActivityWithOptions_reason(NSActivityOptions::UserInitiatedAllowingIdleSystemSleep, &reason);
     std::mem::forget(token);

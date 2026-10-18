@@ -86,7 +86,7 @@ pub fn start_clipboard_listener(tx: Sender<()>) {
     }
     thread::spawn(|| unsafe {
         let Ok(module) = GetModuleHandleW(None) else { return };
-        let class = w!("CtrlCClipboardListener");
+        let class = w!("CopyCClipboardListener");
         let wc = WNDCLASSW {
             lpfnWndProc: Some(listener_proc),
             hInstance: module.into(),
@@ -97,7 +97,7 @@ pub fn start_clipboard_listener(tx: Sender<()>) {
         let Ok(hwnd) = CreateWindowExW(
             WINDOW_EX_STYLE(0),
             class,
-            w!("Ctrl-C"),
+            w!("CopyC"),
             WINDOW_STYLE(0),
             0,
             0,

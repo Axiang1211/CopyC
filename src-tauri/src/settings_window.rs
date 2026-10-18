@@ -13,7 +13,7 @@ pub fn open(app: &AppHandle) {
     }
 
     let builder = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("settings.html".into()))
-        .title("Ctrl-C 偏好設定")
+        .title("CopyC 偏好設定")
         .inner_size(940.0, 660.0)
         .min_inner_size(820.0, 580.0)
         .center()

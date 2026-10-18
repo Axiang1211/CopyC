@@ -83,7 +83,7 @@ impl AppState {
                 stats.copies += 1;
             }
         }
-        if let Some(app) = source.filter(|s| !s.eq_ignore_ascii_case("ctrl-c")) {
+        if let Some(app) = source.filter(|s| !s.eq_ignore_ascii_case("copyc")) {
             let mut apps = self.recent_apps.lock();
             apps.retain(|a| !a.eq_ignore_ascii_case(app));
             apps.insert(0, app.to_string());

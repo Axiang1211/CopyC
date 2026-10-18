@@ -1,10 +1,10 @@
-# 把 tauri build 產生的 ctrl-c.exe 封裝成 .msix。
+# 把 tauri build 產生的 copyc.exe 封裝成 .msix。
 # 用法：pwsh scripts/build-msix.ps1 [-Exe <路徑>] [-Publisher "CN=..."] [-CertPath cert.pfx -CertPassword ***]
 # 沒有提供憑證時只產生未簽章的 .msix（安裝前需自行以 signtool 簽章，或開啟開發人員模式側載）。
 param(
-  [string]$Exe = "src-tauri/target/release/ctrl-c.exe",
+  [string]$Exe = "src-tauri/target/release/copyc.exe",
   [string]$Arch = "x64",
-  [string]$Publisher = "CN=Ctrl-C",
+  [string]$Publisher = "CN=CopyC",
   [string]$OutDir = "dist",
   [string]$CertPath = "",
   [string]$CertPassword = ""
@@ -27,7 +27,7 @@ $layout = Join-Path $OutDir "msix-layout"
 Remove-Item $layout -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
 
-Copy-Item $Exe "$layout/ctrl-c.exe"
+Copy-Item $Exe "$layout/copyc.exe"
 foreach ($asset in "StoreLogo.png", "Square150x150Logo.png", "Square44x44Logo.png") {
   Copy-Item "src-tauri/icons/$asset" "$layout/Assets/$asset"
 }
@@ -37,7 +37,7 @@ foreach ($asset in "StoreLogo.png", "Square150x150Logo.png", "Square44x44Logo.pn
   -replace "__PUBLISHER__", $Publisher |
   Set-Content "$layout/AppxManifest.xml" -Encoding utf8
 
-$msix = Join-Path $OutDir "Ctrl-C_$($conf.version)_$Arch.msix"
+$msix = Join-Path $OutDir "CopyC_$($conf.version)_$Arch.msix"
 & (Find-SdkTool "makeappx.exe") pack /o /d $layout /p $msix
 if ($LASTEXITCODE -ne 0) { throw "makeappx 失敗" }
 

@@ -1,4 +1,4 @@
-/* Ctrl-C 偏好設定
+/* CopyC 偏好設定
  * 視覺主題：暗色便當盒撞色風（Dark Bento + Morandi Pop），品牌綠 #10B981。
  * 版面：懸浮島式側邊欄 + 錨點導航（scrollspy）+ 滾動收縮頂欄。 */
 
@@ -128,26 +128,17 @@ body[data-platform="macos"] .island {
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  background: var(--ink-2);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
 }
-.brand-mark svg {
-  width: 26px;
-  height: 26px;
+.brand-mark img {
+  width: 100%;
+  height: 100%;
 }
 .brand-mark.small {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--on-ink);
-}
-.brand-mark.small svg {
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
 }
 .brand-text {
   display: flex;

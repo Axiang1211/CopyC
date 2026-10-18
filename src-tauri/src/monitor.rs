@@ -18,7 +18,7 @@ const THUMB_PX: u32 = 64;
 pub fn start(app: AppHandle) {
     let (tx, rx) = mpsc::channel::<()>();
     platform::start_clipboard_listener(tx);
-    let _ = thread::Builder::new().name("ctrl-c-clipboard".into()).spawn(move || {
+    let _ = thread::Builder::new().name("copyc-clipboard".into()).spawn(move || {
         platform::init_worker_thread();
         while rx.recv().is_ok() {
             thread::sleep(SETTLE);

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Ctrl-C",
+  "productName": "CopyC",
   "version": "1.0.0",
-  "identifier": "app.ctrlc.toast",
+  "identifier": "top.dreamsworld.copyc",
   "build": {
     "frontendDist": "../src"
   },
@@ -19,8 +19,8 @@
     "targets": ["nsis", "msi", "dmg", "app", "deb"],
     "category": "Utility",
     "shortDescription": "複製即時回饋工具",
-    "longDescription": "Ctrl-C 在你每次成功複製時，於螢幕上方或游標旁彈出輕量提示，告別複製焦慮與重複按鍵。",
-    "copyright": "© 2026 Ctrl-C",
+    "longDescription": "CopyC 在你每次成功複製時，於螢幕上方或游標旁彈出輕量提示，告別複製焦慮與重複按鍵。",
+    "copyright": "© 2026 CopyC",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

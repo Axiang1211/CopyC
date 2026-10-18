@@ -1,13 +1,13 @@
 [package]
-name = "ctrl-c"
+name = "copyc"
 version = "1.0.0"
-description = "Ctrl-C — 桌面複製即時回饋工具"
-authors = ["Ctrl-C"]
+description = "CopyC — 桌面複製即時回饋工具"
+authors = ["CopyC"]
 edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "ctrl_c_lib"
+name = "copyc_lib"
 crate-type = ["rlib"]
 
 [build-dependencies]

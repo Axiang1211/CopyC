@@ -1,4 +1,4 @@
-//! Ctrl-C：常駐背景的複製即時回饋工具。
+//! CopyC：常駐背景的複製即時回饋工具。
 
 mod classify;
 mod commands;
@@ -63,7 +63,7 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("無法啟動 Ctrl-C");
+        .expect("無法啟動 CopyC");
 
     app.run(|_app, event| {
         // 關閉設定視窗不結束程式；只有選單的「結束」（帶 exit code）才會真的退出

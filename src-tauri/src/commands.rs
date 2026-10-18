@@ -18,7 +18,7 @@ pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
     let state = app.state::<AppState>();
     *state.settings.lock() = next.clone();
     if let Err(e) = next.save(&state.settings_path) {
-        eprintln!("ctrl-c: 無法儲存設定：{e}");
+        eprintln!("copyc: 無法儲存設定：{e}");
     }
     tray::refresh(app);
     let _ = app.emit("settings:changed", &next);
@@ -124,12 +124,12 @@ fn sample(kind: &str) -> Payload {
         "url" => Payload::Url {
             scheme: "https://".into(),
             domain: "example.com".into(),
-            rest: "/products/ctrl-c?ref=to…".into(),
+            rest: "/products/copyc?ref=to…".into(),
         },
         "sensitive" => Payload::Sensitive { reason: SensitiveReason::Entropy },
         "private" => Payload::Private,
         _ => Payload::Text {
-            preview: "這是一段測試文字內容，讓你確認 Ctrl-C 正常".into(),
+            preview: "這是一段測試文字內容，讓你確認 CopyC 正常".into(),
             truncated: true,
             chars: 142,
             lines: 3,
@@ -148,7 +148,7 @@ pub fn run_preview(app: &AppHandle, kind: &str) {
     let clip = Clip {
         payload,
         hash: base.bytes().fold(0xC0FFEEu64, |h, b| h.rotate_left(5) ^ b as u64),
-        source: Some("Ctrl-C".into()),
+        source: Some("CopyC".into()),
     };
     match kind {
         "repeat" => {

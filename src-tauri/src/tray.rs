@@ -13,7 +13,7 @@ use tauri::{
     AppHandle, Manager, Wry,
 };
 
-const TRAY_ID: &str = "ctrl-c";
+const TRAY_ID: &str = "copyc";
 
 pub const POSITIONS: [(Position, &str, &str); 6] = [
     (Position::Top, "top", "螢幕正上方膠囊"),
@@ -30,16 +30,10 @@ fn as_refs(items: &[CheckMenuItem<Wry>]) -> Vec<&dyn IsMenuItem<Wry>> {
 const DURATIONS: [u32; 5] = [800, 1200, 1400, 2000, 3000];
 const OPACITIES: [u32; 4] = [100, 90, 80, 70];
 
-fn brand() -> &'static str {
-    if cfg!(target_os = "macos") {
-        "⌘C"
-    } else {
-        "Ctrl-C"
-    }
-}
+const BRAND: &str = "CopyC";
 
 fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
-    let header = MenuItem::with_id(app, "header", format!("{} 正在守護你的剪貼簿", brand()), false, None::<&str>)?;
+    let header = MenuItem::with_id(app, "header", format!("{} 正在守護你的剪貼簿", BRAND), false, None::<&str>)?;
     let pause = CheckMenuItem::with_id(app, "pause", "暫停提示", true, s.paused, None::<&str>)?;
 
     let positions = POSITIONS
@@ -69,7 +63,7 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
     let privacy = CheckMenuItem::with_id(app, "privacy", "隱私打碼模式（分享螢幕用）", true, s.privacy_mode, None::<&str>)?;
     let test = MenuItem::with_id(app, "test", "試一下提示", true, None::<&str>)?;
     let prefs = MenuItem::with_id(app, "settings", "偏好設定…", true, Some("CmdOrCtrl+,"))?;
-    let quit = MenuItem::with_id(app, "quit", format!("結束 {}", brand()), true, Some("CmdOrCtrl+Q"))?;
+    let quit = MenuItem::with_id(app, "quit", format!("結束 {}", BRAND), true, Some("CmdOrCtrl+Q"))?;
     let sep = || PredefinedMenuItem::separator(app);
 
     Menu::with_items(
@@ -106,7 +100,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(icon)
         .icon_as_template(mac)
-        .tooltip(format!("{} — 複製即時回饋", brand()))
+        .tooltip(format!("{} — 複製即時回饋", BRAND))
         .menu(&menu)
         .show_menu_on_left_click(mac)
         .on_menu_event(|app, event| on_menu(app, event.id().as_ref()))

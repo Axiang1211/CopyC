@@ -1,8 +1,8 @@
 {
-  "name": "ctrl-c",
+  "name": "copyc",
   "private": true,
   "version": "1.0.0",
-  "description": "Ctrl-C — 桌面複製即時回饋工具（Windows & macOS）",
+  "description": "CopyC — 桌面複製即時回饋工具（Windows & macOS）",
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",

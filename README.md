@@ -1,8 +1,12 @@
-# Ctrl-C：桌面複製即時回饋工具
+# CopyC：桌面複製即時回饋工具
 
-> 每一次成功複製都有回應。告別「複製焦慮症」與連按三到五次 Ctrl+C 的習慣。
+> 每一次複製，都有一杯 Kopi 的回應。告別「複製焦慮症」與連按三到五次 Ctrl+C 的習慣。
+>
+> 官網：<https://www.copyc.app.dreamsworld.top/>
 
-Ctrl-C 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）。系統剪貼簿一有變更，就在螢幕上方或游標旁彈出一個輕量提示：「你已成功複製……」。提示框不搶焦點、滑鼠可穿透，停留約 1.4 秒後自動淡出。
+**名字由來**：Copy 跟馬來語的 **Kopi**（咖啡）唸起來幾乎一樣。南洋 Kopitiam 裡的 **Kopi C** 是加淡奶與糖的咖啡，所以產品從原本的 Ctrl-C 改名為 **CopyC**，官網與 Logo 也以咖啡為主題設計。
+
+CopyC 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）。系統剪貼簿一有變更，就在螢幕上方或游標旁彈出一個輕量提示：「你已成功複製……」。提示框不搶焦點、滑鼠可穿透，停留約 1.4 秒後自動淡出。
 
 | 平台 | 安裝包 | 常駐位置 |
 | --- | --- | --- |
@@ -53,7 +57,7 @@ Ctrl-C 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）
   - macOS 依據 `CGWindowList` 中前景 App 的視窗是否與螢幕等大來判斷，不需要螢幕錄製權限。
 
 ### 06 命名與 v1.1 規劃（已一併實作）
-- macOS 介面顯示為 **⌘ Cmd-C**，Windows 顯示為 **Ctrl-C**。
+- 產品名稱改為 **CopyC**（Copy 通 Kopi）；兩個平台的介面與選單都以 CopyC 顯示。
 - 系統匣選單提供：暫停、顯示位置、停留秒數、透明度、音效、隱私打碼、試一下、偏好設定。
 - **懸停展開最近 3 筆紀錄**：提示框本身是滑鼠穿透的，所以改由 Rust 在提示顯示期間輪詢游標位置。如此「點擊穿透」與「懸停展開」可以同時成立。
 
@@ -108,6 +112,34 @@ pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword
 
 簽章所需的 secrets 都是選填：`APPLE_CERTIFICATE`、`APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_PASSWORD`、`APPLE_TEAM_ID`、`WINDOWS_CERTIFICATE`（base64 編碼的 pfx）、`WINDOWS_CERTIFICATE_PASSWORD`、`MSIX_PUBLISHER`。沒有設定時，產出的安裝包未簽章，安裝時會出現 Gatekeeper 或 SmartScreen 警告；未簽章的 `.msix` 則需要開啟開發人員模式才能側載。
 
+## 官網（GitHub + Cloudflare Pages）
+
+`website/` 是純靜態網站（HTML / CSS / ES Module，不需打包），包含：
+- **主頁介紹**：可以直接在網頁上選取文字並按 Ctrl/⌘+C，體驗與 App 相同的「你已成功複製」膠囊。連按會出現 ×N 彩蛋。
+- **名字由來**：以 Kopitiam 菜單板對照 Kopi / Kopi C / Kopi O / Kopi Kosong / Kopi Peng 與各項功能。
+- **功能**：橫向手風琴（手機上改為直式）。
+- **下載**：往下滑就能看到。點擊後直接下載 GitHub Releases 的最新安裝包。
+  - Windows 用 Split Button：主鍵下載 `.exe`，箭頭展開 `.msi` 與 `.msix`。
+  - Microsoft Store 欄位已預留：在 `website/index.html` 的 `#download` 設定 `data-ms-store-id="<Store 產品 ID>"` 後會自動啟用。
+  - 頁面會偵測訪客的作業系統並標示「為你推薦」；版本號與檔案大小會從 GitHub API 自動讀取。
+  - 還沒有任何 Release 時，下載按鈕會改連到 Releases 頁面。
+
+下載連結使用固定檔名：`CopyC-windows-x64-setup.exe`、`CopyC-windows-x64.msi`、`CopyC-windows-x64.msix`、`CopyC-macos-universal.dmg`。推送 `v*` tag 時，`release.yml` 會用這些檔名發布正式 Release，所以官網連結永遠指向最新版本。
+
+### 部署到 Cloudflare Pages
+
+方式一（推薦，免 secrets）：在 Cloudflare Dashboard 進入 **Workers & Pages → Create → Pages → Connect to Git**，選擇這個 repo，設定如下：
+- Build command：留空
+- Build output directory：`website`
+
+方式二（GitHub Actions）：在 repo 設定兩個 secrets：
+- `CLOUDFLARE_API_TOKEN`，權限需要 Cloudflare Pages: Edit。
+- `CLOUDFLARE_ACCOUNT_ID`。
+
+之後只要 `website/` 有變更，`.github/workflows/website.yml` 就會自動部署到 Pages 專案 `copyc`。
+
+自訂網域：在 Pages 專案的 **Custom domains** 加入 `www.copyc.app.dreamsworld.top`。若 `dreamsworld.top` 的 DNS 由 Cloudflare 管理，會自動建立 CNAME；否則請自行把 `www.copyc.app` 以 CNAME 指向 `copyc.pages.dev`。
+
 ### 專案結構
 
 ```
@@ -123,6 +155,7 @@ src-tauri/src/
   settings.rs, state.rs  設定持久化、歷史與統計
   platform/              windows.rs、macos.rs、fallback.rs（Linux 開發用）
 packaging/msix/          MSIX 清單（開機啟動改用 StartupTask）
+website/                 官網（Cloudflare Pages）；assets/logo.svg 為吉祥物 × Kopi 杯 Logo 原稿
 ```
 
 ## 已知限制
