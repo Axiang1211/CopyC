@@ -14,7 +14,7 @@
     <DisplayName>CopyC</DisplayName>
     <PublisherDisplayName>__PUBLISHER_DISPLAY_NAME__</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
-    <Description>每一次成功複製都有回應的桌面小工具。</Description>
+    <Description>Instant confirmation for every copy.</Description>
   </Properties>
 
   <Dependencies>
@@ -34,10 +34,17 @@
     <Application Id="CopyC" Executable="copyc.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="CopyC"
-        Description="複製即時回饋工具"
+        Description="Instant confirmation for every copy"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png" />
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square71x71Logo="Assets\Square71x71Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png"
+          ShortName="CopyC" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#2A1C14" />
+      </uap:VisualElements>
       <Extensions>
         <!-- MSIX 沙盒內無法寫入登錄檔 Run 機碼，開機自動啟動改用 StartupTask -->
         <desktop:Extension Category="windows.startupTask" Executable="copyc.exe" EntryPoint="Windows.FullTrustApplication">

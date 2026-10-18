@@ -31,9 +31,8 @@ Remove-Item $layout -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
 
 Copy-Item $Exe "$layout/copyc.exe"
-foreach ($asset in "StoreLogo.png", "Square150x150Logo.png", "Square44x44Logo.png") {
-  Copy-Item "src-tauri/icons/$asset" "$layout/Assets/$asset"
-}
+# 各尺寸 / 縮放比例的圖示（由 store/source/render.mjs icons 產生）
+Copy-Item "packaging/msix/Assets/*.png" "$layout/Assets/"
 (Get-Content "packaging/msix/AppxManifest.xml" -Raw) `
   -replace "__VERSION__", $version `
   -replace "__ARCH__", $Arch `
@@ -41,6 +40,14 @@ foreach ($asset in "StoreLogo.png", "Square150x150Logo.png", "Square44x44Logo.pn
   -replace "__PUBLISHER_DISPLAY_NAME__", $PublisherDisplayName `
   -replace "__PUBLISHER__", $Publisher |
   Set-Content "$layout/AppxManifest.xml" -Encoding utf8
+
+# resources.pri 讓 Windows 依縮放比例與工作列尺寸挑選對應的圖示（scale-200、targetsize-32…）
+$makepri = Find-SdkTool "makepri.exe"
+$priConfig = Join-Path $OutDir "priconfig.xml"
+& $makepri createconfig /cf $priConfig /dq en-US /pv 10.0.0 /o
+if ($LASTEXITCODE -ne 0) { throw "makepri createconfig 失敗" }
+& $makepri new /pr $layout /cf $priConfig /mn "$layout/AppxManifest.xml" /of "$layout/resources.pri" /o
+if ($LASTEXITCODE -ne 0) { throw "makepri new 失敗" }
 
 $msix = Join-Path $OutDir "CopyC_$($conf.version)_$Arch.msix"
 & (Find-SdkTool "makeappx.exe") pack /o /d $layout /p $msix
