@@ -14,8 +14,8 @@
     <meta property="og:title" content="CopyC — Every copy comes with a cup of Kopi" />
     <meta property="og:description" content="No more copy anxiety. Press Ctrl+C and CopyC tells you right away: Copied! Free for Windows and macOS." />
     <meta property="og:url" content="https://www.copyc.app.dreamsworld.top/en/" />
-    <meta property="og:image" content="https://www.copyc.app.dreamsworld.top/assets/logo-512.png" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://www.copyc.app.dreamsworld.top/assets/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
     <link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
@@ -50,8 +50,11 @@
     </div>
     <header class="nav" id="nav">
       <a class="nav-brand" href="#intro" aria-label="CopyC home">
-        <img src="../assets/logo.svg" alt="" width="36" height="36" />
-        <span>CopyC</span>
+        <img src="../assets/logo.svg" alt="" width="40" height="40" />
+        <picture class="wordmark">
+          <source srcset="../assets/wordmark-dark.svg" media="(prefers-color-scheme: dark)" />
+          <img src="../assets/wordmark.svg" alt="CopyC" width="104" height="36" />
+        </picture>
       </a>
       <nav class="nav-links" id="nav-links" aria-label="Page navigation">
         <span class="nav-pill" id="nav-pill" aria-hidden="true"></span>
@@ -349,9 +352,12 @@
 
     <footer class="footer gutter">
       <div class="footer-brand">
-        <img src="../assets/logo.svg" alt="" width="44" height="44" />
+        <img src="../assets/logo.svg" alt="" width="52" height="52" />
         <div>
-          <b>CopyC</b>
+          <picture class="wordmark">
+            <source srcset="../assets/wordmark-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="../assets/wordmark.svg" alt="CopyC" width="92" height="32" />
+          </picture>
           <span>Copy ≈ Kopi · every copy gets a reply.</span>
         </div>
       </div>

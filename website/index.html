@@ -14,8 +14,8 @@
     <meta property="og:title" content="CopyC — 每一次複製，都有一杯 Kopi 的回應" />
     <meta property="og:description" content="告別複製焦慮。按下 Ctrl+C，CopyC 立刻告訴你：你已成功複製！Windows 與 macOS 免費下載。" />
     <meta property="og:url" content="https://www.copyc.app.dreamsworld.top/" />
-    <meta property="og:image" content="https://www.copyc.app.dreamsworld.top/assets/logo-512.png" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://www.copyc.app.dreamsworld.top/assets/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
@@ -54,8 +54,11 @@
     <!-- 懸浮吸頂導航：膠囊 + 毛玻璃，下滾收縮；錨點自動高亮 -->
     <header class="nav" id="nav">
       <a class="nav-brand" href="#intro" aria-label="CopyC 首頁">
-        <img src="assets/logo.svg" alt="" width="36" height="36" />
-        <span>CopyC</span>
+        <img src="assets/logo.svg" alt="" width="40" height="40" />
+        <picture class="wordmark">
+          <source srcset="assets/wordmark-dark.svg" media="(prefers-color-scheme: dark)" />
+          <img src="assets/wordmark.svg" alt="CopyC" width="104" height="36" />
+        </picture>
       </a>
       <nav class="nav-links" id="nav-links" aria-label="頁面導覽">
         <span class="nav-pill" id="nav-pill" aria-hidden="true"></span>
@@ -369,9 +372,12 @@
 
     <footer class="footer gutter">
       <div class="footer-brand">
-        <img src="assets/logo.svg" alt="" width="44" height="44" />
+        <img src="assets/logo.svg" alt="" width="52" height="52" />
         <div>
-          <b>CopyC</b>
+          <picture class="wordmark">
+            <source srcset="assets/wordmark-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="assets/wordmark.svg" alt="CopyC" width="92" height="32" />
+          </picture>
           <span>Copy 通 Kopi・每一次複製，都有回應。</span>
         </div>
       </div>

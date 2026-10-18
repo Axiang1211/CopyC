@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="CopyC" width="520"></p>
+
 # CopyC：桌面複製即時回饋工具
 
 > 每一次複製，都有一杯 Kopi 的回應。告別「複製焦慮症」與連按三到五次 Ctrl+C 的習慣。
