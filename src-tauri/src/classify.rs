@@ -1,0 +1,464 @@
+//! 智慧內容識別：把剪貼簿快照轉成通知框要呈現的結構化資料。
+//!
+//! 文案（「你已成功複製……」）統一由前端組字，這裡只負責判斷型別與擷取必要欄位。
+//! 敏感內容在這一層就丟棄明文，確保之後的事件、歷史紀錄都拿不到原文。
+
+use crate::settings::{BlacklistAction, Settings};
+use regex::Regex;
+use serde::Serialize;
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+    path::PathBuf,
+    sync::OnceLock,
+};
+
+pub const TEXT_PREVIEW_CHARS: usize = 25;
+const URL_REST_CHARS: usize = 22;
+
+#[derive(Debug, Clone, Default)]
+pub struct ImageInfo {
+    pub width: u32,
+    pub height: u32,
+    pub format: String,
+    /// 32×32 顯示用縮圖（以 64×64 輸出以支援高 DPI），data URL。
+    pub thumb: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FileEntry {
+    pub path: PathBuf,
+    pub icon: Option<String>,
+}
+
+/// 一次剪貼簿變更所讀到的全部資訊。
+#[derive(Debug, Clone, Default)]
+pub struct Snapshot {
+    /// 剪貼簿上的格式數量；0 代表被清空，不應提示。
+    pub format_count: usize,
+    /// 密碼管理器設定的「勿記錄」標記（macOS ConcealedType、Windows ExcludeClipboardContentFromMonitorProcessing 等）。
+    pub sensitive_marker: bool,
+    pub files: Vec<FileEntry>,
+    pub text: Option<String>,
+    pub image: Option<ImageInfo>,
+    pub source: Option<crate::platform::AppInfo>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SensitiveReason {
+    /// 來源應用設定了隱私標記
+    Marker,
+    /// 來源應用在黑名單內
+    Blacklist,
+    /// 內容符合高熵值密碼特徵
+    Entropy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum Payload {
+    Text { preview: String, truncated: bool, chars: usize, lines: usize },
+    Image { width: u32, height: u32, format: String, thumb: Option<String> },
+    Files { first: String, count: usize, is_dir: bool, ext: String, icon: Option<String> },
+    Color { value: String },
+    Url { scheme: String, domain: String, rest: String },
+    Sensitive { reason: SensitiveReason },
+    /// 隱私打碼模式：僅顯示「✓ 你已成功複製」。
+    Private,
+    /// 對應類型的智慧預覽被關閉，或是無法辨識的格式。
+    Generic { label: String },
+}
+
+/// 一次可顯示的複製事件。
+#[derive(Debug, Clone)]
+pub struct Clip {
+    pub payload: Payload,
+    /// 內容雜湊，用來判斷「連按」是否為同一份內容。
+    pub hash: u64,
+    pub source: Option<String>,
+}
+
+pub enum Outcome {
+    Show(Clip),
+    /// 黑名單設定為「完全不提示」。
+    Silent,
+    /// 剪貼簿被清空或沒有內容，不應誤報。
+    Ignore,
+}
+
+pub fn classify(snap: Snapshot, settings: &Settings) -> Outcome {
+    if snap.format_count == 0 {
+        return Outcome::Ignore;
+    }
+    let hash = content_hash(&snap);
+    let source = snap.source.as_ref().map(|a| a.name.clone()).filter(|s| !s.is_empty());
+
+    let blacklisted = snap.source.as_ref().is_some_and(|a| settings.is_blacklisted(a));
+    if blacklisted && settings.blacklist_action == BlacklistAction::Silent {
+        return Outcome::Silent;
+    }
+
+    let payload = if blacklisted {
+        Payload::Sensitive { reason: SensitiveReason::Blacklist }
+    } else if snap.sensitive_marker && settings.mask_sensitive {
+        Payload::Sensitive { reason: SensitiveReason::Marker }
+    } else {
+        detect(snap, settings)
+    };
+
+    let payload = if settings.privacy_mode { Payload::Private } else { payload };
+    Outcome::Show(Clip { payload, hash, source })
+}
+
+fn detect(snap: Snapshot, settings: &Settings) -> Payload {
+    let smart = &settings.smart_types;
+
+    if let Some(first) = snap.files.first() {
+        if !smart.files {
+            return generic("檔案");
+        }
+        let name = first
+            .path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| first.path.to_string_lossy().into_owned());
+        let ext = first
+            .path
+            .extension()
+            .map(|e| e.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
+        return Payload::Files {
+            first: name,
+            count: snap.files.len(),
+            is_dir: first.path.is_dir(),
+            ext,
+            icon: first.icon.clone(),
+        };
+    }
+
+    if let Some(text) = snap.text.as_deref().filter(|t| !t.trim().is_empty()) {
+        let token = text.trim();
+        if settings.mask_sensitive && looks_like_secret(token) {
+            return Payload::Sensitive { reason: SensitiveReason::Entropy };
+        }
+        if let Some(value) = parse_color(token) {
+            return if smart.color { Payload::Color { value } } else { generic("色碼") };
+        }
+        if let Some((scheme, domain, rest)) = parse_url(token) {
+            return if smart.url { Payload::Url { scheme, domain, rest } } else { generic("連結") };
+        }
+        if !smart.text {
+            return generic("文字");
+        }
+        let (preview, truncated) = text_preview(text);
+        return Payload::Text {
+            preview,
+            truncated,
+            chars: text.chars().count(),
+            lines: text.lines().count().max(1),
+        };
+    }
+
+    if let Some(img) = snap.image {
+        if !smart.image {
+            return generic("圖片");
+        }
+        return Payload::Image { width: img.width, height: img.height, format: img.format, thumb: img.thumb };
+    }
+
+    generic("內容")
+}
+
+fn generic(label: &str) -> Payload {
+    Payload::Generic { label: label.to_string() }
+}
+
+fn content_hash(snap: &Snapshot) -> u64 {
+    let mut h = DefaultHasher::new();
+    snap.sensitive_marker.hash(&mut h);
+    for f in &snap.files {
+        f.path.hash(&mut h);
+    }
+    snap.text.hash(&mut h);
+    if let Some(img) = &snap.image {
+        (img.width, img.height, &img.thumb).hash(&mut h);
+    }
+    h.finish()
+}
+
+/// 換行、Tab 轉成空白，擷取前 25 個字元。
+pub fn text_preview(text: &str) -> (String, bool) {
+    let flat: String = text
+        .trim()
+        .chars()
+        .map(|c| if c == '\n' || c == '\r' || c == '\t' { ' ' } else { c })
+        .collect();
+    let mut chars = flat.chars();
+    let preview: String = chars.by_ref().take(TEXT_PREVIEW_CHARS).collect();
+    let truncated = chars.next().is_some();
+    (preview.trim_end().to_string(), truncated)
+}
+
+fn color_regexes() -> &'static [Regex; 3] {
+    static RE: OnceLock<[Regex; 3]> = OnceLock::new();
+    RE.get_or_init(|| {
+        [
+            Regex::new(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$").unwrap(),
+            Regex::new(
+                r"(?i)^rgba?\(\s*(\d{1,3})%?\s*[,\s]\s*(\d{1,3})%?\s*[,\s]\s*(\d{1,3})%?\s*(?:[,/]\s*(?:0|1|0?\.\d+|\d{1,3}%)\s*)?\)$",
+            )
+            .unwrap(),
+            Regex::new(
+                r"(?i)^hsla?\(\s*\d{1,3}(?:\.\d+)?(?:deg)?\s*[,\s]\s*\d{1,3}(?:\.\d+)?%\s*[,\s]\s*\d{1,3}(?:\.\d+)?%\s*(?:[,/]\s*(?:0|1|0?\.\d+|\d{1,3}%)\s*)?\)$",
+            )
+            .unwrap(),
+        ]
+    })
+}
+
+/// 識別 HEX / RGB / HSL 色碼；回傳值只會是通過正則的字串，可安全當作 CSS 顏色。
+pub fn parse_color(s: &str) -> Option<String> {
+    if s.len() > 64 {
+        return None;
+    }
+    let [hex, rgb, hsl] = color_regexes();
+    if hex.is_match(s) {
+        return Some(s.to_uppercase());
+    }
+    if let Some(caps) = rgb.captures(s) {
+        let ok = (1..=3).all(|i| caps[i].parse::<u16>().is_ok_and(|v| v <= 255));
+        return ok.then(|| s.to_string());
+    }
+    hsl.is_match(s).then(|| s.to_string())
+}
+
+/// 識別網址並拆出「協定 / 網域 / 其餘路徑」，供前端高亮網域。
+pub fn parse_url(s: &str) -> Option<(String, String, String)> {
+    if s.len() > 4096 || s.chars().any(char::is_whitespace) {
+        return None;
+    }
+    let lower = s.to_ascii_lowercase();
+    let (scheme, body) = if lower.starts_with("https://") || lower.starts_with("http://") {
+        let idx = s.find("://")? + 3;
+        (s[..idx].to_string(), &s[idx..])
+    } else if lower.starts_with("www.") {
+        (String::new(), s)
+    } else {
+        return None;
+    };
+    let host_end = body.find(['/', '?', '#']).unwrap_or(body.len());
+    let host = &body[..host_end];
+    let host = host.rsplit('@').next().unwrap_or(host);
+    if host.is_empty() || !host.contains('.') && !host.starts_with("localhost") {
+        return None;
+    }
+    let rest = &body[host_end..];
+    let rest = if rest.chars().count() > URL_REST_CHARS {
+        format!("{}…", rest.chars().take(URL_REST_CHARS).collect::<String>())
+    } else {
+        rest.to_string()
+    };
+    Some((scheme, host.to_string(), rest))
+}
+
+fn shannon_entropy(s: &str) -> f64 {
+    let mut counts = std::collections::HashMap::new();
+    let mut total = 0usize;
+    for c in s.chars() {
+        *counts.entry(c).or_insert(0usize) += 1;
+        total += 1;
+    }
+    counts
+        .values()
+        .map(|&n| {
+            let p = n as f64 / total as f64;
+            -p * p.log2()
+        })
+        .sum()
+}
+
+/// 高熵值密碼 / 金鑰特徵判斷。刻意保守，避免把一般檔名、程式識別字誤判為密碼。
+pub fn looks_like_secret(s: &str) -> bool {
+    let len = s.chars().count();
+    if !(8..=128).contains(&len) || s.chars().any(char::is_whitespace) || !s.is_ascii() {
+        return false;
+    }
+    if parse_url(s).is_some() || parse_color(s).is_some() {
+        return false;
+    }
+    if s.contains('@') && s.contains('.') && !s.starts_with('@') {
+        return false; // email
+    }
+    if s.starts_with('/') || s.starts_with('~') || s.contains(":\\") || s.chars().all(|c| c.is_ascii_digit()) {
+        return false; // 路徑或純數字
+    }
+
+    let has_upper = s.chars().any(|c| c.is_ascii_uppercase());
+    let has_lower = s.chars().any(|c| c.is_ascii_lowercase());
+    let has_digit = s.chars().any(|c| c.is_ascii_digit());
+    let has_special = s.chars().any(|c| !c.is_ascii_alphanumeric() && !"_-./\\:".contains(c));
+
+    if has_upper && has_lower && has_digit && has_special {
+        return true;
+    }
+
+    // 長金鑰（API Token、Base64）：字母數字類別頻繁交錯且熵值高。
+    let class = |c: char| {
+        if c.is_ascii_uppercase() {
+            0
+        } else if c.is_ascii_lowercase() {
+            1
+        } else {
+            2
+        }
+    };
+    let alnum: Vec<u8> = s.chars().filter(|c| c.is_ascii_alphanumeric()).map(class).collect();
+    let transitions = alnum.windows(2).filter(|w| w[0] != w[1]).count();
+    len >= 16
+        && has_digit
+        && (has_upper || has_lower)
+        && shannon_entropy(s) >= 3.6
+        && transitions as f64 / len as f64 >= 0.3
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::platform::AppInfo;
+
+    fn text_snap(t: &str) -> Snapshot {
+        Snapshot { format_count: 1, text: Some(t.into()), ..Default::default() }
+    }
+
+    fn show(snap: Snapshot, s: &Settings) -> Payload {
+        match classify(snap, s) {
+            Outcome::Show(c) => c.payload,
+            _ => panic!("expected Show"),
+        }
+    }
+
+    #[test]
+    fn empty_clipboard_is_ignored() {
+        assert!(matches!(classify(Snapshot::default(), &Settings::default()), Outcome::Ignore));
+    }
+
+    #[test]
+    fn text_preview_flattens_and_truncates() {
+        let text = "這是一段測試文字內容\n第二行的內容在這裡\n第三行會被截斷掉喔喔喔喔喔";
+        match show(text_snap(text), &Settings::default()) {
+            Payload::Text { preview, truncated, chars, lines } => {
+                assert!(!preview.contains('\n'));
+                assert_eq!(preview.chars().count(), 25);
+                assert!(truncated);
+                assert_eq!(chars, text.chars().count());
+                assert_eq!(lines, 3);
+            }
+            p => panic!("{p:?}"),
+        }
+    }
+
+    #[test]
+    fn short_text_is_not_truncated() {
+        assert_eq!(text_preview("hello\nworld"), ("hello world".into(), false));
+    }
+
+    #[test]
+    fn detects_colors() {
+        assert_eq!(parse_color("#10b981").as_deref(), Some("#10B981"));
+        assert!(parse_color("rgb(16, 185, 129)").is_some());
+        assert!(parse_color("rgba(16 185 129 / 0.5)").is_some());
+        assert!(parse_color("hsl(160, 84%, 39%)").is_some());
+        assert!(parse_color("rgb(300, 0, 0)").is_none());
+        assert!(parse_color("#12345").is_none());
+        assert!(parse_color("10B981").is_none());
+    }
+
+    #[test]
+    fn detects_urls_and_domain() {
+        let (scheme, domain, rest) = parse_url("https://example.com/some/really/long/path?q=1").unwrap();
+        assert_eq!(scheme, "https://");
+        assert_eq!(domain, "example.com");
+        assert!(rest.starts_with("/some"));
+        assert!(parse_url("www.google.com").is_some());
+        assert!(parse_url("hello world").is_none());
+        assert!(parse_url("file.txt").is_none());
+    }
+
+    #[test]
+    fn secret_heuristics() {
+        assert!(looks_like_secret("Tr0ub4dor&3x!"));
+        assert!(looks_like_secret("aZ3kP9qL2mX8vB7nW4tR"));
+        assert!(!looks_like_secret("Project_Report_2024_Final.docx"));
+        assert!(!looks_like_secret("getUserName"));
+        assert!(!looks_like_secret("hello"));
+        assert!(!looks_like_secret("someone@example.com"));
+        assert!(!looks_like_secret("https://example.com/a1B2c3D4"));
+        assert!(!looks_like_secret("20241018"));
+    }
+
+    #[test]
+    fn sensitive_never_carries_plaintext() {
+        let p = show(text_snap("Tr0ub4dor&3x!"), &Settings::default());
+        assert_eq!(p, Payload::Sensitive { reason: SensitiveReason::Entropy });
+        let json = serde_json::to_string(&p).unwrap();
+        assert!(!json.contains("Tr0ub"));
+    }
+
+    #[test]
+    fn marker_and_blacklist() {
+        let mut snap = text_snap("plain words");
+        snap.sensitive_marker = true;
+        assert_eq!(show(snap, &Settings::default()), Payload::Sensitive { reason: SensitiveReason::Marker });
+
+        let mut snap = text_snap("plain words");
+        snap.source = Some(AppInfo { name: "1Password".into(), id: "com.1password.1password".into() });
+        assert_eq!(show(snap.clone(), &Settings::default()), Payload::Sensitive { reason: SensitiveReason::Blacklist });
+
+        let silent = Settings { blacklist_action: BlacklistAction::Silent, ..Default::default() };
+        assert!(matches!(classify(snap, &silent), Outcome::Silent));
+    }
+
+    #[test]
+    fn privacy_mode_hides_everything() {
+        let s = Settings { privacy_mode: true, ..Default::default() };
+        assert_eq!(show(text_snap("secret meeting notes"), &s), Payload::Private);
+    }
+
+    #[test]
+    fn files_take_priority_over_text() {
+        let snap = Snapshot {
+            format_count: 3,
+            files: vec![
+                FileEntry { path: "/tmp/要求.pdf".into(), icon: None },
+                FileEntry { path: "/tmp/報告.docx".into(), icon: None },
+            ],
+            text: Some("要求.pdf".into()),
+            ..Default::default()
+        };
+        match show(snap, &Settings::default()) {
+            Payload::Files { first, count, ext, .. } => {
+                assert_eq!(first, "要求.pdf");
+                assert_eq!(count, 2);
+                assert_eq!(ext, "pdf");
+            }
+            p => panic!("{p:?}"),
+        }
+    }
+
+    #[test]
+    fn disabled_smart_type_falls_back_to_generic() {
+        let mut s = Settings::default();
+        s.smart_types.color = false;
+        assert_eq!(show(text_snap("#FFFFFF"), &s), Payload::Generic { label: "色碼".into() });
+    }
+
+    #[test]
+    fn same_content_same_hash() {
+        let a = content_hash(&text_snap("abc"));
+        let b = content_hash(&text_snap("abc"));
+        let c = content_hash(&text_snap("abd"));
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+}

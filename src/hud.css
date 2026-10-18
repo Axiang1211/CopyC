@@ -1,0 +1,643 @@
+/* Ctrl-C 通知框（HUD）
+ * 視窗本身透明且滑鼠穿透；內容依 data-h / data-v 貼齊視窗的一角或頂部中央。
+ * 三種外型：pill（螢幕正上方膠囊）、bubble（游標旁微氣泡）、card（螢幕四角）。 */
+
+:root {
+  --stage-pad: 24px; /* 與 hud.rs 的 STAGE_PAD 一致 */
+  --alpha: 0.96;
+}
+
+/* 色票與版面變數掛在元件上，偏好設定頁的預覽也能直接沿用 */
+.hud,
+.dot {
+  --surface: rgba(24, 24, 27, var(--alpha));
+  --tray: rgba(38, 38, 42, calc(var(--alpha) + 0.02));
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #8e8e93;
+  --brand: #10b981;
+  --brand-ink: #6ee7b7;
+  --sky: #8cc0f5;
+  --coral: #f2a093;
+  --amber: #e5a93c;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 版面基準：主列 左內距 + 圖示 + 間距 = 文字基準線（歷史托盤沿用同一條線） */
+  --main-pl: 12px;
+  --main-pr: 22px;
+  --lead: 32px;
+  --gap: 12px;
+  --radius: 999px;
+  --tray-inset: 18px;
+  --text-rail: calc(var(--main-pl) + var(--lead) + var(--gap));
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Segoe UI Variable Text",
+    "Segoe UI", "Microsoft JhengHei UI", "Noto Sans TC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+p {
+  margin: 0;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  padding: var(--stage-pad);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+body[data-h="left"] .stage {
+  justify-content: flex-start;
+}
+body[data-h="right"] .stage {
+  justify-content: flex-end;
+}
+body[data-v="bottom"] .stage {
+  align-items: flex-end;
+}
+
+/* ---------- 外框與三種外型 ---------- */
+
+.hud {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: 480px;
+  width: max-content;
+  opacity: 0;
+  pointer-events: none;
+}
+.hud.is-shown {
+  opacity: 1;
+}
+
+.hud[data-variant="bubble"] {
+  --main-pl: 10px;
+  --main-pr: 16px;
+  --lead: 28px;
+  --gap: 10px;
+  --radius: 16px;
+  --tray-inset: 10px;
+  min-width: 200px;
+  max-width: 400px;
+}
+.hud[data-variant="card"] {
+  --main-pr: 20px;
+  --radius: 18px;
+  --tray-inset: 12px;
+}
+
+.main {
+  order: 1;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  min-height: 56px;
+  padding: 10px var(--main-pr) 10px var(--main-pl);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 6px 18px rgba(0, 0, 0, 0.24),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.hud[data-variant="bubble"] .main {
+  min-height: 48px;
+  padding-block: 9px;
+}
+
+.copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.title > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detail {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detail:empty {
+  display: none;
+}
+.hud[data-variant="bubble"] .title {
+  font-size: 13px;
+  line-height: 18px;
+}
+.hud[data-variant="bubble"] .detail {
+  font-size: 11.5px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.strong {
+  color: #fff;
+}
+.quote {
+  font-weight: 500;
+  color: #f4f4f5;
+}
+.mono {
+  font-family: "SF Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.94em;
+}
+.muted {
+  color: var(--text-3);
+}
+.domain {
+  color: var(--sky);
+  font-weight: 600;
+}
+.mask {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(242, 160, 147, 0.14);
+  color: var(--coral);
+  letter-spacing: 0.12em;
+}
+
+.badge {
+  flex: none;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--brand-ink);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+.badge.bump {
+  animation: bump 420ms var(--spring);
+}
+
+.swatch-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin: 0 6px 0 2px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.28);
+}
+
+/* ---------- 左側視覺 ---------- */
+
+.lead-slot {
+  display: contents;
+}
+.lead {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--lead);
+  height: var(--lead);
+  border-radius: 50%;
+  overflow: hidden;
+}
+.lead .ico,
+.mini .ico {
+  display: grid;
+  place-items: center;
+  width: 58%;
+  height: 58%;
+}
+.lead svg,
+.mini svg {
+  width: 100%;
+  height: 100%;
+}
+.lead-check {
+  background: var(--brand);
+  color: #fff;
+}
+.lead-globe {
+  background: rgba(92, 156, 230, 0.2);
+  color: var(--sky);
+}
+.lead-lock {
+  background: rgba(224, 90, 71, 0.22);
+  color: var(--coral);
+}
+.lead-thumb,
+.lead-file {
+  border-radius: 8px;
+  background: #2c2c31;
+  color: var(--text-2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.lead-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lead-file.has-icon {
+  background: transparent;
+  box-shadow: none;
+}
+.lead-file.has-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.lead-file.is-dir {
+  color: var(--amber);
+}
+.lead-file .ext {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+}
+.lead-color .swatch {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.22);
+}
+
+/* 視覺重心校正：勾勾左下重、鎖頭下重 */
+.icon-optical-check {
+  transform: translate(2%, -3%);
+}
+.icon-optical-lock {
+  transform: translateY(-5%);
+}
+
+/* ---------- 懸停歷史托盤（Card Tray） ---------- */
+
+.tray {
+  order: 2;
+  position: relative;
+  z-index: 1;
+  margin: -18px var(--tray-inset) 0;
+  padding-top: 18px;
+  border-radius: 0 0 18px 18px;
+  background: var(--tray);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 8px 18px rgba(0, 0, 0, 0.22);
+  /* 平時完全藏在主列後方，懸停才抽出 */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 180ms ease,
+    visibility 0s linear 180ms;
+}
+.hud.is-hover .tray {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 120ms ease;
+}
+body[data-v="bottom"] .tray {
+  order: 0;
+  margin: 0 var(--tray-inset) -18px;
+  padding: 0 0 18px;
+  border-radius: 18px 18px 0 0;
+}
+.tray-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 340ms var(--ease-out);
+}
+.tray-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.hud.is-hover .tray-body {
+  grid-template-rows: 1fr;
+}
+.tray-label {
+  padding: 10px 0 4px calc(var(--text-rail) - var(--tray-inset));
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+.tray-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 8px 0;
+}
+.tray-list li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 30px;
+  /* 讓文字欄與主列文字站在同一條垂直線上 */
+  padding-left: calc(var(--text-rail) - var(--tray-inset) - 30px);
+  font-size: 12.5px;
+  color: #e4e4e7;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 200ms ease,
+    transform 260ms var(--ease-out);
+}
+.hud.is-hover .tray-list li {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(120ms + var(--i, 0) * 40ms);
+}
+.tray-list .text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tray-list time {
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.mini {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.mini.lead-thumb,
+.mini.lead-file {
+  border-radius: 5px;
+}
+.mini .ext {
+  font-size: 6.5px;
+}
+
+/* ---------- 進場 / 連按 / 換內容 / 離場 ---------- */
+
+/* 模式 A：從頂部滑下，像靈動島一樣從中央膠囊撐開 */
+.hud.is-entering[data-variant="pill"] .main {
+  animation:
+    pill-drop 560ms var(--spring) both,
+    island 460ms var(--ease-out) 40ms both;
+}
+.hud.is-entering[data-variant="pill"] .copy {
+  animation: content-in 260ms var(--ease-out) 160ms both;
+}
+.hud.is-entering .lead {
+  animation: lead-pop 420ms var(--spring) 60ms both;
+}
+
+/* 模式 B：從游標方向彈出 */
+.hud.is-entering[data-variant="bubble"] {
+  animation: bubble-in 420ms var(--spring) both;
+}
+body[data-h="left"][data-v="bottom"] .hud[data-variant="bubble"] {
+  transform-origin: 0% 100%;
+}
+body[data-h="right"][data-v="bottom"] .hud[data-variant="bubble"] {
+  transform-origin: 100% 100%;
+}
+body[data-h="left"][data-v="top"] .hud[data-variant="bubble"] {
+  transform-origin: 0% 0%;
+}
+body[data-h="right"][data-v="top"] .hud[data-variant="bubble"] {
+  transform-origin: 100% 0%;
+}
+
+/* 四角：從所在邊緣滑入 */
+.hud.is-entering[data-variant="card"] {
+  animation: card-in 460ms var(--spring) both;
+}
+body[data-v="bottom"] .hud.is-entering[data-variant="card"] {
+  animation-name: card-in-up;
+}
+
+.hud.is-shake {
+  animation: shake 440ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+.copy.is-swap {
+  animation: swap 280ms var(--ease-out);
+}
+.hud.is-out {
+  animation: out 240ms ease-in forwards;
+}
+body[data-v="bottom"] .hud.is-out {
+  animation-name: out-down;
+}
+
+@keyframes pill-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes island {
+  from {
+    clip-path: inset(0 max(0px, calc(50% - 28px)) round 999px);
+  }
+  to {
+    clip-path: inset(0 0 round 999px);
+  }
+}
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lead-pop {
+  from {
+    transform: scale(0.5);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes card-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  18% {
+    transform: translateX(-5px) rotate(-0.6deg);
+  }
+  36% {
+    transform: translateX(5px) rotate(0.6deg);
+  }
+  54% {
+    transform: translateX(-3px);
+  }
+  72% {
+    transform: translateX(2px);
+  }
+  88% {
+    transform: translateX(-1px);
+  }
+}
+@keyframes bump {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes swap {
+  from {
+    opacity: 0.15;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+@keyframes out-down {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+/* ---------- 全螢幕極簡微點 ---------- */
+
+.dot {
+  display: none;
+  position: relative;
+  width: 12px;
+  height: 12px;
+  margin: 4px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35);
+  opacity: 0;
+}
+body.is-minimal .hud {
+  display: none;
+}
+body.is-minimal .dot {
+  display: block;
+}
+.dot.is-on {
+  opacity: 1;
+  animation: lead-pop 360ms var(--spring);
+}
+.dot.is-on::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--brand);
+  animation: ripple 900ms var(--ease-out) 2;
+}
+.dot.is-out {
+  opacity: 0;
+  transition: opacity 240ms ease-in;
+}
+@keyframes ripple {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud,
+  .hud *,
+  .dot,
+  .dot::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

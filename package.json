@@ -1,0 +1,17 @@
+{
+  "name": "ctrl-c",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Ctrl-C — 桌面複製即時回饋工具（Windows & macOS）",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:mac": "tauri build --target universal-apple-darwin --bundles dmg",
+    "build:win": "tauri build --bundles nsis",
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.3"
+  }
+}
