@@ -3,6 +3,7 @@
 mod classify;
 mod commands;
 mod hud;
+mod i18n;
 mod monitor;
 mod platform;
 mod settings;

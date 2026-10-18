@@ -1,5 +1,6 @@
 // 通知框前端：接收 hud:show / hud:hover，負責動畫、計時與回報內容區塊位置。
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
+import { applyI18n, setLang } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -119,6 +120,8 @@ function tick(repeat) {
 
 function show(ev) {
   seq = ev.seq;
+  setLang(ev.lang);
+  applyI18n();
   clearTimeout(exitTimer);
   document.body.dataset.h = ev.anchor.h;
   document.body.dataset.v = ev.anchor.v;

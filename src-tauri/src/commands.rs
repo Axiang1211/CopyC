@@ -2,7 +2,7 @@
 
 use crate::{
     classify::{Clip, Payload, SensitiveReason},
-    hud, monitor, platform,
+    hud, i18n, monitor, platform,
     settings::Settings,
     state::{AppState, HistoryOut, Stats},
     tray,
@@ -21,6 +21,7 @@ pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
         eprintln!("copyc: 無法儲存設定：{e}");
     }
     tray::refresh(app);
+    crate::settings_window::retitle(app);
     let _ = app.emit("settings:changed", &next);
     next
 }
@@ -39,6 +40,8 @@ pub fn update_settings(app: AppHandle, settings: Settings) -> Settings {
 #[serde(rename_all = "camelCase")]
 pub struct Overview {
     platform: &'static str,
+    /// 實際使用的介面語言（「跟隨系統」已解析）
+    lang: i18n::Lang,
     version: String,
     stats: Stats,
     history: Vec<HistoryOut>,
@@ -50,6 +53,7 @@ pub struct Overview {
 pub fn get_overview(app: AppHandle, state: tauri::State<'_, AppState>) -> Overview {
     Overview {
         platform: platform::PLATFORM,
+        lang: i18n::resolve(state.settings.lock().language),
         version: app.package_info().version.to_string(),
         stats: *state.stats.lock(),
         history: state.history_out(0, 10),
@@ -109,17 +113,18 @@ fn sample_thumb() -> Option<String> {
     monitor::thumbnail(w, h, rgba)
 }
 
-fn sample(kind: &str) -> Payload {
+fn sample(kind: &str, lang: i18n::Lang) -> Payload {
+    let t = i18n::strings(lang);
     match kind {
         "image" => Payload::Image { width: 1920, height: 1080, format: "PNG".into(), thumb: sample_thumb() },
         "files" => Payload::Files {
-            first: "專案進度報告_v2.docx".into(),
+            first: t.sample_files.into(),
             count: 4,
             is_dir: false,
             ext: "docx".into(),
             icon: None,
         },
-        "file" => Payload::Files { first: "要求.pdf".into(), count: 1, is_dir: false, ext: "pdf".into(), icon: None },
+        "file" => Payload::Files { first: t.sample_file.into(), count: 1, is_dir: false, ext: "pdf".into(), icon: None },
         "color" => Payload::Color { value: "#10B981".into() },
         "url" => Payload::Url {
             scheme: "https://".into(),
@@ -129,7 +134,7 @@ fn sample(kind: &str) -> Payload {
         "sensitive" => Payload::Sensitive { reason: SensitiveReason::Entropy },
         "private" => Payload::Private,
         _ => Payload::Text {
-            preview: "這是一段測試文字內容，讓你確認 CopyC 正常".into(),
+            preview: t.sample_text.into(),
             truncated: true,
             chars: 142,
             lines: 3,
@@ -143,8 +148,11 @@ pub fn run_preview(app: &AppHandle, kind: &str) {
         "repeat" | "dot" => "text",
         k => k,
     };
-    let payload = sample(base);
-    let payload = if app.state::<AppState>().settings.lock().privacy_mode { Payload::Private } else { payload };
+    let (privacy, lang) = {
+        let s = app.state::<AppState>().settings.lock().clone();
+        (s.privacy_mode, i18n::resolve(s.language))
+    };
+    let payload = if privacy { Payload::Private } else { sample(base, lang) };
     let clip = Clip {
         payload,
         hash: base.bytes().fold(0xC0FFEEu64, |h, b| h.rotate_left(5) ^ b as u64),

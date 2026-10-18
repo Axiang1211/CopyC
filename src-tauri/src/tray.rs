@@ -2,7 +2,8 @@
 
 use crate::{
     commands::commit_settings,
-    settings::{Position, Settings},
+    i18n,
+    settings::{Language, Position, Settings},
     settings_window,
     state::AppState,
 };
@@ -15,13 +16,20 @@ use tauri::{
 
 const TRAY_ID: &str = "copyc";
 
-pub const POSITIONS: [(Position, &str, &str); 6] = [
-    (Position::Top, "top", "螢幕正上方膠囊"),
-    (Position::Cursor, "cursor", "游標旁微氣泡"),
-    (Position::TopLeft, "top-left", "左上角"),
-    (Position::TopRight, "top-right", "右上角"),
-    (Position::BottomLeft, "bottom-left", "左下角"),
-    (Position::BottomRight, "bottom-right", "右下角"),
+/// 位置與選單 id；顯示名稱依序取自 i18n::Strings::positions。
+pub const POSITIONS: [(Position, &str); 6] = [
+    (Position::Top, "top"),
+    (Position::Cursor, "cursor"),
+    (Position::TopLeft, "top-left"),
+    (Position::TopRight, "top-right"),
+    (Position::BottomLeft, "bottom-left"),
+    (Position::BottomRight, "bottom-right"),
+];
+/// 語言選項：選單 id、設定值、固定顯示名稱（語言名稱本身不翻譯）。
+const LANGUAGES: [(&str, Language, Option<&str>); 3] = [
+    ("auto", Language::Auto, None),
+    ("zh-hant", Language::ZhHant, Some("繁體中文")),
+    ("en", Language::En, Some("English")),
 ];
 fn as_refs(items: &[CheckMenuItem<Wry>]) -> Vec<&dyn IsMenuItem<Wry>> {
     items.iter().map(|i| i as &dyn IsMenuItem<Wry>).collect()
@@ -33,17 +41,19 @@ const OPACITIES: [u32; 4] = [100, 90, 80, 70];
 const BRAND: &str = "CopyC";
 
 fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
-    let header = MenuItem::with_id(app, "header", format!("{} 正在守護你的剪貼簿", BRAND), false, None::<&str>)?;
-    let pause = CheckMenuItem::with_id(app, "pause", "暫停提示", true, s.paused, None::<&str>)?;
+    let t = i18n::strings(i18n::resolve(s.language));
+    let header = MenuItem::with_id(app, "header", format!("{BRAND} {}", t.watching), false, None::<&str>)?;
+    let pause = CheckMenuItem::with_id(app, "pause", t.pause, true, s.paused, None::<&str>)?;
 
     let positions = POSITIONS
         .iter()
-        .map(|(p, key, label)| CheckMenuItem::with_id(app, format!("pos:{key}"), *label, true, s.position == *p, None::<&str>))
+        .zip(t.positions)
+        .map(|((p, key), label)| CheckMenuItem::with_id(app, format!("pos:{key}"), label, true, s.position == *p, None::<&str>))
         .collect::<tauri::Result<Vec<_>>>()?;
     let durations = DURATIONS
         .iter()
         .map(|ms| {
-            let label = format!("{:.1} 秒", *ms as f64 / 1000.0);
+            let label = format!("{:.1} {}", *ms as f64 / 1000.0, t.seconds);
             CheckMenuItem::with_id(app, format!("dur:{ms}"), label, true, s.duration_ms == *ms, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
@@ -54,16 +64,24 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
             CheckMenuItem::with_id(app, format!("op:{pct}"), format!("{pct}%"), true, checked, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
+    let languages = LANGUAGES
+        .iter()
+        .map(|(key, lang, name)| {
+            let label = name.unwrap_or(t.lang_auto);
+            CheckMenuItem::with_id(app, format!("lang:{key}"), label, true, s.language == *lang, None::<&str>)
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
 
-    let position_menu = Submenu::with_items(app, "顯示位置", true, &as_refs(&positions))?;
-    let duration_menu = Submenu::with_items(app, "停留秒數", true, &as_refs(&durations))?;
-    let opacity_menu = Submenu::with_items(app, "透明度", true, &as_refs(&opacities))?;
+    let position_menu = Submenu::with_items(app, t.position, true, &as_refs(&positions))?;
+    let duration_menu = Submenu::with_items(app, t.duration, true, &as_refs(&durations))?;
+    let opacity_menu = Submenu::with_items(app, t.opacity, true, &as_refs(&opacities))?;
+    let language_menu = Submenu::with_items(app, t.language, true, &as_refs(&languages))?;
 
-    let sound = CheckMenuItem::with_id(app, "sound", "提示音效", true, s.sound, None::<&str>)?;
-    let privacy = CheckMenuItem::with_id(app, "privacy", "隱私打碼模式（分享螢幕用）", true, s.privacy_mode, None::<&str>)?;
-    let test = MenuItem::with_id(app, "test", "試一下提示", true, None::<&str>)?;
-    let prefs = MenuItem::with_id(app, "settings", "偏好設定…", true, Some("CmdOrCtrl+,"))?;
-    let quit = MenuItem::with_id(app, "quit", format!("結束 {}", BRAND), true, Some("CmdOrCtrl+Q"))?;
+    let sound = CheckMenuItem::with_id(app, "sound", t.sound, true, s.sound, None::<&str>)?;
+    let privacy = CheckMenuItem::with_id(app, "privacy", t.privacy, true, s.privacy_mode, None::<&str>)?;
+    let test = MenuItem::with_id(app, "test", t.try_it, true, None::<&str>)?;
+    let prefs = MenuItem::with_id(app, "settings", t.settings, true, Some("CmdOrCtrl+,"))?;
+    let quit = MenuItem::with_id(app, "quit", format!("{} {BRAND}", t.quit), true, Some("CmdOrCtrl+Q"))?;
     let sep = || PredefinedMenuItem::separator(app);
 
     Menu::with_items(
@@ -77,6 +95,7 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
             &opacity_menu,
             &sound,
             &privacy,
+            &language_menu,
             &sep()?,
             &test,
             &prefs,
@@ -100,7 +119,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(icon)
         .icon_as_template(mac)
-        .tooltip(format!("{} — 複製即時回饋", BRAND))
+        .tooltip(tooltip(&settings))
         .menu(&menu)
         .show_menu_on_left_click(mac)
         .on_menu_event(|app, event| on_menu(app, event.id().as_ref()))
@@ -119,11 +138,16 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-/// 設定變更後重建選單，讓勾選狀態與設定視窗保持一致。
+fn tooltip(s: &Settings) -> String {
+    format!("{BRAND} — {}", i18n::strings(i18n::resolve(s.language)).tooltip)
+}
+
+/// 設定變更後重建選單，讓勾選狀態、語言與設定視窗保持一致。
 pub fn refresh(app: &AppHandle) {
     let settings = app.state::<AppState>().settings.lock().clone();
     if let (Some(tray), Ok(menu)) = (app.tray_by_id(TRAY_ID), build_menu(app, &settings)) {
         let _ = tray.set_menu(Some(menu));
+        let _ = tray.set_tooltip(Some(tooltip(&settings)));
     }
 }
 
@@ -138,8 +162,13 @@ fn on_menu(app: &AppHandle, id: &str) {
         "quit" => return app.exit(0),
         _ => {
             if let Some(key) = id.strip_prefix("pos:") {
-                match POSITIONS.iter().find(|(_, k, _)| *k == key) {
-                    Some((p, _, _)) => s.position = *p,
+                match POSITIONS.iter().find(|(_, k)| *k == key) {
+                    Some((p, _)) => s.position = *p,
+                    None => return,
+                }
+            } else if let Some(key) = id.strip_prefix("lang:") {
+                match LANGUAGES.iter().find(|(k, _, _)| *k == key) {
+                    Some((_, lang, _)) => s.language = *lang,
                     None => return,
                 }
             } else if let Some(ms) = id.strip_prefix("dur:").and_then(|v| v.parse().ok()) {

@@ -1,5 +1,6 @@
 // 偏好設定視窗
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
+import { applyI18n, getLang, setLang, t } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -27,6 +28,7 @@ function restart(el, cls) {
 const persist = debounce(async () => {
   settings = await invoke('update_settings', { settings });
   syncAll();
+  refreshOverview(); // 語言可能改了，重新取得實際使用的語言
 }, 120);
 
 function set(key, value) {
@@ -37,13 +39,25 @@ function set(key, value) {
 
 /* ---------------- 平台與品牌 ---------------- */
 
-const PLATFORM_LABEL = { macos: 'macOS', windows: 'Windows', linux: 'Linux（開發模式）' };
+const platformLabel = (p) => ({ macos: 'macOS', windows: 'Windows', linux: t('platform.linux') })[p] ?? p;
 
 function applyPlatform(platform) {
   document.body.dataset.platform = platform;
-  $('#hero-platform').textContent = PLATFORM_LABEL[platform] ?? platform;
-  $('#autostart-hint').textContent =
-    platform === 'macos' ? '登入後自動常駐於頂部選單列' : '開機後自動常駐於右下角系統匣';
+  $('#hero-platform').textContent = platformLabel(platform);
+  $('#autostart-hint').textContent = t(platform === 'macos' ? 'general.autostartMac' : 'general.autostartWin');
+  $('#about-version').textContent = t('about.version', overview.version, platformLabel(platform));
+}
+
+/** 套用語言：靜態文字、動態文字與所有元件重新繪製。 */
+function applyLanguage(lang) {
+  setLang(lang);
+  applyI18n();
+  document.title = t('doc.title');
+  applyPlatform(overview.platform);
+  const section = sections.find((sec) => sec.id === activeId);
+  if (section) $('#page-title').textContent = section.dataset.title;
+  renderHistory();
+  syncAll();
 }
 
 /* ---------------- 錨點導航 + 滾動收縮頂欄 ---------------- */
@@ -137,7 +151,7 @@ $('#autostart').addEventListener('change', async (e) => {
 
 /* ---------------- 總覽：預覽、托盤、按壓傾斜 ---------------- */
 
-const SAMPLE_TEXT = { kind: 'text', preview: '這是一段測試文字內容', truncated: true, chars: 142, lines: 3 };
+const sampleText = () => ({ kind: 'text', preview: t('sample.textPreview'), truncated: true, chars: 142, lines: 3 });
 const VARIANT = { top: 'pill', cursor: 'bubble' };
 
 function mockHud(payload, variant, count = 1) {
@@ -175,7 +189,7 @@ function renderHeroPreview() {
   const variant = VARIANT[settings.position] ?? 'card';
   const box = $('#hero-preview');
   const key = `${variant}|${settings.privacyMode}`;
-  const payload = settings.privacyMode ? { kind: 'private' } : SAMPLE_TEXT;
+  const payload = settings.privacyMode ? { kind: 'private' } : sampleText();
   const hud = mockHud(payload, variant);
   box.dataset.variant = variant;
   box.replaceChildren(hud);
@@ -196,7 +210,7 @@ $('#clear-history').addEventListener('click', async () => {
 
 function renderHistory() {
   const items = overview.history;
-  $('#tray-summary').textContent = items.length ? `最近 ${items.length} 筆複製` : '最近還沒有複製紀錄';
+  $('#tray-summary').textContent = items.length ? t('tray.count', items.length) : t('tray.none');
   $('#history-list').replaceChildren(
     ...items.map((item, i) => {
       const li = document.createElement('li');
@@ -252,14 +266,6 @@ hero.addEventListener('pointerleave', release);
 
 /* ---------------- 顯示位置 ---------------- */
 
-const POSITION_CAPTION = {
-  top: '模式 A：螢幕正上方膠囊，像靈動島一樣從頂部滑出',
-  cursor: '模式 B：游標右上方微氣泡，視線不必離開工作區',
-  'top-left': '螢幕左上角卡片',
-  'top-right': '螢幕右上角卡片',
-  'bottom-left': '螢幕左下角卡片',
-  'bottom-right': '螢幕右下角卡片',
-};
 const spots = $$('.spot');
 spots.forEach((spot) => spot.addEventListener('click', () => set('position', spot.dataset.position)));
 $('#screen').addEventListener('keydown', (e) => {
@@ -299,7 +305,7 @@ function paintDial(index, offset, snapping) {
   const seconds = (DURATIONS[index] / 1000).toFixed(1);
   $('#duration-label').textContent = seconds;
   dial.setAttribute('aria-valuenow', seconds);
-  dial.setAttribute('aria-valuetext', `${seconds} 秒`);
+  dial.setAttribute('aria-valuetext', t('dial.valuetext', seconds));
 }
 function dialTo(index, commit = true) {
   dialIndex = Math.max(0, Math.min(DURATIONS.length - 1, index));
@@ -405,49 +411,49 @@ function sampleThumb() {
   return c.toDataURL('image/png');
 }
 
-const SAMPLES = [
-  { type: 'text', kind: 'text', name: '文字 / 段落', rule: '前 25 字＋字數統計', payload: SAMPLE_TEXT },
+const THUMB = sampleThumb();
+const samples = () => [
+  { type: 'text', kind: 'text', name: t('sample.text'), rule: t('sample.textRule'), payload: sampleText() },
   {
     type: 'image',
     kind: 'image',
-    name: '圖片 / 螢幕截圖',
-    rule: '32×32 縮圖＋解析度',
-    payload: { kind: 'image', width: 1920, height: 1080, format: 'PNG', thumb: sampleThumb() },
+    name: t('sample.image'),
+    rule: t('sample.imageRule'),
+    payload: { kind: 'image', width: 1920, height: 1080, format: 'PNG', thumb: THUMB },
   },
   {
     type: 'files',
     kind: 'files',
-    name: '檔案 / 資料夾',
-    rule: '首個檔名＋總數',
-    payload: { kind: 'files', first: '報告.docx', count: 4, isDir: false, ext: 'docx', icon: null },
+    name: t('sample.files'),
+    rule: t('sample.filesRule'),
+    payload: { kind: 'files', first: t('sample.filesName'), count: 4, isDir: false, ext: 'docx', icon: null },
   },
-  { type: 'color', kind: 'color', name: '色碼', rule: '渲染同色圓點', payload: { kind: 'color', value: '#10B981' } },
+  { type: 'color', kind: 'color', name: t('sample.color'), rule: t('sample.colorRule'), payload: { kind: 'color', value: '#10B981' } },
   {
     type: 'url',
     kind: 'url',
-    name: '網址連結',
-    rule: '地球圖示＋高亮網域',
+    name: t('sample.url'),
+    rule: t('sample.urlRule'),
     payload: { kind: 'url', scheme: 'https://', domain: 'example.com', rest: '/products/…' },
   },
   {
     type: null,
     kind: 'sensitive',
-    name: '密碼 / 敏感資訊',
-    rule: '自動隱藏明文',
+    name: t('sample.secret'),
+    rule: t('sample.secretRule'),
     payload: { kind: 'sensitive', reason: 'entropy' },
   },
 ];
-const LABELS = { text: '文字', image: '圖片', files: '檔案', color: '色碼', url: '連結' };
 
 function renderGallery() {
   $('#gallery').replaceChildren(
-    ...SAMPLES.map((s) => {
+    ...samples().map((s) => {
       const off = s.type && !settings.smartTypes[s.type];
-      const payload = off ? { kind: 'generic', label: LABELS[s.type] } : s.payload;
+      const payload = off ? { kind: 'generic', label: s.type } : s.payload;
       const card = document.createElement('button');
       card.type = 'button';
       card.className = `sample${off ? ' is-off' : ''}`;
-      card.setAttribute('aria-label', `預覽 ${s.name}`);
+      card.setAttribute('aria-label', t('sample.aria', s.name));
       const screen = document.createElement('span');
       screen.className = 'sample-screen';
       screen.append(mockHud(payload, 'card'));
@@ -456,7 +462,7 @@ function renderGallery() {
       const name = document.createElement('strong');
       name.textContent = s.name;
       const rule = document.createElement('span');
-      rule.textContent = off ? '已關閉智慧預覽' : s.rule;
+      rule.textContent = off ? t('sample.off') : s.rule;
       caption.append(name, rule);
       card.append(screen, caption);
       card.addEventListener('click', () => invoke('preview_hud', { kind: s.kind }));
@@ -509,7 +515,7 @@ function tagEl(name, isNew) {
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.className = 'tag-remove';
-  remove.setAttribute('aria-label', `移除 ${name}`);
+  remove.setAttribute('aria-label', t('tag.remove', name));
   remove.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>';
   remove.addEventListener('click', () => removeTag(name));
   tag.append(avatar(name), label, remove);
@@ -587,7 +593,7 @@ function openSuggest() {
   const recent = overview?.recentApps ?? [];
   const taken = new Set(settings.blacklist.map((n) => n.toLowerCase()));
   const seen = new Set();
-  suggestions = [...recent.map((n) => [n, '最近使用']), ...KNOWN_APPS.map((n) => [n, '密碼工具'])]
+  suggestions = [...recent.map((n) => [n, t('suggest.recent')]), ...KNOWN_APPS.map((n) => [n, t('suggest.pm')])]
     .filter(([n]) => {
       const k = n.toLowerCase();
       if (taken.has(k) || seen.has(k)) return false;
@@ -617,7 +623,7 @@ function openSuggest() {
           });
           return b;
         })
-      : [Object.assign(document.createElement('p'), { className: 'suggest-empty', textContent: `按 Enter 新增「${query}」` })]),
+      : [Object.assign(document.createElement('p'), { className: 'suggest-empty', textContent: t('suggest.add', query) })]),
   );
   // 浮層原地長在輸入游標旁
   suggest.style.left = `${Math.min(tagsInput.offsetLeft, tagsBox.clientWidth - 290)}px`;
@@ -678,9 +684,9 @@ function makeSelect(root) {
     o.className = 'select-option';
     o.setAttribute('role', 'option');
     o.dataset.value = value;
-    const t = document.createElement('span');
-    t.textContent = text;
-    o.append(t);
+    const txt = document.createElement('span');
+    txt.className = 'select-text';
+    o.append(txt);
     o.insertAdjacentHTML('beforeend', CHECK);
     o.addEventListener('click', () => {
       toggle(false);
@@ -725,7 +731,8 @@ function makeSelect(root) {
 
   const sync = () => {
     const current = options.find(([v]) => v === settings[key]) ?? options[0];
-    label.textContent = current[1];
+    label.textContent = t(current[1]);
+    optionEls.forEach((o, i) => ($('.select-text', o).textContent = t(options[i][1])));
     optionEls.forEach((o) => {
       const on = o.dataset.value === current[0];
       o.classList.toggle('is-selected', on);
@@ -747,19 +754,19 @@ const resetBtn = $('#reset');
 let resetArmed = 0;
 resetBtn.addEventListener('click', async () => {
   if (!resetArmed) {
-    resetBtn.textContent = '再按一次確認';
+    resetBtn.textContent = t('reset.confirm');
     resetArmed = setTimeout(() => {
       resetArmed = 0;
-      resetBtn.textContent = '重設';
+      resetBtn.textContent = t('reset.btn');
     }, 2600);
     return;
   }
   clearTimeout(resetArmed);
   resetArmed = 0;
-  resetBtn.textContent = '已重設 ✓';
+  resetBtn.textContent = t('reset.done');
   settings = await invoke('update_settings', { settings: {} });
   syncAll();
-  setTimeout(() => (resetBtn.textContent = '重設'), 1400);
+  setTimeout(() => (resetBtn.textContent = t('reset.btn')), 1400);
 });
 
 /* ---------------- 同步 ---------------- */
@@ -771,17 +778,17 @@ function syncAll() {
   const status = $('#status-toggle');
   status.classList.toggle('is-paused', settings.paused);
   status.setAttribute('aria-checked', String(!settings.paused));
-  $('#status-text').textContent = settings.paused ? '已暫停' : '守護中';
-  $('#status-hint').textContent = settings.paused ? '點擊恢復' : '點擊暫停';
+  $('#status-text').textContent = t(settings.paused ? 'status.paused' : 'status.on');
+  $('#status-hint').textContent = t(settings.paused ? 'status.hintResume' : 'status.hintPause');
   $('#hero').classList.toggle('is-paused', settings.paused);
-  $('#live-text').textContent = settings.paused ? '提示已暫停，仍會記錄複製' : '正在守護你的剪貼簿';
+  $('#live-text').textContent = t(settings.paused ? 'hero.livePaused' : 'hero.live');
 
   spots.forEach((s) => {
     const on = s.dataset.position === settings.position;
     s.setAttribute('aria-checked', String(on));
     s.tabIndex = on ? 0 : -1;
   });
-  $('#position-caption').textContent = POSITION_CAPTION[settings.position] ?? '';
+  $('#position-caption').textContent = t(`cap.${settings.position}`);
 
   if (!drag) {
     const i = DURATIONS.indexOf(Math.round(settings.durationMs / 100) * 100);
@@ -797,7 +804,7 @@ function syncAll() {
 
   chips.forEach((c) => c.setAttribute('aria-pressed', String(Boolean(settings.smartTypes[c.dataset.type]))));
   const on = Object.values(settings.smartTypes).filter(Boolean).length;
-  $('#chip-count').textContent = `已啟用 ${on} / ${chips.length}`;
+  $('#chip-count').textContent = t('content.count', on, chips.length);
 
   renderTags();
   selects.forEach((s) => s.sync());
@@ -807,6 +814,7 @@ function syncAll() {
 
 async function refreshOverview() {
   overview = await invoke('get_overview');
+  if (overview.lang !== getLang()) applyLanguage(overview.lang);
   setStat($('#stat-copies'), overview.stats.copies);
   setStat($('#stat-confirms'), overview.stats.confirms);
   $('#autostart').checked = overview.autostart;
@@ -815,9 +823,11 @@ async function refreshOverview() {
 
 async function init() {
   [settings, overview] = await Promise.all([invoke('get_settings'), invoke('get_overview')]);
+  setLang(overview.lang);
+  applyI18n();
+  document.title = t('doc.title');
   applyPlatform(overview.platform);
   $('#version').textContent = `v${overview.version}`;
-  $('#about-version').textContent = `版本 ${overview.version} · ${PLATFORM_LABEL[overview.platform] ?? ''}`;
   $('#stat-copies').textContent = overview.stats.copies;
   $('#stat-confirms').textContent = overview.stats.confirms;
   $('#autostart').checked = overview.autostart;
@@ -828,6 +838,7 @@ async function init() {
   listen('settings:changed', (e) => {
     settings = e.payload;
     syncAll();
+    refreshOverview();
   });
   listen('overview:changed', debounce(refreshOverview, 150));
   setInterval(() => overview && renderHistory(), 30_000);

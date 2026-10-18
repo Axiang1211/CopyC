@@ -11,7 +11,7 @@
   <body>
     <div class="app">
       <!-- 懸浮島式側邊欄：離邊 12px、18px 圓角、柔和多層陰影 -->
-      <aside class="island" aria-label="偏好設定分類">
+      <aside class="island" aria-label="偏好設定分類" data-i18n-aria="nav.aria">
         <div class="island-drag" data-tauri-drag-region></div>
         <div class="brand">
           <span class="brand-mark" aria-hidden="true">
@@ -19,7 +19,7 @@
           </span>
           <div class="brand-text">
             <strong id="brand-name">CopyC</strong>
-            <span>Kopi 一杯，複製安心</span>
+            <span data-i18n="brand.tagline">Kopi 一杯，複製安心</span>
           </div>
         </div>
 
@@ -27,35 +27,35 @@
           <span class="nav-highlight" id="nav-highlight" aria-hidden="true"></span>
           <a class="nav-item" href="#overview" data-target="overview">
             <svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>
-            <span>總覽</span>
+            <span data-i18n="nav.overview">總覽</span>
           </a>
           <a class="nav-item" href="#display" data-target="display">
             <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/><rect x="9" y="6.8" width="6" height="2.4" rx="1.2"/></svg>
-            <span>顯示與動畫</span>
+            <span data-i18n="nav.display">顯示與動畫</span>
           </a>
           <a class="nav-item" href="#content" data-target="content">
             <svg viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18 15.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z"/></svg>
-            <span>智慧內容</span>
+            <span data-i18n="nav.content">智慧內容</span>
           </a>
           <a class="nav-item" href="#privacy" data-target="privacy">
             <svg viewBox="0 0 24 24"><path d="M12 3.5l7 2.8v5.1c0 4.3-2.9 7.7-7 9.1-4.1-1.4-7-4.8-7-9.1V6.3z"/><path d="M9.3 12.2l1.9 1.9 3.6-3.7"/></svg>
-            <span>隱私安全</span>
+            <span data-i18n="nav.privacy">隱私安全</span>
           </a>
           <a class="nav-item" href="#focus" data-target="focus">
             <svg viewBox="0 0 24 24"><path d="M19.5 14.3A7.8 7.8 0 0 1 9.7 4.5a7.8 7.8 0 1 0 9.8 9.8z"/></svg>
-            <span>勿擾模式</span>
+            <span data-i18n="nav.focus">勿擾模式</span>
           </a>
           <a class="nav-item" href="#general" data-target="general">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/></svg>
-            <span>一般</span>
+            <span data-i18n="nav.general">一般</span>
           </a>
         </nav>
 
         <div class="island-foot">
           <button class="status" id="status-toggle" role="switch" aria-checked="true">
             <span class="status-dot" aria-hidden="true"></span>
-            <span class="status-text" id="status-text">守護中</span>
-            <span class="status-hint" id="status-hint">點擊暫停</span>
+            <span class="status-text" id="status-text" data-i18n="status.on">守護中</span>
+            <span class="status-hint" id="status-hint" data-i18n="status.hintPause">點擊暫停</span>
           </button>
           <span class="version num" id="version">v1.0.0</span>
         </div>
@@ -65,8 +65,8 @@
         <!-- 滾動收縮導航：頂部透明，下滾後變矮並轉為毛玻璃底 -->
         <header class="topbar" id="topbar" data-tauri-drag-region>
           <div class="topbar-title" data-tauri-drag-region>
-            <p class="eyebrow" data-tauri-drag-region>偏好設定</p>
-            <h1 id="page-title" data-tauri-drag-region>總覽</h1>
+            <p class="eyebrow" data-tauri-drag-region data-i18n="top.eyebrow">偏好設定</p>
+            <h1 id="page-title" data-tauri-drag-region data-i18n="nav.overview">總覽</h1>
           </div>
           <!-- Split Button：主區直接預覽，右側箭頭才展開其他類型 -->
           <div class="split" id="split">
@@ -74,42 +74,42 @@
               <span class="split-ico" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M8 5.8v12.4a.8.8 0 0 0 1.2.7l9.9-6.2a.8.8 0 0 0 0-1.4L9.2 5.1A.8.8 0 0 0 8 5.8z"/></svg>
               </span>
-              試一下提示
+              <span data-i18n="preview.try">試一下提示</span>
             </button>
-            <button class="split-arrow" id="split-arrow" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="選擇其他預覽類型">
+            <button class="split-arrow" id="split-arrow" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="選擇其他預覽類型" data-i18n-aria="preview.more">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
             </button>
             <div class="menu" id="split-menu" role="menu">
-              <button role="menuitem" data-kind="image">圖片 / 螢幕截圖</button>
-              <button role="menuitem" data-kind="files">多個檔案</button>
-              <button role="menuitem" data-kind="color">色碼</button>
-              <button role="menuitem" data-kind="url">網址連結</button>
-              <button role="menuitem" data-kind="sensitive">敏感內容（遮罩）</button>
+              <button role="menuitem" data-kind="image" data-i18n="preview.image">圖片 / 螢幕截圖</button>
+              <button role="menuitem" data-kind="files" data-i18n="preview.files">多個檔案</button>
+              <button role="menuitem" data-kind="color" data-i18n="preview.color">色碼</button>
+              <button role="menuitem" data-kind="url" data-i18n="preview.url">網址連結</button>
+              <button role="menuitem" data-kind="sensitive" data-i18n="preview.sensitive">敏感內容（遮罩）</button>
               <hr />
-              <button role="menuitem" data-kind="repeat">連按彩蛋 ×3</button>
-              <button role="menuitem" data-kind="dot">全螢幕極簡微點</button>
+              <button role="menuitem" data-kind="repeat" data-i18n="preview.repeat">連按彩蛋 ×3</button>
+              <button role="menuitem" data-kind="dot" data-i18n="preview.dot">全螢幕極簡微點</button>
             </div>
           </div>
         </header>
 
         <!-- 總覽 -->
-        <section class="section" id="overview" data-title="總覽">
+        <section class="section" id="overview" data-title="總覽" data-i18n-title="nav.overview">
           <div class="bento">
             <div class="hero-wrap">
               <article class="hero" id="hero">
                 <span class="hero-glow" id="hero-glow" aria-hidden="true"></span>
                 <div class="hero-top">
-                  <span class="live"><i aria-hidden="true"></i><span id="live-text">正在守護你的剪貼簿</span></span>
+                  <span class="live"><i aria-hidden="true"></i><span id="live-text" data-i18n="hero.live">正在守護你的剪貼簿</span></span>
                   <span class="hero-platform" id="hero-platform">Windows</span>
                 </div>
                 <div class="hero-stats">
                   <div class="stat">
                     <strong class="num" id="stat-copies">0</strong>
-                    <span>次成功複製</span>
+                    <span data-i18n="hero.copies">次成功複製</span>
                   </div>
                   <div class="stat">
                     <strong class="num" id="stat-confirms">0</strong>
-                    <span>次連按確認</span>
+                    <span data-i18n="hero.confirms">次連按確認</span>
                   </div>
                 </div>
                 <div class="hero-preview" id="hero-preview" aria-hidden="true"></div>
@@ -117,15 +117,15 @@
               <!-- 組件托盤：主卡片不動，托盤從下方抽出最近紀錄 -->
               <div class="card-tray" id="history-tray">
                 <button class="tray-toggle" id="tray-toggle" type="button" aria-expanded="false" aria-controls="history-body">
-                  <span id="tray-summary">最近還沒有複製紀錄</span>
+                  <span id="tray-summary" data-i18n="tray.none">最近還沒有複製紀錄</span>
                   <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
                 </button>
                 <div class="card-tray-body" id="history-body">
                   <div class="card-tray-inner">
                     <ol class="history" id="history-list"></ol>
                     <div class="tray-actions">
-                      <span class="tray-note">紀錄只存在記憶體中，關閉程式即清除</span>
-                      <button class="text-btn" id="clear-history" type="button">清除紀錄</button>
+                      <span class="tray-note" data-i18n="tray.note">紀錄只存在記憶體中，關閉程式即清除</span>
+                      <button class="text-btn" id="clear-history" type="button" data-i18n="tray.clear">清除紀錄</button>
                     </div>
                   </div>
                 </div>
@@ -135,17 +135,17 @@
             <div class="quick">
               <label class="quick-tile">
                 <span class="quick-ico amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></span>
-                <span class="quick-text"><strong>暫停提示</strong><span>暫時不顯示任何通知框</span></span>
+                <span class="quick-text"><strong data-i18n="quick.pause">暫停提示</strong><span data-i18n="quick.pauseDesc">暫時不顯示任何通知框</span></span>
                 <input type="checkbox" class="switch" data-setting="paused" />
               </label>
               <label class="quick-tile">
                 <span class="quick-ico lavender" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="11.5" rx="2.2"/><path d="M8.5 20h7"/><path d="M8 10.8h8" stroke-dasharray="1.6 2.2"/></svg></span>
-                <span class="quick-text"><strong>隱私打碼模式</strong><span>分享螢幕時只顯示「✓ 你已成功複製」</span></span>
+                <span class="quick-text"><strong data-i18n="quick.privacy">隱私打碼模式</strong><span data-i18n="quick.privacyDesc">分享螢幕時只顯示「✓ 你已成功複製」</span></span>
                 <input type="checkbox" class="switch" data-setting="privacyMode" />
               </label>
               <label class="quick-tile">
                 <span class="quick-ico sky" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 9.5h3l4-3.5v12l-4-3.5H5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></span>
-                <span class="quick-text"><strong>提示音效</strong><span>成功複製時輕輕「叮」一聲</span></span>
+                <span class="quick-text"><strong data-i18n="quick.sound">提示音效</strong><span data-i18n="quick.soundDesc">成功複製時輕輕「叮」一聲</span></span>
                 <input type="checkbox" class="switch" data-setting="sound" />
               </label>
             </div>
@@ -153,22 +153,22 @@
         </section>
 
         <!-- 顯示與動畫 -->
-        <section class="section" id="display" data-title="顯示與動畫">
-          <h2 class="section-title">顯示與動畫</h2>
+        <section class="section" id="display" data-title="顯示與動畫" data-i18n-title="nav.display">
+          <h2 class="section-title" data-i18n="display.title">顯示與動畫</h2>
           <div class="panel">
             <div class="row row-stack">
               <div class="row-text">
-                <h3>顯示位置</h3>
+                <h3 data-i18n="display.position">顯示位置</h3>
                 <p id="position-caption">模式 A：螢幕正上方膠囊，像靈動島一樣從頂部滑出</p>
               </div>
-              <div class="screen" id="screen" role="radiogroup" aria-label="顯示位置">
+              <div class="screen" id="screen" role="radiogroup" aria-label="顯示位置" data-i18n-aria="display.position">
                 <span class="screen-bar" aria-hidden="true"></span>
-                <button class="spot spot-top" role="radio" data-position="top" aria-label="螢幕正上方膠囊"><span class="spot-shape"></span></button>
-                <button class="spot spot-tl" role="radio" data-position="top-left" aria-label="左上角"><span class="spot-shape"></span></button>
-                <button class="spot spot-tr" role="radio" data-position="top-right" aria-label="右上角"><span class="spot-shape"></span></button>
-                <button class="spot spot-bl" role="radio" data-position="bottom-left" aria-label="左下角"><span class="spot-shape"></span></button>
-                <button class="spot spot-br" role="radio" data-position="bottom-right" aria-label="右下角"><span class="spot-shape"></span></button>
-                <button class="spot spot-cursor" role="radio" data-position="cursor" aria-label="游標旁微氣泡">
+                <button class="spot spot-top" role="radio" data-position="top" aria-label="螢幕正上方膠囊" data-i18n-aria="pos.top"><span class="spot-shape"></span></button>
+                <button class="spot spot-tl" role="radio" data-position="top-left" aria-label="左上角" data-i18n-aria="pos.top-left"><span class="spot-shape"></span></button>
+                <button class="spot spot-tr" role="radio" data-position="top-right" aria-label="右上角" data-i18n-aria="pos.top-right"><span class="spot-shape"></span></button>
+                <button class="spot spot-bl" role="radio" data-position="bottom-left" aria-label="左下角" data-i18n-aria="pos.bottom-left"><span class="spot-shape"></span></button>
+                <button class="spot spot-br" role="radio" data-position="bottom-right" aria-label="右下角" data-i18n-aria="pos.bottom-right"><span class="spot-shape"></span></button>
+                <button class="spot spot-cursor" role="radio" data-position="cursor" aria-label="游標旁微氣泡" data-i18n-aria="pos.cursor">
                   <span class="spot-shape"></span>
                   <svg class="spot-pointer" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5l13 7.2-5.6 1.4-2.6 5.4z"/></svg>
                 </button>
@@ -178,11 +178,11 @@
 
             <div class="row row-stack">
               <div class="row-text">
-                <h3>停留秒數</h3>
-                <p>左右撥動刻度，停下後自動吸附；通知框停留 <strong class="num" id="duration-label">1.4</strong> 秒後淡出</p>
+                <h3 data-i18n="display.duration">停留秒數</h3>
+                <p><span data-i18n="display.durationHint1">左右撥動刻度，停下後自動吸附；通知框停留</span> <strong class="num" id="duration-label">1.4</strong> <span data-i18n="display.durationHint2">秒後淡出</span></p>
               </div>
               <!-- Size Dial：當前值居中高亮、兩側漸隱、停下吸附 -->
-              <div class="dial" id="dial" role="slider" tabindex="0" aria-label="停留秒數" aria-valuemin="0.8" aria-valuemax="3" aria-valuenow="1.4">
+              <div class="dial" id="dial" role="slider" tabindex="0" aria-label="停留秒數" data-i18n-aria="display.duration" aria-valuemin="0.8" aria-valuemax="3" aria-valuenow="1.4">
                 <div class="dial-view"><div class="dial-track" id="dial-track"></div></div>
                 <span class="dial-needle" aria-hidden="true"></span>
               </div>
@@ -190,49 +190,49 @@
 
             <div class="row">
               <div class="row-text">
-                <h3>不透明度</h3>
-                <p>通知框底色的不透明程度，文字永遠保持清晰</p>
+                <h3 data-i18n="display.opacity">不透明度</h3>
+                <p data-i18n="display.opacityDesc">通知框底色的不透明程度，文字永遠保持清晰</p>
               </div>
               <div class="range-wrap">
-                <input type="range" class="range" id="opacity" min="60" max="100" step="1" aria-label="不透明度" />
+                <input type="range" class="range" id="opacity" min="60" max="100" step="1" aria-label="不透明度" data-i18n-aria="display.opacity" />
                 <output class="range-value num" id="opacity-value" for="opacity">96%</output>
               </div>
             </div>
 
             <div class="row">
               <div class="row-text">
-                <h3>提示音效</h3>
-                <p>連按時音調會稍微升高，提醒你「已經複製過了」</p>
+                <h3 data-i18n="quick.sound">提示音效</h3>
+                <p data-i18n="display.soundDesc">連按時音調會稍微升高，提醒你「已經複製過了」</p>
               </div>
-              <input type="checkbox" class="switch" data-setting="sound" aria-label="提示音效" />
+              <input type="checkbox" class="switch" data-setting="sound" aria-label="提示音效" data-i18n-aria="quick.sound" />
             </div>
           </div>
         </section>
 
         <!-- 智慧內容 -->
-        <section class="section" id="content" data-title="智慧內容">
-          <h2 class="section-title">智慧內容識別</h2>
+        <section class="section" id="content" data-title="智慧內容" data-i18n-title="nav.content">
+          <h2 class="section-title" data-i18n="content.title">智慧內容識別</h2>
           <div class="panel">
             <div class="row row-stack">
               <div class="row-text row-text-split">
                 <div>
-                  <h3>依內容類型顯示預覽</h3>
-                  <p>關閉的類型只會顯示「你已成功複製」與類型名稱</p>
+                  <h3 data-i18n="content.types">依內容類型顯示預覽</h3>
+                  <p data-i18n="content.typesDesc">關閉的類型只會顯示「你已成功複製」與類型名稱</p>
                 </div>
                 <span class="count-badge num" id="chip-count">已啟用 5 / 5</span>
               </div>
-              <div class="chips" id="chips" role="group" aria-label="智慧預覽類型">
-                <button class="chip" type="button" data-type="text" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span>文字段落</button>
-                <button class="chip" type="button" data-type="image" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span>圖片截圖</button>
-                <button class="chip" type="button" data-type="files" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span>檔案資料夾</button>
-                <button class="chip" type="button" data-type="color" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span>色碼</button>
-                <button class="chip" type="button" data-type="url" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span>網址連結</button>
+              <div class="chips" id="chips" role="group" aria-label="智慧預覽類型" data-i18n-aria="content.chipsAria">
+                <button class="chip" type="button" data-type="text" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span data-i18n="chip.text">文字段落</span></button>
+                <button class="chip" type="button" data-type="image" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span data-i18n="chip.image">圖片截圖</span></button>
+                <button class="chip" type="button" data-type="files" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span data-i18n="chip.files">檔案資料夾</span></button>
+                <button class="chip" type="button" data-type="color" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span data-i18n="chip.color">色碼</span></button>
+                <button class="chip" type="button" data-type="url" aria-pressed="true"><span class="chip-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span data-i18n="chip.url">網址連結</span></button>
               </div>
             </div>
             <div class="row row-stack">
               <div class="row-text">
-                <h3>顯示範例</h3>
-                <p>點任一張卡片，就能在螢幕上看到實際的通知框</p>
+                <h3 data-i18n="content.samples">顯示範例</h3>
+                <p data-i18n="content.samplesDesc">點任一張卡片，就能在螢幕上看到實際的通知框</p>
               </div>
               <div class="gallery" id="gallery"></div>
             </div>
@@ -240,97 +240,104 @@
         </section>
 
         <!-- 隱私安全 -->
-        <section class="section" id="privacy" data-title="隱私安全">
-          <h2 class="section-title">隱私安全</h2>
+        <section class="section" id="privacy" data-title="隱私安全" data-i18n-title="nav.privacy">
+          <h2 class="section-title" data-i18n="privacy.title">隱私安全</h2>
           <div class="panel">
             <div class="row">
               <div class="row-text">
-                <h3>隱私打碼模式</h3>
-                <p>開會投影或視訊分享螢幕時開啟，只顯示「✓ 你已成功複製」，不顯示任何內容文字</p>
+                <h3 data-i18n="quick.privacy">隱私打碼模式</h3>
+                <p data-i18n="privacy.modeDesc">開會投影或視訊分享螢幕時開啟，只顯示「✓ 你已成功複製」，不顯示任何內容文字</p>
               </div>
-              <input type="checkbox" class="switch" data-setting="privacyMode" aria-label="隱私打碼模式" />
+              <input type="checkbox" class="switch" data-setting="privacyMode" aria-label="隱私打碼模式" data-i18n-aria="privacy.mode" />
             </div>
             <div class="row">
               <div class="row-text">
-                <h3>自動遮罩敏感內容</h3>
-                <p>來自密碼管理器（1Password、Bitwarden）或符合高熵值密碼特徵時，以 •••••••• 取代明文</p>
+                <h3 data-i18n="privacy.mask">自動遮罩敏感內容</h3>
+                <p data-i18n="privacy.maskDesc">來自密碼管理器（1Password、Bitwarden）或符合高熵值密碼特徵時，以 •••••••• 取代明文</p>
               </div>
-              <input type="checkbox" class="switch" data-setting="maskSensitive" aria-label="自動遮罩敏感內容" />
+              <input type="checkbox" class="switch" data-setting="maskSensitive" aria-label="自動遮罩敏感內容" data-i18n-aria="privacy.mask" />
             </div>
             <div class="row row-stack">
               <div class="row-text">
-                <h3>應用程式黑名單</h3>
-                <p>從這些應用程式複製時，視為敏感內容處理。輸入名稱可從最近使用的應用程式中挑選</p>
+                <h3 data-i18n="privacy.blacklist">應用程式黑名單</h3>
+                <p data-i18n="privacy.blacklistDesc">從這些應用程式複製時，視為敏感內容處理。輸入名稱可從最近使用的應用程式中挑選</p>
               </div>
               <!-- 可刪除標籤 + 輸入聯想浮層 -->
               <div class="tags" id="tags">
                 <div class="tags-list" id="tags-list"></div>
-                <input class="tags-input" id="tags-input" type="text" placeholder="輸入應用程式名稱…" autocomplete="off" spellcheck="false" aria-label="新增黑名單應用程式" aria-autocomplete="list" aria-controls="suggest" />
-                <div class="suggest" id="suggest" role="listbox" aria-label="建議的應用程式"></div>
+                <input class="tags-input" id="tags-input" type="text" placeholder="輸入應用程式名稱…" data-i18n-placeholder="privacy.placeholder" autocomplete="off" spellcheck="false" aria-label="新增黑名單應用程式" data-i18n-aria="privacy.addAria" aria-autocomplete="list" aria-controls="suggest" />
+                <div class="suggest" id="suggest" role="listbox" aria-label="建議的應用程式" data-i18n-aria="privacy.suggestAria"></div>
               </div>
             </div>
             <div class="row">
               <div class="row-text">
-                <h3>黑名單應用程式複製時</h3>
-                <p>選擇顯示遮罩提示，或完全保持安靜</p>
+                <h3 data-i18n="privacy.action">黑名單應用程式複製時</h3>
+                <p data-i18n="privacy.actionDesc">選擇顯示遮罩提示，或完全保持安靜</p>
               </div>
-              <div class="select" data-setting="blacklistAction" data-options='[["mask","顯示 🔒 遮罩提示"],["silent","完全不提示"]]'></div>
+              <div class="select" data-setting="blacklistAction" data-options='[["mask","opt.mask"],["silent","opt.silent"]]'></div>
             </div>
           </div>
         </section>
 
         <!-- 勿擾模式 -->
-        <section class="section" id="focus" data-title="勿擾模式">
-          <h2 class="section-title">勿擾模式</h2>
+        <section class="section" id="focus" data-title="勿擾模式" data-i18n-title="nav.focus">
+          <h2 class="section-title" data-i18n="focus.title">勿擾模式</h2>
           <div class="panel">
             <div class="row">
               <div class="row-text">
-                <h3>全螢幕獨佔時</h3>
-                <p>玩遊戲、播放影片或 PowerPoint / Keynote 簡報放映時，避免打斷沉浸體驗</p>
+                <h3 data-i18n="focus.fullscreen">全螢幕獨佔時</h3>
+                <p data-i18n="focus.fullscreenDesc">玩遊戲、播放影片或 PowerPoint / Keynote 簡報放映時，避免打斷沉浸體驗</p>
               </div>
-              <div class="select" data-setting="fullscreenAction" data-options='[["dot","切換為極簡微點"],["pause","自動暫停彈窗"],["normal","照常顯示"]]'></div>
+              <div class="select" data-setting="fullscreenAction" data-options='[["dot","opt.dot"],["pause","opt.pause"],["normal","opt.normal"]]'></div>
             </div>
             <div class="row">
               <div class="row-text">
-                <h3>暫停所有提示</h3>
-                <p>需要完全專注時暫停；系統匣選單也能一鍵切換</p>
+                <h3 data-i18n="focus.pause">暫停所有提示</h3>
+                <p data-i18n="focus.pauseDesc">需要完全專注時暫停；系統匣選單也能一鍵切換</p>
               </div>
-              <input type="checkbox" class="switch" data-setting="paused" aria-label="暫停所有提示" />
+              <input type="checkbox" class="switch" data-setting="paused" aria-label="暫停所有提示" data-i18n-aria="focus.pause" />
             </div>
           </div>
         </section>
 
         <!-- 一般 -->
-        <section class="section" id="general" data-title="一般">
-          <h2 class="section-title">一般</h2>
+        <section class="section" id="general" data-title="一般" data-i18n-title="nav.general">
+          <h2 class="section-title" data-i18n="general.title">一般</h2>
           <div class="panel">
             <div class="row">
               <div class="row-text">
-                <h3>開機自動啟動</h3>
+                <h3 data-i18n="general.language">語言 Language</h3>
+                <p data-i18n="general.languageDesc">偏好設定、系統匣選單與通知框使用的語言</p>
+              </div>
+              <div class="select" data-setting="language" data-options='[["auto","opt.langAuto"],["zh-hant","繁體中文"],["en","English"]]'></div>
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="general.autostart">開機自動啟動</h3>
                 <p id="autostart-hint">登入後自動常駐於系統匣</p>
               </div>
-              <input type="checkbox" class="switch" id="autostart" aria-label="開機自動啟動" />
+              <input type="checkbox" class="switch" id="autostart" aria-label="開機自動啟動" data-i18n-aria="general.autostart" />
             </div>
             <div class="row">
               <div class="row-text">
-                <h3>懸停展開最近 3 筆紀錄</h3>
-                <p>滑鼠移到剛彈出的通知框上，就能看到最近的複製紀錄；通知框依然不擋點擊</p>
+                <h3 data-i18n="general.hover">懸停展開最近 3 筆紀錄</h3>
+                <p data-i18n="general.hoverDesc">滑鼠移到剛彈出的通知框上，就能看到最近的複製紀錄；通知框依然不擋點擊</p>
               </div>
-              <input type="checkbox" class="switch" data-setting="hoverHistory" aria-label="懸停展開最近 3 筆紀錄" />
+              <input type="checkbox" class="switch" data-setting="hoverHistory" aria-label="懸停展開最近 3 筆紀錄" data-i18n-aria="general.hover" />
             </div>
             <div class="row">
               <div class="row-text">
-                <h3>重設為預設值</h3>
-                <p>還原所有顯示、內容與隱私設定（黑名單會恢復預設清單）</p>
+                <h3 data-i18n="general.reset">重設為預設值</h3>
+                <p data-i18n="general.resetDesc">還原所有顯示、內容與隱私設定（黑名單會恢復預設清單）</p>
               </div>
-              <button class="btn" id="reset" type="button">重設</button>
+              <button class="btn" id="reset" type="button" data-i18n="reset.btn">重設</button>
             </div>
           </div>
           <footer class="about">
             <span class="brand-mark small" aria-hidden="true">
               <img src="assets/logo.png" alt="" />
             </span>
-            <p><strong id="about-name">CopyC</strong> · Copy 通 Kopi——每一次複製，都有一杯咖啡的回應。<br /><span class="num" id="about-version"></span></p>
+            <p><strong id="about-name">CopyC</strong> <span data-i18n="about.tagline">· Copy 通 Kopi——每一次複製，都有一杯咖啡的回應。</span><br /><span class="num" id="about-version"></span></p>
           </footer>
         </section>
       </main>

@@ -86,6 +86,7 @@ struct ShowEvent<'a> {
     duration_ms: u32,
     sound: bool,
     platform: &'static str,
+    lang: crate::i18n::Lang,
 }
 
 #[derive(Serialize, Clone)]
@@ -218,6 +219,7 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
             duration_ms: settings.duration_ms,
             sound: settings.sound,
             platform: platform::PLATFORM,
+            lang: crate::i18n::resolve(settings.language),
         },
     );
 

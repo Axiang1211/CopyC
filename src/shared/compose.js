@@ -1,5 +1,6 @@
 // 通知框文案與視覺組裝：HUD 與偏好設定（預覽、歷史）共用。
 // 剪貼簿內容屬於不受信任的輸入：一律以 textContent 寫入，絕不拼接成 HTML。
+import { locale, t } from './i18n.js';
 
 const ICONS = {
   check:
@@ -23,12 +24,12 @@ export function icon(name, cls = '') {
   return span;
 }
 
-const num = (n) => Number(n).toLocaleString('zh-TW');
+const num = (n) => Number(n).toLocaleString(locale());
 
 function colorKind(v) {
-  if (v.startsWith('#')) return 'HEX 色碼';
-  if (/^rgba?/i.test(v)) return 'RGB 色碼';
-  return 'HSL 色碼';
+  if (v.startsWith('#')) return t('hud.colorKind', 'HEX');
+  if (/^rgba?/i.test(v)) return t('hud.colorKind', 'RGB');
+  return t('hud.colorKind', 'HSL');
 }
 
 /** 只放行 Rust 端產生的 PNG data URL。 */
@@ -49,49 +50,49 @@ export function compose(p, count = 1) {
 
   switch (p.kind) {
     case 'text':
-      title = [seg('你已成功複製：'), seg(`「${p.preview}${p.truncated ? '…' : ''}」`, 'quote')];
-      detail = [seg(`共 ${num(p.chars)} 字元 · ${num(p.lines)} 行`, 'num')];
+      title = [seg(t('hud.copiedColon')), seg(t('hud.quote', `${p.preview}${p.truncated ? '…' : ''}`), 'quote')];
+      detail = [seg(t('hud.textStats', num(p.chars), num(p.lines)), 'num')];
       break;
     case 'image':
       lead = { type: 'thumb', src: safeImage(p.thumb) };
-      title = [seg('你已成功複製圖片')];
-      detail = [seg(`尺寸：${num(p.width)} × ${num(p.height)} px${p.format ? ` (${p.format})` : ''}`, 'num')];
+      title = [seg(t('hud.image'))];
+      detail = [seg(t('hud.imageSize', num(p.width), num(p.height), p.format), 'num')];
       break;
     case 'files':
       lead = { type: 'file', src: safeImage(p.icon), ext: p.ext, isDir: p.isDir };
-      title = [seg(`你已成功複製${p.isDir ? '資料夾' : '檔案'}：`), seg(p.first, 'strong')];
+      title = [seg(t('hud.fileTitle', p.isDir)), seg(p.first, 'strong')];
       detail =
         p.count > 1
-          ? [seg(`（${p.first} 等共 ${num(p.count)} 個項目）`, 'num')]
-          : [seg(p.isDir ? '資料夾' : p.ext ? `${p.ext.toUpperCase()} 檔案` : '檔案')];
+          ? [seg(t('hud.filesMore', p.first, p.count), 'num')]
+          : [seg(p.isDir ? t('hud.folder') : p.ext ? t('hud.fileExt', p.ext.toUpperCase()) : t('hud.file'))];
       break;
     case 'color':
       lead = { type: 'color', value: p.value };
-      title = [seg('你已成功複製色碼：'), { dot: p.value }, seg(p.value, 'strong mono')];
+      title = [seg(t('hud.colorTitle')), { dot: p.value }, seg(p.value, 'strong mono')];
       detail = [seg(colorKind(p.value))];
       break;
     case 'url':
       lead = { type: 'globe' };
-      title = [seg('你已成功複製連結')];
+      title = [seg(t('hud.url'))];
       detail = [seg(p.scheme, 'muted'), seg(p.domain, 'domain'), seg(p.rest, 'muted')];
       break;
     case 'sensitive':
       lead = { type: 'lock' };
-      title = [seg('你已成功複製敏感內容'), seg('••••••••', 'mask')];
-      detail = [seg('（已啟動隱私安全遮罩保護）')];
+      title = [seg(t('hud.secret')), seg('••••••••', 'mask')];
+      detail = [seg(t('hud.secretDetail'))];
       break;
     case 'private':
-      title = [seg('你已成功複製')];
+      title = [seg(t('hud.copied'))];
       break;
     default:
-      title = [seg(`你已成功複製${p.label ?? ''}`)];
+      title = [seg(t('hud.generic', t(`label.${p.label ?? 'content'}`)))];
   }
 
   let badge = null;
   if (count > 1) {
-    title = [seg('你已成功複製！')];
-    badge = `已確認 ×${count} 次`;
-    detail = [seg('放心吧！內容已經安全躺在剪貼簿裡了')];
+    title = [seg(t('hud.again'))];
+    badge = t('hud.badge', count);
+    detail = [seg(t('hud.relax'))];
   }
   return { lead, title, detail, badge };
 }
@@ -102,19 +103,19 @@ export function summary(p) {
     case 'text':
       return [seg(`${p.preview}${p.truncated ? '…' : ''}`)];
     case 'image':
-      return [seg('圖片 '), seg(`${p.width} × ${p.height}`, 'num muted')];
+      return [seg(t('sum.image')), seg(`${p.width} × ${p.height}`, 'num muted')];
     case 'files':
-      return p.count > 1 ? [seg(p.first), seg(` 等 ${p.count} 項`, 'muted')] : [seg(p.first)];
+      return p.count > 1 ? [seg(p.first), seg(t('sum.filesMore', p.count), 'muted')] : [seg(p.first)];
     case 'color':
       return [seg(p.value, 'mono')];
     case 'url':
       return [seg(p.domain, 'domain'), seg(p.rest, 'muted')];
     case 'sensitive':
-      return [seg('敏感內容 '), seg('••••••', 'mask')];
+      return [seg(t('sum.secret')), seg('••••••', 'mask')];
     case 'private':
-      return [seg('已隱藏（隱私打碼模式）', 'muted')];
+      return [seg(t('sum.private'), 'muted')];
     default:
-      return [seg(p.label ?? '內容')];
+      return [seg(t(`label.${p.label ?? 'content'}`))];
   }
 }
 
@@ -194,9 +195,9 @@ export function buildLead(lead, cls = 'lead') {
 
 export function timeAgo(ms) {
   const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
-  if (s < 10) return '剛剛';
-  if (s < 60) return `${s} 秒前`;
-  if (s < 3600) return `${Math.floor(s / 60)} 分鐘前`;
+  if (s < 10) return t('ago.now');
+  if (s < 60) return t('ago.sec', s);
+  if (s < 3600) return t('ago.min', Math.floor(s / 60));
   const d = new Date(ms);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }

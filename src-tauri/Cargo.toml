@@ -24,6 +24,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
 regex = "1"
 parking_lot = "0.12"
+sys-locale = "0.3"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

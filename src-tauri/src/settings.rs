@@ -34,6 +34,16 @@ pub enum BlacklistAction {
     Silent,
 }
 
+/// 介面語言。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Language {
+    /// 跟隨作業系統語系
+    Auto,
+    ZhHant,
+    En,
+}
+
 /// 各內容類型是否啟用智慧預覽；關閉時以通用文案呈現。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -71,6 +81,7 @@ pub struct Settings {
     pub hover_history: bool,
     pub smart_types: SmartTypes,
     pub paused: bool,
+    pub language: Language,
 }
 
 pub const DEFAULT_BLACKLIST: &[&str] = &[
@@ -98,6 +109,7 @@ impl Default for Settings {
             hover_history: true,
             smart_types: SmartTypes::default(),
             paused: false,
+            language: Language::Auto,
         }
     }
 }
@@ -162,6 +174,15 @@ mod tests {
         assert_eq!(s.position, Position::Cursor);
         assert_eq!(s.duration_ms, 1400);
         assert!(s.smart_types.url);
+        assert_eq!(s.language, Language::Auto);
+    }
+
+    #[test]
+    fn language_uses_kebab_case() {
+        let s: Settings = serde_json::from_str(r#"{"language":"zh-hant"}"#).unwrap();
+        assert_eq!(s.language, Language::ZhHant);
+        let s: Settings = serde_json::from_str(r#"{"language":"en"}"#).unwrap();
+        assert_eq!(s.language, Language::En);
     }
 
     #[test]

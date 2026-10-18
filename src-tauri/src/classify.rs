@@ -66,7 +66,7 @@ pub enum Payload {
     Sensitive { reason: SensitiveReason },
     /// 隱私打碼模式：僅顯示「✓ 你已成功複製」。
     Private,
-    /// 對應類型的智慧預覽被關閉，或是無法辨識的格式。
+    /// 對應類型的智慧預覽被關閉，或是無法辨識的格式。label 是類型 key（text / image / files / color / url / content），由前端翻譯。
     Generic { label: String },
 }
 
@@ -116,7 +116,7 @@ fn detect(snap: Snapshot, settings: &Settings) -> Payload {
 
     if let Some(first) = snap.files.first() {
         if !smart.files {
-            return generic("檔案");
+            return generic("files");
         }
         let name = first
             .path
@@ -143,13 +143,13 @@ fn detect(snap: Snapshot, settings: &Settings) -> Payload {
             return Payload::Sensitive { reason: SensitiveReason::Entropy };
         }
         if let Some(value) = parse_color(token) {
-            return if smart.color { Payload::Color { value } } else { generic("色碼") };
+            return if smart.color { Payload::Color { value } } else { generic("color") };
         }
         if let Some((scheme, domain, rest)) = parse_url(token) {
-            return if smart.url { Payload::Url { scheme, domain, rest } } else { generic("連結") };
+            return if smart.url { Payload::Url { scheme, domain, rest } } else { generic("url") };
         }
         if !smart.text {
-            return generic("文字");
+            return generic("text");
         }
         let (preview, truncated) = text_preview(text);
         return Payload::Text {
@@ -162,12 +162,12 @@ fn detect(snap: Snapshot, settings: &Settings) -> Payload {
 
     if let Some(img) = snap.image {
         if !smart.image {
-            return generic("圖片");
+            return generic("image");
         }
         return Payload::Image { width: img.width, height: img.height, format: img.format, thumb: img.thumb };
     }
 
-    generic("內容")
+    generic("content")
 }
 
 fn generic(label: &str) -> Payload {
@@ -450,7 +450,7 @@ mod tests {
     fn disabled_smart_type_falls_back_to_generic() {
         let mut s = Settings::default();
         s.smart_types.color = false;
-        assert_eq!(show(text_snap("#FFFFFF"), &s), Payload::Generic { label: "色碼".into() });
+        assert_eq!(show(text_snap("#FFFFFF"), &s), Payload::Generic { label: "color".into() });
     }
 
     #[test]
