@@ -1664,3 +1664,65 @@ html[lang="en"] .menu-row {
     transform: none;
   }
 }
+
+/* ---------- 隱私權政策等文件頁 ---------- */
+
+.legal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 24px;
+}
+.legal-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font: 800 20px/1 var(--display);
+  text-decoration: none;
+}
+.legal-nav .lang {
+  font: 600 14px/1 var(--sans);
+  color: var(--text-2);
+}
+.legal {
+  max-width: 760px;
+  margin-inline: auto;
+  padding-block: 24px 72px;
+  color: var(--text);
+  font: 400 16px/1.8 var(--sans);
+}
+.legal h1 {
+  margin: 0 0 8px;
+  font: 900 clamp(32px, 6vw, 44px) / 1.2 var(--serif);
+}
+.legal .updated {
+  margin: 0 0 32px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+.legal h2 {
+  margin: 40px 0 8px;
+  font: 700 22px/1.4 var(--serif);
+}
+.legal p,
+.legal ul {
+  margin: 0 0 12px;
+}
+.legal ul {
+  padding-left: 1.3em;
+}
+.legal li + li {
+  margin-top: 6px;
+}
+.legal .tldr {
+  padding: 20px 24px;
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+}
+.legal a {
+  color: var(--caramel-deep);
+  overflow-wrap: anywhere;
+}

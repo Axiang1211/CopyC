@@ -885,6 +885,76 @@ body[data-platform="macos"] .island {
 .btn:active {
   transform: scale(0.96);
 }
+.btn-primary {
+  background: var(--brand-strong);
+  box-shadow: none;
+  color: #fff;
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: var(--brand-strong);
+  filter: brightness(1.1);
+}
+.row[hidden] {
+  display: none;
+}
+
+/* 新版本提示卡：貼在頂欄下方，所有分頁都看得到 */
+.update-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--brand-soft);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand) 30%, transparent);
+  animation: update-in 420ms var(--spring);
+}
+.update-card[hidden] {
+  display: none;
+}
+.update-ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+}
+.update-ico svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.update-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.update-text b {
+  font-size: 15px;
+  font-weight: 650;
+}
+.update-text span {
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+@keyframes update-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
 
 /* 開關：按下時旋鈕拉長，鬆開彈回 */
 .switch {
@@ -1578,5 +1648,12 @@ body[data-platform="macos"] .spot-br {
     animation-duration: 1ms !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* 深色模式的 --brand-strong 是淺綠，按鈕文字改用深色才看得清楚 */
+@media (prefers-color-scheme: dark) {
+  .btn-primary {
+    color: #052e22;
   }
 }

@@ -44,6 +44,8 @@ pub struct AppState {
     pub history: Mutex<VecDeque<HistoryItem>>,
     pub stats: Mutex<Stats>,
     pub recent_apps: Mutex<Vec<String>>,
+    /// 本次執行期間發現的新版本號（不含 v），已通知過就不再重複開視窗
+    pub update: Mutex<Option<String>>,
 }
 
 pub fn now_ms() -> u64 {
@@ -59,6 +61,7 @@ impl AppState {
             history: Mutex::new(VecDeque::with_capacity(HISTORY_CAP)),
             stats: Mutex::new(Stats::default()),
             recent_apps: Mutex::new(Vec::new()),
+            update: Mutex::new(None),
         }
     }
 

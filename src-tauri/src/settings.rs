@@ -79,6 +79,8 @@ pub struct Settings {
     pub fullscreen_action: FullscreenAction,
     /// 滑鼠懸停於通知框時展開最近 3 筆複製紀錄。
     pub hover_history: bool,
+    /// 啟動時向 GitHub 查詢是否有新版本（Microsoft Store 版由商店更新，不檢查）。
+    pub check_updates: bool,
     pub smart_types: SmartTypes,
     pub paused: bool,
     pub language: Language,
@@ -107,6 +109,7 @@ impl Default for Settings {
             blacklist_action: BlacklistAction::Mask,
             fullscreen_action: FullscreenAction::Dot,
             hover_history: true,
+            check_updates: true,
             smart_types: SmartTypes::default(),
             paused: false,
             language: Language::Auto,

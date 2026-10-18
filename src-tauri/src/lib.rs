@@ -35,6 +35,9 @@ pub fn run() {
             commands::hud_finished,
             commands::hud_rect,
             commands::open_settings,
+            commands::update_check,
+            commands::update_found,
+            commands::open_download,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock
@@ -47,8 +50,10 @@ pub fn run() {
             let settings = Settings::load(&settings_path);
             if first_run {
                 let _ = settings.save(&settings_path);
-                // 規格：安裝即用、開機自動啟動
-                let _ = app.autolaunch().enable();
+                // 規格：安裝即用、開機自動啟動（MSIX 版由清單的 StartupTask 負責）
+                if !platform::is_packaged() {
+                    let _ = app.autolaunch().enable();
+                }
             }
             app.manage(AppState::new(settings, settings_path));
 

@@ -44,7 +44,14 @@ const platformLabel = (p) => ({ macos: 'macOS', windows: 'Windows', linux: t('pl
 function applyPlatform(platform) {
   document.body.dataset.platform = platform;
   $('#hero-platform').textContent = platformLabel(platform);
-  $('#autostart-hint').textContent = t(platform === 'macos' ? 'general.autostartMac' : 'general.autostartWin');
+  // Microsoft Store 版的開機啟動由 Windows 管理，App 內無法切換
+  const store = overview.packaged;
+  $('#autostart').hidden = store;
+  // 商店版由 Microsoft Store 負責更新
+  $('#updates-row').hidden = store;
+  $('#autostart-hint').textContent = t(
+    store ? 'general.autostartStore' : platform === 'macos' ? 'general.autostartMac' : 'general.autostartWin',
+  );
   $('#about-version').textContent = t('about.version', overview.version, platformLabel(platform));
 }
 
@@ -57,6 +64,7 @@ function applyLanguage(lang) {
   const section = sections.find((sec) => sec.id === activeId);
   if (section) $('#page-title').textContent = section.dataset.title;
   renderHistory();
+  renderUpdate();
   syncAll();
 }
 
@@ -812,6 +820,25 @@ function syncAll() {
   renderGallery();
 }
 
+/* ---------------- 新版本提示 ---------------- */
+
+let updateDismissed = '';
+
+function renderUpdate() {
+  const version = overview.update;
+  const card = $('#update-card');
+  card.hidden = !version || version === updateDismissed;
+  if (card.hidden) return;
+  $('#update-title').textContent = t('update.title', version);
+  $('#update-desc').textContent = t('update.desc', overview.version);
+}
+
+$('#update-go').addEventListener('click', () => invoke('open_download'));
+$('#update-later').addEventListener('click', () => {
+  updateDismissed = overview.update;
+  renderUpdate();
+});
+
 async function refreshOverview() {
   overview = await invoke('get_overview');
   if (overview.lang !== getLang()) applyLanguage(overview.lang);
@@ -819,6 +846,7 @@ async function refreshOverview() {
   setStat($('#stat-confirms'), overview.stats.confirms);
   $('#autostart').checked = overview.autostart;
   renderHistory();
+  renderUpdate();
 }
 
 async function init() {
@@ -832,6 +860,7 @@ async function init() {
   $('#stat-confirms').textContent = overview.stats.confirms;
   $('#autostart').checked = overview.autostart;
   renderHistory();
+  renderUpdate();
   syncAll();
   activate('overview');
 

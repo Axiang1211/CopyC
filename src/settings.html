@@ -92,6 +92,19 @@
           </div>
         </header>
 
+        <!-- 新版本提示：啟動時發現新版就會打開偏好設定並顯示這張卡 -->
+        <div class="update-card" id="update-card" role="status" hidden>
+          <span class="update-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+          </span>
+          <div class="update-text">
+            <b id="update-title"></b>
+            <span id="update-desc"></span>
+          </div>
+          <button class="btn" id="update-later" type="button" data-i18n="update.later">稍後</button>
+          <button class="btn btn-primary" id="update-go" type="button" data-i18n="update.go">前往下載</button>
+        </div>
+
         <!-- 總覽 -->
         <section class="section" id="overview" data-title="總覽" data-i18n-title="nav.overview">
           <div class="bento">
@@ -317,6 +330,13 @@
                 <p id="autostart-hint">登入後自動常駐於系統匣</p>
               </div>
               <input type="checkbox" class="switch" id="autostart" aria-label="開機自動啟動" data-i18n-aria="general.autostart" />
+            </div>
+            <div class="row" id="updates-row">
+              <div class="row-text">
+                <h3 data-i18n="general.updates">自動檢查更新</h3>
+                <p data-i18n="general.updatesDesc">開啟 App 時向 GitHub 查詢最新版本號，有新版就提醒你；不會傳送任何個人資料</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="checkUpdates" aria-label="自動檢查更新" data-i18n-aria="general.updates" />
             </div>
             <div class="row">
               <div class="row-text">

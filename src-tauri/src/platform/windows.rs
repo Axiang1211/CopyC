@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 use windows::{
-    core::{w, PCWSTR, PWSTR},
+    core::{w, HSTRING, PCWSTR, PWSTR},
     Win32::{
         Foundation::{CloseHandle, HANDLE, HGLOBAL, HWND, LPARAM, LRESULT, RECT, WPARAM},
         Graphics::Gdi::{
@@ -19,7 +19,7 @@ use windows::{
             MonitorFromWindow, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
             HGDIOBJ, MONITORINFO, MONITOR_DEFAULTTONEAREST,
         },
-        Storage::FileSystem::FILE_FLAGS_AND_ATTRIBUTES,
+        Storage::{FileSystem::FILE_FLAGS_AND_ATTRIBUTES, Packaging::Appx::GetCurrentPackageFullName},
         System::{
             Com::{CoInitializeEx, COINIT_APARTMENTTHREADED},
             DataExchange::{
@@ -35,7 +35,7 @@ use windows::{
         },
         UI::{
             Shell::{
-                DragQueryFileW, SHGetFileInfoW, SHQueryUserNotificationState, HDROP,
+                DragQueryFileW, SHGetFileInfoW, ShellExecuteW, SHQueryUserNotificationState, HDROP,
                 QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN, SHFILEINFOW, SHGFI_ICON,
                 SHGFI_LARGEICON,
             },
@@ -45,7 +45,7 @@ use windows::{
                 GetWindowRect, GetWindowThreadProcessId, IsZoomed, RegisterClassW, SetWindowLongPtrW,
                 SetWindowPos, ShowWindow, TranslateMessage, GWL_EXSTYLE, GWL_STYLE, HICON, HWND_MESSAGE,
                 HWND_TOPMOST, ICONINFO, MSG, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
-                SWP_SHOWWINDOW, SW_HIDE, SW_SHOWNOACTIVATE, WINDOW_EX_STYLE, WINDOW_STYLE,
+                SWP_SHOWWINDOW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, WINDOW_EX_STYLE, WINDOW_STYLE,
                 WM_CLIPBOARDUPDATE, WNDCLASSW, WS_CAPTION, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
             },
         },
@@ -237,6 +237,20 @@ fn window_app(hwnd: HWND) -> Option<AppInfo> {
         let path = PathBuf::from(String::from_utf16_lossy(&buf[..len as usize]));
         let name = path.file_stem()?.to_string_lossy().into_owned();
         Some(AppInfo { name, id: path.to_string_lossy().into_owned() })
+    }
+}
+
+/// MSIX 封裝版：登錄檔 Run 機碼會被虛擬化而失效，開機啟動改由清單裡的 StartupTask 負責，
+/// 使用者在「設定 → 應用程式 → 啟動」管理。
+pub fn is_packaged() -> bool {
+    const APPMODEL_ERROR_NO_PACKAGE: u32 = 15700;
+    let mut len = 0u32;
+    unsafe { GetCurrentPackageFullName(&mut len, None).0 != APPMODEL_ERROR_NO_PACKAGE }
+}
+
+pub fn shell_open(url: &str) {
+    unsafe {
+        ShellExecuteW(None, w!("open"), &HSTRING::from(url), None, None, SW_SHOWNORMAL);
     }
 }
 

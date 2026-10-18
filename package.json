@@ -1,7 +1,7 @@
 {
   "name": "copyc",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CopyC — 桌面複製即時回饋工具（Windows & macOS）",
   "scripts": {
     "tauri": "tauri",

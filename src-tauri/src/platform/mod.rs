@@ -19,6 +19,22 @@ mod fallback;
 #[cfg(not(any(windows, target_os = "macos")))]
 pub use fallback::*;
 
+/// 是否以 MSIX（Microsoft Store）封裝執行。只有 Windows 有封裝版本。
+#[cfg(not(windows))]
+pub fn is_packaged() -> bool {
+    false
+}
+
+/// 用預設瀏覽器開啟網址。
+pub fn open_url(url: &str) {
+    #[cfg(windows)]
+    shell_open(url);
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open").arg(url).spawn();
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let _ = std::process::Command::new("xdg-open").arg(url).spawn();
+}
+
 /// 複製來源應用程式。
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 pub struct AppInfo {

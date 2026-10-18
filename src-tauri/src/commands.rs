@@ -47,6 +47,10 @@ pub struct Overview {
     history: Vec<HistoryOut>,
     recent_apps: Vec<String>,
     autostart: bool,
+    /// Microsoft Store（MSIX）版：開機啟動交給 Windows 管理
+    packaged: bool,
+    /// 有新版本時的版本號（不含 v）
+    update: Option<String>,
 }
 
 #[tauri::command]
@@ -62,7 +66,51 @@ pub fn get_overview(app: AppHandle, state: tauri::State<'_, AppState>) -> Overvi
         history: state.history_out(0, 10),
         recent_apps: state.recent_apps.lock().clone(),
         autostart: app.autolaunch().is_enabled().unwrap_or(false),
+        packaged: platform::is_packaged(),
+        update: state.update.lock().clone(),
     }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateCheck {
+    enabled: bool,
+    current: String,
+}
+
+/// 通知框頁面啟動時呼叫，決定要不要向 GitHub 查詢新版本。
+#[tauri::command]
+pub fn update_check(app: AppHandle, state: tauri::State<'_, AppState>) -> UpdateCheck {
+    let enabled = state.settings.lock().check_updates && !platform::is_packaged();
+    UpdateCheck { enabled, current: app.package_info().version.to_string() }
+}
+
+/// 發現新版本：記下來並打開偏好設定，由頁面上的提示卡引導使用者前往下載。
+#[tauri::command]
+pub fn update_found(app: AppHandle, state: tauri::State<'_, AppState>, version: String) {
+    let valid = !version.is_empty() && version.len() <= 20 && version.chars().all(|c| c.is_ascii_digit() || c == '.');
+    if !valid {
+        return;
+    }
+    {
+        let mut update = state.update.lock();
+        if update.as_deref() == Some(version.as_str()) {
+            return;
+        }
+        *update = Some(version);
+    }
+    let _ = app.emit("overview:changed", ());
+    crate::settings_window::open(&app);
+}
+
+/// 用瀏覽器打開官網下載區（依介面語言選中文或英文頁）。
+#[tauri::command]
+pub fn open_download(state: tauri::State<'_, AppState>) {
+    let lang = i18n::resolve(state.settings.lock().language);
+    platform::open_url(match lang {
+        i18n::Lang::En => "https://www.copyc.app.dreamsworld.top/en/#download",
+        _ => "https://www.copyc.app.dreamsworld.top/#download",
+    });
 }
 
 #[tauri::command]
@@ -73,6 +121,9 @@ pub fn clear_history(app: AppHandle, state: tauri::State<'_, AppState>) {
 
 #[tauri::command]
 pub fn set_autostart(app: AppHandle, enabled: bool) -> bool {
+    if platform::is_packaged() {
+        return false;
+    }
     let launcher = app.autolaunch();
     let _ = if enabled { launcher.enable() } else { launcher.disable() };
     launcher.is_enabled().unwrap_or(false)
