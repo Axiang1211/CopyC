@@ -228,6 +228,7 @@ function setDrawer(open) {
 burger.addEventListener('click', () => setDrawer(burger.getAttribute('aria-expanded') !== 'true'));
 scrim.addEventListener('click', () => setDrawer(false));
 $$('a', drawer).forEach((a) => a.addEventListener('click', () => setDrawer(false)));
+document.addEventListener('keydown', (e) => e.key === 'Escape' && setDrawer(false));
 
 /* ---------------- 功能：橫向手風琴 ---------------- */
 
@@ -242,22 +243,7 @@ strips.forEach((strip) =>
   }),
 );
 
-/* ---------------- 下載：Split Button、托盤、Store ---------------- */
-
-const split = $('#win-split');
-const splitArrow = $('.split-arrow', split);
-const splitMenu = $('.split-menu', split);
-function setSplit(open) {
-  splitMenu.classList.toggle('is-open', open);
-  splitArrow.setAttribute('aria-expanded', String(open));
-}
-splitArrow.addEventListener('click', () => setSplit(!splitMenu.classList.contains('is-open')));
-document.addEventListener('pointerdown', (e) => !split.contains(e.target) && setSplit(false));
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  setSplit(false);
-  setDrawer(false);
-});
+/* ---------------- 下載：托盤、Store ---------------- */
 
 $$('.tray').forEach((tray) => {
   const btn = $('.tray-toggle', tray);

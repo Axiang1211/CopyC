@@ -10,7 +10,7 @@ CopyC 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）�
 
 | 平台 | 安裝包 | 常駐位置 |
 | --- | --- | --- |
-| Windows 10 / 11 | `.exe`（NSIS）、`.msi`、`.msix` | 系統匣 |
+| Windows 10 / 11 | `.exe`（NSIS）公開下載；`.msix` 僅供上架 Microsoft Store | 系統匣 |
 | macOS 11+ | `.dmg`（Universal Binary：Apple Silicon + Intel） | 選單列（不出現在 Dock） |
 
 技術選型依規格書建議採用 **Tauri 2（Rust 後端 + HTML/CSS 前端）**。前端是原生 HTML / CSS / ES Modules，不需要打包工具。
@@ -102,14 +102,21 @@ Linux 只用於開發：以輪詢替代系統剪貼簿事件，所以無法偵�
 
 ```bash
 npm run build:mac   # macOS Universal .dmg（需先 rustup target add aarch64-apple-darwin x86_64-apple-darwin）
-npm run build:win   # Windows NSIS .exe；npx tauri build --bundles nsis,msi 可同時產生 .msi
+npm run build:win   # Windows NSIS .exe
 pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword ***]   # .msix
 ```
 
 `.github/workflows/release.yml` 會在 GitHub Actions 上：
 1. 執行測試。
-2. 打包 macOS `.dmg` 與 Windows `.exe` / `.msi` / `.msix`。
+2. 打包 macOS `.dmg` 與 Windows `.exe`，另外產出 `.msix`。`.msix` 只放在 Actions 的私有 artifact `copyc-msix-private`，不會出現在公開 Release。
 3. 推送 `v*` tag 時建立 Release 草稿。
+
+**上架 Microsoft Store**：到 Partner Center 的「產品管理 → 產品身分識別」，把裡面的三個值填進 repo 的 **Settings → Secrets and variables → Actions → Variables**：
+- `MSIX_IDENTITY_NAME`（Package/Identity/Name）
+- `MSIX_PUBLISHER`（Package/Identity/Publisher，例如 `CN=XXXXXXXX-...`）
+- `MSIX_PUBLISHER_DISPLAY_NAME`
+
+設定好後重新跑一次建置，就會產生可以直接上傳到 Store 的 `.msix`。上傳到 Store 的套件不需要自己簽章，Store 會代簽。
 
 簽章所需的 secrets 都是選填：`APPLE_CERTIFICATE`、`APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_PASSWORD`、`APPLE_TEAM_ID`、`WINDOWS_CERTIFICATE`（base64 編碼的 pfx）、`WINDOWS_CERTIFICATE_PASSWORD`、`MSIX_PUBLISHER`。沒有設定時，產出的安裝包未簽章，安裝時會出現 Gatekeeper 或 SmartScreen 警告；未簽章的 `.msix` 則需要開啟開發人員模式才能側載。
 
@@ -120,12 +127,12 @@ pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword
 - **名字由來**：以 Kopitiam 菜單板對照 Kopi / Kopi C / Kopi O / Kopi Kosong / Kopi Peng 與各項功能。
 - **功能**：橫向手風琴（手機上改為直式）。
 - **下載**：往下滑就能看到。點擊後直接下載 GitHub Releases 的最新安裝包。
-  - Windows 用 Split Button：主鍵下載 `.exe`，箭頭展開 `.msi` 與 `.msix`。
+  - Windows 只提供 `.exe` 安裝程式；`.msix` 不對外下載，只用於上架 Microsoft Store。
   - Microsoft Store 欄位已預留：在 `website/index.html` 的 `#download` 設定 `data-ms-store-id="<Store 產品 ID>"` 後會自動啟用。
   - 頁面會偵測訪客的作業系統並標示「為你推薦」；版本號與檔案大小會從 GitHub API 自動讀取。
   - 還沒有任何 Release 時，下載按鈕會改連到 Releases 頁面。
 
-下載連結使用固定檔名：`CopyC-windows-x64-setup.exe`、`CopyC-windows-x64.msi`、`CopyC-windows-x64.msix`、`CopyC-macos-universal.dmg`。推送 `v*` tag 時，`release.yml` 會用這些檔名發布正式 Release，所以官網連結永遠指向最新版本。
+下載連結使用固定檔名：`CopyC-windows-x64-setup.exe`、`CopyC-macos-universal.dmg`。推送 `v*` tag 時，`release.yml` 會用這些檔名發布正式 Release，所以官網連結永遠指向最新版本。
 
 ### 部署到 Cloudflare（Workers 靜態資產）
 
@@ -160,5 +167,5 @@ website/                 官網（Cloudflare Workers 靜態資產，設定見 wr
 
 ## 已知限制
 - **記憶體**：Rust 常駐程序本身很小，但 WebView2／WKWebView 會另外啟動系統瀏覽器引擎程序，整體記憶體會高於規格的 25MB 目標。為了壓低用量，偏好設定視窗是需要時才建立、關閉即銷毀，平時只保留一個通知框 WebView。若要嚴格達到 25MB，需要把通知框改為原生繪製（WinUI / AppKit）。
-- **MSIX 版的開機啟動**由清單中的 StartupTask 控制。偏好設定裡的「開機自動啟動」開關只對 `.exe`、`.msi`、`.dmg` 版本有效；MSIX 使用者需要到「設定 → 應用程式 → 啟動」調整。
+- **MSIX 版的開機啟動**由清單中的 StartupTask 控制。偏好設定裡的「開機自動啟動」開關只對 `.exe`、`.dmg` 版本有效；MSIX 使用者需要到「設定 → 應用程式 → 啟動」調整。
 - **macOS 透明視窗**需要開啟 `macOSPrivateApi`，因此無法上架 Mac App Store；以 `.dmg` 發行不受影響。

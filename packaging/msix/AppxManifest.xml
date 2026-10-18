@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- CopyC 的 MSIX 封裝清單。scripts/build-msix.ps1 會替換 __VERSION__ / __ARCH__ / __PUBLISHER__。
+<!-- CopyC 的 MSIX 封裝清單。scripts/build-msix.ps1 會替換 __VERSION__ / __ARCH__ / __IDENTITY_NAME__ / __PUBLISHER__ / __PUBLISHER_DISPLAY_NAME__。
      Publisher 必須與簽章憑證的 Subject 完全一致。 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -8,11 +8,11 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap desktop rescap">
 
-  <Identity Name="CopyC" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="__ARCH__" />
+  <Identity Name="__IDENTITY_NAME__" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="__ARCH__" />
 
   <Properties>
     <DisplayName>CopyC</DisplayName>
-    <PublisherDisplayName>CopyC</PublisherDisplayName>
+    <PublisherDisplayName>__PUBLISHER_DISPLAY_NAME__</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>每一次成功複製都有回應的桌面小工具。</Description>
   </Properties>

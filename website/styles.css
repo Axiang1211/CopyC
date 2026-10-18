@@ -1237,10 +1237,18 @@ kbd.is-pressed {
   gap: 28px;
 }
 @media (min-width: 860px) {
+  /* 兩張卡片等高：標題、下載鍵、托盤三條水平基準線對齊 */
   .platforms {
     grid-template-columns: 1fr 1fr;
-    align-items: start;
+    align-items: stretch;
   }
+}
+.platform-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.platform-wrap > .platform {
+  flex: 1;
 }
 .platform-wrap.is-recommended {
   order: -1;
@@ -1305,109 +1313,6 @@ kbd.is-pressed {
 .platform-top p,
 .platform-note {
   font-size: 14px;
-  color: var(--text-2);
-}
-
-/* Split Button：主鍵直接下載，箭頭才展開其他格式 */
-.split {
-  position: relative;
-  display: flex;
-  height: 54px;
-  border-radius: 999px;
-  background: var(--espresso);
-  color: #fbf3e7;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 22px -8px rgba(42, 28, 20, 0.6);
-}
-.split-main,
-.split-arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: 600 16px/1 var(--sans);
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background 160ms ease,
-    transform 300ms var(--spring);
-}
-.split-main {
-  flex: 1;
-  gap: 10px;
-  border-radius: 999px 0 0 999px;
-}
-.split-arrow {
-  width: 60px;
-  border-left: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 0 999px 999px 0;
-}
-.split-main:hover,
-.split-arrow:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-.split-main:active,
-.split-arrow:active {
-  transform: scale(0.97);
-}
-.split-arrow svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 320ms var(--spring);
-}
-.split-arrow[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-.split-menu {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(300px, 100%);
-  padding: 6px;
-  border-radius: 18px;
-  background: var(--paper);
-  color: var(--text);
-  box-shadow: var(--shadow-lg), 0 0 0 1px var(--line);
-  transform-origin: top right;
-  opacity: 0;
-  transform: translateY(-4px) scale(0.97);
-  pointer-events: none;
-  transition:
-    opacity 160ms ease,
-    transform 220ms var(--ease-out);
-}
-.split-menu.is-open {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-.split-menu a {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  text-decoration: none;
-  font-size: 14px;
-}
-.split-menu a:hover,
-.split-menu a:focus-visible {
-  background: var(--milk);
-  outline: none;
-}
-.split-menu b {
-  font-family: var(--mono);
-  color: var(--kopi);
-}
-.split-menu span {
   color: var(--text-2);
 }
 
@@ -1678,17 +1583,13 @@ kbd.is-pressed {
 
 /* 深色模式：主按鈕改用焦糖色，避免與濃縮咖啡底色融在一起 */
 @media (prefers-color-scheme: dark) {
-  .btn-primary,
-  .split {
+  .btn-primary {
     background: var(--caramel);
     color: var(--espresso);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 22px -8px rgba(200, 137, 77, 0.5);
   }
   .btn-primary:hover {
     background: var(--crema);
-  }
-  .split-arrow {
-    border-left-color: rgba(42, 28, 20, 0.2);
   }
 }
 

@@ -274,20 +274,10 @@
                 </div>
               </div>
 
-              <!-- Split Button：主鍵直接下載 .exe，箭頭才展開其他格式 -->
-              <div class="split" id="win-split">
-                <a class="split-main" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
-                  <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-                  下載 .exe 安裝程式
-                </a>
-                <button class="split-arrow" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="選擇其他安裝格式">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
-                </button>
-                <div class="split-menu" role="menu">
-                  <a role="menuitem" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64.msi" download data-asset="CopyC-windows-x64.msi"><b>.msi</b><span>適合 IT 部署／群組原則</span></a>
-                  <a role="menuitem" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64.msix" download data-asset="CopyC-windows-x64.msix"><b>.msix</b><span>現代封裝・沙盒安裝</span></a>
-                </div>
-              </div>
+              <a class="btn btn-primary btn-block" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
+                <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+                <span>下載 .exe 安裝程式</span>
+              </a>
 
               <!-- Microsoft Store 欄位：設定 data-ms-store-id 後自動啟用 -->
               <a class="store-btn" id="ms-store" aria-disabled="true" tabindex="-1">
@@ -322,7 +312,7 @@
               </div>
               <a class="btn btn-primary btn-block" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-macos-universal.dmg" download data-asset="CopyC-macos-universal.dmg">
                 <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-                下載 .dmg
+                <span>下載 .dmg</span>
               </a>
               <p class="platform-note">在頂部選單列找到杯子圖示，就代表 CopyC 開始守護你的剪貼簿了。</p>
             </article>

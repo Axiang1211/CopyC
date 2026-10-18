@@ -16,7 +16,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi", "dmg", "app", "deb"],
+    "targets": ["nsis", "dmg", "app", "deb"],
     "category": "Utility",
     "shortDescription": "複製即時回饋工具",
     "longDescription": "CopyC 在你每次成功複製時，於螢幕上方或游標旁彈出輕量提示，告別複製焦慮與重複按鍵。",

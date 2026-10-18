@@ -1,10 +1,13 @@
 # 把 tauri build 產生的 copyc.exe 封裝成 .msix。
-# 用法：pwsh scripts/build-msix.ps1 [-Exe <路徑>] [-Publisher "CN=..."] [-CertPath cert.pfx -CertPassword ***]
-# 沒有提供憑證時只產生未簽章的 .msix（安裝前需自行以 signtool 簽章，或開啟開發人員模式側載）。
+# 用法：pwsh scripts/build-msix.ps1 [-IdentityName ...] [-Publisher "CN=..."] [-PublisherDisplayName ...] [-CertPath cert.pfx -CertPassword ***]
+# 上架 Microsoft Store：三個身分值填 Partner Center「產品管理 → 產品身分識別」裡的值，不需要簽章（Store 會代簽）。
+# 自行側載：需要以 -CertPath 簽章，且 Publisher 必須與憑證 Subject 相同。
 param(
   [string]$Exe = "src-tauri/target/release/copyc.exe",
   [string]$Arch = "x64",
+  [string]$IdentityName = "CopyC",
   [string]$Publisher = "CN=CopyC",
+  [string]$PublisherDisplayName = "CopyC",
   [string]$OutDir = "dist",
   [string]$CertPath = "",
   [string]$CertPassword = ""
@@ -34,6 +37,8 @@ foreach ($asset in "StoreLogo.png", "Square150x150Logo.png", "Square44x44Logo.pn
 (Get-Content "packaging/msix/AppxManifest.xml" -Raw) `
   -replace "__VERSION__", $version `
   -replace "__ARCH__", $Arch `
+  -replace "__IDENTITY_NAME__", $IdentityName `
+  -replace "__PUBLISHER_DISPLAY_NAME__", $PublisherDisplayName `
   -replace "__PUBLISHER__", $Publisher |
   Set-Content "$layout/AppxManifest.xml" -Encoding utf8
 
