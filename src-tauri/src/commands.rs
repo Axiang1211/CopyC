@@ -51,9 +51,12 @@ pub struct Overview {
 
 #[tauri::command]
 pub fn get_overview(app: AppHandle, state: tauri::State<'_, AppState>) -> Overview {
+    // 先取出語言並釋放鎖：結構字面值裡的暫時鎖會一直持有到整個運算式結束，
+    // 而 history_out 也要拿 settings 鎖，同一執行緒重複上鎖就會卡死。
+    let language = state.settings.lock().language;
     Overview {
         platform: platform::PLATFORM,
-        lang: i18n::resolve(state.settings.lock().language),
+        lang: i18n::resolve(language),
         version: app.package_info().version.to_string(),
         stats: *state.stats.lock(),
         history: state.history_out(0, 10),

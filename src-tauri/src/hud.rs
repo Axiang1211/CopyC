@@ -177,21 +177,29 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
     let Some(win) = app.get_webview_window(HUD_LABEL) else { return };
     let state = app.state::<AppState>();
 
-    let (seq, anchor, was_visible, start_poller) = {
+    let (seq, was_visible, start_poller) = {
         let mut h = state.hud.lock();
         h.seq += 1;
         let was_visible = h.visible;
-        if !was_visible {
-            h.anchor = place(app, &win, settings.position);
-            h.rect = None;
-            h.hovering = false;
-        }
         h.visible = true;
         let start_poller = settings.hover_history && !minimal && !h.poller_running;
         if start_poller {
             h.poller_running = true;
         }
-        (h.seq, h.anchor, was_visible, start_poller)
+        (h.seq, was_visible, start_poller)
+    };
+
+    // 定位會同步呼叫主執行緒（游標、螢幕、視窗大小），不能拿著 hud 鎖做：
+    // 主執行緒上的 hud_rect / hud_finished 指令也要這把鎖，會互相等死。
+    let anchor = if was_visible {
+        state.hud.lock().anchor
+    } else {
+        let anchor = place(app, &win, settings.position);
+        let mut h = state.hud.lock();
+        h.anchor = anchor;
+        h.rect = None;
+        h.hovering = false;
+        anchor
     };
 
     if !was_visible {
