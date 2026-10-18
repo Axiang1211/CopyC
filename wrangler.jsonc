@@ -1,0 +1,9 @@
+// CopyC 官網：Cloudflare Workers 靜態資產（website/ 為純靜態檔案，不需建置）
+{
+  "name": "copyc",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./website",
+    "not_found_handling": "404-page"
+  }
+}

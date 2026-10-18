@@ -92,7 +92,7 @@ CopyC 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）�
 ```bash
 npm install
 npm run dev        # 開發模式
-npm run build      # 建置桌面 App（等同 tauri build；在 Cloudflare Pages 上自動略過）
+npm run build      # 建置桌面 App（等同 tauri build；在 Cloudflare 上自動略過）
 npm test           # Rust 單元測試（內容識別、敏感判斷、連按判斷、設定、縮圖…）
 ```
 
@@ -113,7 +113,7 @@ pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword
 
 簽章所需的 secrets 都是選填：`APPLE_CERTIFICATE`、`APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_PASSWORD`、`APPLE_TEAM_ID`、`WINDOWS_CERTIFICATE`（base64 編碼的 pfx）、`WINDOWS_CERTIFICATE_PASSWORD`、`MSIX_PUBLISHER`。沒有設定時，產出的安裝包未簽章，安裝時會出現 Gatekeeper 或 SmartScreen 警告；未簽章的 `.msix` 則需要開啟開發人員模式才能側載。
 
-## 官網（GitHub + Cloudflare Pages）
+## 官網（GitHub + Cloudflare）
 
 `website/` 是純靜態網站（HTML / CSS / ES Module，不需打包），包含：
 - **主頁介紹**：可以直接在網頁上選取文字並按 Ctrl/⌘+C，體驗與 App 相同的「你已成功複製」膠囊。連按會出現 ×N 彩蛋。
@@ -127,19 +127,18 @@ pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword
 
 下載連結使用固定檔名：`CopyC-windows-x64-setup.exe`、`CopyC-windows-x64.msi`、`CopyC-windows-x64.msix`、`CopyC-macos-universal.dmg`。推送 `v*` tag 時，`release.yml` 會用這些檔名發布正式 Release，所以官網連結永遠指向最新版本。
 
-### 部署到 Cloudflare Pages
+### 部署到 Cloudflare（Workers 靜態資產）
 
-方式一（推薦，免 secrets）：在 Cloudflare Dashboard 進入 **Workers & Pages → Create → Pages → Connect to Git**，選擇這個 repo，設定如下：
-- Build command：留空，或保留自動偵測的 `npm run build`。在 Cloudflare 上（`CF_PAGES=1`）它會直接略過，不會去建置桌面 App。
-- Build output directory：`website`
+官網以 Cloudflare Workers 的靜態資產服務。設定寫在 repo 根目錄的 `wrangler.jsonc`：Worker 名稱是 `copyc`，`assets.directory` 指向 `./website`。
 
-方式二（GitHub Actions）：在 repo 設定兩個 secrets：
-- `CLOUDFLARE_API_TOKEN`，權限需要 Cloudflare Pages: Edit。
-- `CLOUDFLARE_ACCOUNT_ID`。
+1. Cloudflare Dashboard → **Workers 和 Pages** → 匯入 Git 存放庫，選擇這個 repo，生產分支選預設分支。
+2. 組建設定：
+   - 組建命令：`npm run build`。偵測到 `WORKERS_CI=1` 時會直接略過，不會建置桌面 App。
+   - 部署命令：`npx wrangler deploy`。
+   - 根目錄：`/`。
+3. 自訂網域：Worker → **設定 → 網域和路由 → 新增 → 自訂網域**，填入 `www.copyc.app.dreamsworld.top`。需要 `dreamsworld.top` 的 DNS 由 Cloudflare 管理。
 
-之後只要 `website/` 有變更，`.github/workflows/website.yml` 就會自動部署到 Pages 專案 `copyc`。
-
-自訂網域：在 Pages 專案的 **Custom domains** 加入 `www.copyc.app.dreamsworld.top`。若 `dreamsworld.top` 的 DNS 由 Cloudflare 管理，會自動建立 CNAME；否則請自行把 `www.copyc.app` 以 CNAME 指向 `copyc.pages.dev`。
+之後每次推送到生產分支，Cloudflare 都會自動重新部署。
 
 ### 專案結構
 
@@ -156,7 +155,7 @@ src-tauri/src/
   settings.rs, state.rs  設定持久化、歷史與統計
   platform/              windows.rs、macos.rs、fallback.rs（Linux 開發用）
 packaging/msix/          MSIX 清單（開機啟動改用 StartupTask）
-website/                 官網（Cloudflare Pages）；assets/logo.svg 為吉祥物 × Kopi 杯 Logo 原稿
+website/                 官網（Cloudflare Workers 靜態資產，設定見 wrangler.jsonc）；assets/logo.svg 為吉祥物 × Kopi 杯 Logo 原稿
 ```
 
 ## 已知限制
