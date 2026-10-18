@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/logo.png" alt="CopyC" width="520"></p>
+<p align="center"><img src="docs/logo.png" alt="CopyC" width="160"></p>
 
 # CopyC：桌面複製即時回饋工具
 
@@ -170,7 +170,7 @@ src-tauri/src/
   settings.rs, state.rs  設定持久化、歷史與統計
   platform/              windows.rs、macos.rs、fallback.rs（Linux 開發用）
 packaging/msix/          MSIX 清單（開機啟動改用 StartupTask）
-website/                 官網（Cloudflare Workers 靜態資產，設定見 wrangler.jsonc）；assets/logo.svg 為吉祥物 × Kopi 杯 Logo 原稿
+website/                 官網（Cloudflare Workers 靜態資產，設定見 wrangler.jsonc）；assets/logo.svg 為 Kopi 杯 Logo 原稿
 ```
 
 ## 已知限制

@@ -322,18 +322,6 @@ kbd.is-pressed {
   width: 34px;
   height: 34px;
 }
-/* 字標：Fredoka 圓體 + Kopi 漸層，與 3D Cards 同一套品牌語言 */
-.wordmark img {
-  display: block;
-  width: auto;
-  height: 30px;
-}
-.nav.is-compact .wordmark img {
-  height: 26px;
-}
-.footer-brand .wordmark img {
-  height: 26px;
-}
 .nav-links {
   position: relative;
   display: none;
@@ -877,7 +865,7 @@ kbd.is-pressed {
 .demo-foot span {
   color: var(--sun);
 }
-/* 吉祥物從卡片後方探出頭 */
+/* 圖示從卡片後方探出頭 */
 .demo-card {
   z-index: 2;
 }
