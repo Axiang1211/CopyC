@@ -34,7 +34,7 @@ Remove-Item $layout -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path "$layout/Assets" -Force | Out-Null
 
 Copy-Item $Exe "$layout/copyc.exe"
-# 各尺寸 / 縮放比例的圖示（由 store/source/render.mjs icons 產生）
+# 各尺寸 / 縮放比例的圖示
 Copy-Item "packaging/msix/Assets/*.png" "$layout/Assets/"
 (Get-Content "packaging/msix/AppxManifest.xml" -Raw) `
   -replace "__VERSION__", $version `

@@ -7,3 +7,5 @@ dist/
 # 影片渲染輸出（音訊、影格、MP4）不進版本庫，用 marketing/video 的腳本重新產生
 marketing/video/out/
 marketing/video/.cache/
+# Microsoft Store 上架資料（文案、截圖、審核備註、資料包腳本）只留在本機，不上傳
+store/
