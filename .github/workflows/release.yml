@@ -96,11 +96,12 @@ jobs:
         env:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # 上架用的 Partner Center 身分值與保留名稱：repo Settings → Secrets and variables → Actions → Variables
-          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
-          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
-          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
-          MSIX_DISPLAY_NAME: ${{ vars.MSIX_DISPLAY_NAME }}
+          # 上架用的 Partner Center 身分值與保留名稱：repo Settings → Secrets and variables → Actions → Secrets
+          # 用 Secrets 而不是 Variables：公開 repo 的 Actions 紀錄任何人都看得到，Secrets 會被遮蔽
+          MSIX_IDENTITY_NAME: ${{ secrets.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ secrets.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ secrets.MSIX_PUBLISHER_DISPLAY_NAME }}
+          MSIX_DISPLAY_NAME: ${{ secrets.MSIX_DISPLAY_NAME }}
         run: |
           $opts = @{}
           if ($env:MSIX_IDENTITY_NAME) { $opts.IdentityName = $env:MSIX_IDENTITY_NAME }

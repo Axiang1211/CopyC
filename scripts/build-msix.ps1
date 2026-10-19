@@ -1,7 +1,7 @@
 # 把 tauri build 產生的 copyc.exe 封裝成 .msix。
 # 用法：pwsh scripts/build-msix.ps1 [-IdentityName ...] [-Publisher "CN=..."] [-PublisherDisplayName ...] [-DisplayName ...] [-CertPath cert.pfx -CertPassword ***]
 # 上架 Microsoft Store：四個值填 Partner Center「產品管理 → 產品標識」裡的身分值與保留的應用程式名稱，
-# 產出的 .msix 可直接上傳（不需要簽章，Store 會代簽）。CI 從 repo 的 Actions Variables 讀取，不寫在程式碼裡。
+# 產出的 .msix 可直接上傳（不需要簽章，Store 會代簽）。CI 從 repo 的 Actions Secrets 讀取，不寫在程式碼裡。
 # 自行側載：需要以 -CertPath 簽章，且 Publisher 必須與憑證 Subject 相同。
 param(
   [string]$Exe = "src-tauri/target/release/copyc.exe",
