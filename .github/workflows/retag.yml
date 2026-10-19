@@ -1,0 +1,30 @@
+name: Move release tags
+
+# 一次性：歷史改寫後，把版本 tag 移到改寫後的對應提交（session 的 git proxy 不能直接推 tag）
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: "以空白分隔的 tag=sha 清單"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Move tags
+        env:
+          TAGS: ${{ inputs.tags }}
+        run: |
+          for pair in $TAGS; do
+            tag="${pair%%=*}"; sha="${pair#*=}"
+            git cat-file -e "$sha^{commit}"
+            git tag -f "$tag" "$sha"
+            git push -f origin "refs/tags/$tag"
+          done
