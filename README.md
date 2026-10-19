@@ -1,179 +1,113 @@
 <p align="center"><img src="docs/logo.png" alt="CopyC" width="160"></p>
 
-# CopyC：桌面複製即時回饋工具
+<h1 align="center">CopyC</h1>
 
-> 每一次複製，都有一杯 Kopi 的回應。告別「複製焦慮症」與連按三到五次 Ctrl+C 的習慣。
->
-> 官網：<https://www.copyc.app.dreamsworld.top/>
+<p align="center"><b>每一次複製，都看得見。</b><br>按下 Ctrl+C 的瞬間，螢幕上就告訴你：「已複製」，以及複製了什麼。</p>
 
-**名字由來**：Copy 跟馬來語的 **Kopi**（咖啡）唸起來幾乎一樣。南洋 Kopitiam 裡的 **Kopi C** 是加淡奶與糖的咖啡，所以產品從原本的 Ctrl-C 改名為 **CopyC**，官網與 Logo 也以咖啡為主題設計。
+<p align="center">
+  <a href="https://www.copyc.app.dreamsworld.top/">官網</a> ·
+  <a href="https://github.com/Axiang1211/CopyC/releases/latest">下載最新版</a> ·
+  <a href="https://github.com/Axiang1211/CopyC/issues">回報問題</a> ·
+  <a href="https://www.copyc.app.dreamsworld.top/en/">English</a>
+</p>
 
-CopyC 常駐在 Windows 系統匣（右下角）與 macOS 選單列（頂部）。系統剪貼簿一有變更，就在螢幕上方或游標旁彈出一個輕量提示：「你已成功複製……」。提示框不搶焦點、滑鼠可穿透，停留約 1.4 秒後自動淡出。
+---
 
-| 平台 | 安裝包 | 常駐位置 |
+按了 Ctrl+C，卻不確定到底有沒有複製成功，只好再按兩三次；貼上時才發現貼的是舊內容。CopyC 就是為了解決這件事：它安靜地待在系統匣（Windows）或選單列（macOS），每次複製成功，螢幕上方就會滑下一個小小的提示，約 1.5 秒後自動消失。
+
+Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也是一杯在你需要時回應你的咖啡。
+
+## 下載
+
+| 平台 | 下載 | 系統需求 |
 | --- | --- | --- |
-| Windows 10 / 11 | `.exe`（NSIS）公開下載；`.msix` 僅供上架 Microsoft Store | 系統匣 |
-| macOS 11+ | `.dmg`（Universal Binary：Apple Silicon + Intel） | 選單列（不出現在 Dock） |
+| Windows | [CopyC-windows-x64-setup.exe](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe) | Windows 10 / 11，64 位元 |
+| macOS | [CopyC-macos-universal.dmg](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-macos-universal.dmg) | macOS 11 以上，Apple Silicon 與 Intel 都可用 |
 
-技術選型依規格書建議採用 **Tauri 2（Rust 後端 + HTML/CSS 前端）**。前端是原生 HTML / CSS / ES Modules，不需要打包工具。
+免費、無廣告。Microsoft Store 版即將上架。
 
----
+### 安裝
+**Windows**
+1. 執行下載的 `.exe` 安裝程式。
+2. 如果出現 SmartScreen「Windows 已保護您的電腦」，按「其他資訊 → 仍要執行」。
+3. 安裝完成後，CopyC 會出現在右下角的系統匣（杯子圖示）。
 
-## 功能對照規格書
+**macOS**
+1. 打開 `.dmg`，把 CopyC 拖進「應用程式」資料夾。
+2. 第一次開啟如果被擋下，在 Finder 對 CopyC 按右鍵 →「打開」。
+3. CopyC 只會出現在頂部選單列，不會出現在 Dock。
 
-### 03 視覺與互動
-- **不搶焦點 + 滑鼠穿透**：通知框是 Always on Top、不可聚焦的透明視窗。
-  - Windows 使用 `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW`，並以 `SW_SHOWNOACTIVATE` 顯示。
-  - macOS 使用狀態列層級，並以 `orderFrontRegardless` 顯示；可跨所有桌面空間，也能浮在全螢幕 App 上。
-  - 兩個平台都開啟 `set_ignore_cursor_events`，點擊會穿透到後方的軟體。
-- **雙顯示位置**：
-  - 模式 A 是「螢幕正上方膠囊」，會從頂部滑下，再像靈動島一樣由中央撐開。
-  - 模式 B 是「游標右上方微氣泡」，貼近螢幕邊緣時會自動翻到左側或下方。
-  - 另可選螢幕四角。提示一律出現在游標所在的螢幕。
-- **連按防抖動彩蛋**：1 秒內（或提示仍在畫面上時）再次複製同一份內容，提示不會關掉重開，而是原地輕震一下，並更新為「你已成功複製！（已確認 ×3 次）／放心吧！內容已經安全躺在剪貼簿裡了」。
+> 目前的安裝包還沒有付費的程式碼簽章，所以系統會出現一次安全性提醒，照上面的步驟操作即可。
 
-### 04 智慧內容識別
-| 類型 | 顯示 |
-| --- | --- |
-| 純文字／段落 | 換行轉成空白，預覽前 25 字，附「共 N 字元 · M 行」 |
-| 圖片／截圖 | 32×32 圓角縮圖（以 64px 輸出，支援高 DPI），附解析度與格式（PNG / TIFF / BMP …） |
-| 檔案／資料夾 | 單一檔案顯示檔名與**系統檔案圖示**；多檔案顯示「首個檔名 等共 N 個項目」 |
-| 色碼 | HEX / RGB / HSL 以正則識別，直接渲染同色圓點 |
-| 網址 | 地球圖示並高亮網域 |
-| 密碼／敏感資訊 | 🔒 `••••••••`，附「已啟動隱私安全遮罩保護」；明文在 Rust 端就丟棄，不會進入事件或歷史 |
+## 功能
 
-敏感內容依三種來源判定：
-- 密碼管理器加上的隱私標記：macOS 為 `org.nspasteboard.ConcealedType`；Windows 為 `ExcludeClipboardContentFromMonitorProcessing`、`CanIncludeInClipboardHistory = 0` 等。
-- 來源 App 在黑名單內。
-- 內容符合高熵值密碼特徵。
+- **每次複製都有回應**：快捷鍵、右鍵選單、網頁上的「複製」按鈕都算，複製成功就會提示。
+- **一眼看懂複製了什麼**
+  - 文字：開頭幾個字與字數
+  - 圖片：縮圖與尺寸
+  - 檔案：檔名、圖示與數量
+  - 色碼：直接顯示顏色
+  - 網址：標出網域
+- **連按也不閃爍**：同一份內容連續複製時，提示不會一直關掉重開，而是原地晃一下，並顯示「已確認 ×3」。
+- **密碼不會出現在螢幕上**：從 1Password、Bitwarden 等密碼管理器複製的內容，或看起來像密碼、金鑰的內容，會自動遮蔽。
+- **隱私模式**：開會分享螢幕時打開，提示只顯示「已複製」，不顯示內容。
+- **App 黑名單**：指定的 App 複製時，可以選擇遮蔽內容或完全不提示。
+- **不打擾專注**：玩遊戲、全螢幕看影片或簡報時，提示會縮成一個小點，也可以設定成暫停。
+- **不擋路**：提示不會搶走鍵盤焦點，滑鼠也能直接點穿它。
+- **放在你喜歡的位置**：螢幕頂部、游標旁，或螢幕四個角落。
+- **最近 3 筆紀錄**：把滑鼠移到提示上，就能看到最近複製的內容。
+- **繁體中文 / English 介面**：預設跟隨系統語言，可以隨時切換。
 
-### 05 隱私與底層架構
-- **監聽系統剪貼簿事件，而不是攔截按鍵**：
-  - Windows 使用 `AddClipboardFormatListener`（message-only 視窗，零輪詢）。
-  - macOS 使用 `NSPasteboard.changeCount`，每 150ms 檢查一次，並關閉 App Nap 以免被系統節流。
-  - 因此快捷鍵、右鍵選單、網頁的「一鍵複製」按鈕都會觸發；沒選到內容就按複製時，剪貼簿不會變動，也就不會誤報。
-- **隱私打碼模式**：只顯示「✓ 你已成功複製」，連先前的歷史紀錄也會一併遮蔽。
-- **應用程式黑名單**：可設定為「顯示 🔒 遮罩提示」或「完全不提示」。
-- **全螢幕勿擾**：偵測到前景 App 處於全螢幕時，可選擇切換為極簡微點、自動暫停或照常顯示。
-  - Windows 依據 `SHQueryUserNotificationState`（D3D 全螢幕、簡報模式），以及前景視窗是否覆蓋整個螢幕來判斷。
-  - macOS 依據 `CGWindowList` 中前景 App 的視窗是否與螢幕等大來判斷，不需要螢幕錄製權限。
+## 使用方式
 
-### 介面語言
-- 支援**繁體中文**與 **English**。預設「跟隨系統」：系統語系是中文時用繁中，其他一律用英文。
-- 可以在偏好設定 →「一般 → 語言 Language」，或系統匣的「語言」子選單隨時切換，不需要重新啟動。
-- 偏好設定視窗、系統匣選單、通知框、預覽範例都會跟著切換。
-- 文案在 `src/shared/i18n.js`；Rust 端（系統匣選單、視窗標題）的字串在 `src-tauri/src/i18n.rs`。
+安裝後就會開始運作，不需要任何設定。
 
-### 06 命名與 v1.1 規劃（已一併實作）
-- 產品名稱改為 **CopyC**（Copy 通 Kopi）；兩個平台的介面與選單都以 CopyC 顯示。
-- 系統匣選單提供：暫停、顯示位置、停留秒數、透明度、音效、隱私打碼、試一下、偏好設定。
-- **懸停展開最近 3 筆紀錄**：提示框本身是滑鼠穿透的，所以改由 Rust 在提示顯示期間輪詢游標位置。如此「點擊穿透」與「懸停展開」可以同時成立。
+- **右鍵點杯子圖示**（Windows 系統匣／macOS 選單列）可以：暫停、切換隱私模式、開關提示音、調整位置與停留時間、切換語言、打開偏好設定。
+- **偏好設定**可以調整更多細節：顯示位置、停留秒數、透明度、要辨識哪些內容類型、黑名單、全螢幕時的行為等。按「試一下提示」可以直接預覽各種提示的樣子。
+- **開機自動啟動**：預設開啟，可以在「偏好設定 → 一般 → 開機自動啟動」關閉。
+- **自動檢查更新**：開啟 CopyC 時會檢查有沒有新版本，有的話會提醒你前往官網下載，新版會直接覆蓋安裝並保留設定。可以在「偏好設定 → 一般」關閉。
 
----
+## 隱私
 
-## UI/UX 設計（依 `vibe_ui_ux_skill`）
+- CopyC 完全在你的電腦上運作，**不會上傳你複製的任何內容**，不需要帳號，也沒有廣告或追蹤程式。
+- 它使用系統的剪貼簿事件來偵測複製，**不會記錄鍵盤輸入**。
+- 最近的複製紀錄只存在記憶體裡，關閉 CopyC 就會清除。
+- 唯一的連網動作是檢查新版本（只查詢版本號，可以關閉）。
 
-| Skill 規範 | 套用位置 |
-| --- | --- |
-| 暗色便當盒撞色風色票 | 偏好設定整體；品牌綠 `#10B981`，琥珀／珊瑚／天空藍／薰衣草紫作為類型色 |
-| 懸浮島式側邊欄（Floating Island） | 偏好設定左側：離邊 12px、18px 圓角、多層柔和陰影 |
-| 錨點導航（Scrollspy）＋滾動收縮頂欄 | 側邊欄隨捲動高亮；高亮膠囊以彈簧曲線移動；頂欄下滾後變矮並轉為毛玻璃 |
-| Split Button | 「試一下提示」：主區直接預覽，箭頭展開其他類型（圖片、檔案、連按彩蛋、全螢幕微點…） |
-| Select | 黑名單行為、全螢幕行為；空間不足時自動改為向上展開 |
-| Filter Chips | 智慧預覽類型：選中時長出 ✓、底色漸層填滿，計數徽章跳動 |
-| Removable Tags ＋ Suggest Popover | 黑名單：刪除時縮成圓點，其餘標籤以 FLIP 補位；輸入時在游標旁浮現聯想（最近使用的 App、常見密碼工具） |
-| Size Dial | 停留秒數 0.8–3.0：兩側漸隱，可拖曳／滾輪／方向鍵，停下吸附 |
-| Card Tray | 總覽卡片下方抽出最近紀錄，主卡片不動；HUD 懸停時的歷史托盤也是同一個模式 |
-| Press Tilt | 總覽主卡片按壓時朝觸點傾斜，光斑跟著聚攏 |
-| 視覺對齊 | HUD 主列與歷史托盤共用同一條文字基準線（`--text-rail`）；播放三角形右移 7%；鎖頭上移 5%；數字一律 `tabular-nums` |
-| 延遲淡入 | 膠囊撐開後，內容延遲 160ms 淡入；托盤列表延遲 120ms 起逐列出現 |
-| 觸控回饋 | 開關、按鈕、標籤都使用 `cubic-bezier(0.34, 1.56, 0.64, 1)` 彈簧曲線 |
+完整內容請見[隱私權政策](https://www.copyc.app.dreamsworld.top/privacy/)。
 
-偏好設定支援淺色與深色模式，並遵守 `prefers-reduced-motion`。剪貼簿內容一律以 `textContent` 寫入畫面，不會被當成 HTML 解讀。
+## 解除安裝
+
+- **Windows**：設定 → 應用程式 → 已安裝的應用程式 → CopyC → 解除安裝。
+- **macOS**：先從選單列的杯子圖示選「結束」，再把「應用程式」資料夾裡的 CopyC 移到垃圾桶。
+
+## 常見問題
+
+**它會把我複製的內容傳到網路上嗎？**
+不會。複製的內容只用來在你的電腦上顯示提示。
+
+**它是靠監聽鍵盤來偵測的嗎？**
+不是。CopyC 監聽的是系統剪貼簿的變更，不記錄任何按鍵。所以沒選取內容就按 Ctrl+C 時，不會出現誤報。
+
+**提示擋到我了怎麼辦？**
+提示不會攔截滑鼠點擊，可以直接點穿。也可以在右鍵選單改到游標旁或螢幕角落，或者縮短停留時間。
+
+**有問題或建議？**
+歡迎到 [GitHub Issues](https://github.com/Axiang1211/CopyC/issues) 留言。
 
 ---
 
-## 開發
+<details>
+<summary>從原始碼建置（開發者）</summary>
 
-需要：Node 22、Rust stable，以及 Tauri 的[平台相依套件](https://v2.tauri.app/start/prerequisites/)。
+需要 Node 22、Rust stable，以及 Tauri 的[平台相依套件](https://v2.tauri.app/start/prerequisites/)。
 
 ```bash
 npm install
-npm run dev        # 開發模式
-npm run build      # 建置桌面 App（等同 tauri build；在 Cloudflare 上自動略過）
-npm test           # Rust 單元測試（內容識別、敏感判斷、連按判斷、設定、縮圖…）
+npm run dev         # 開發模式
+npm test            # 單元測試
+npm run build:win   # Windows .exe
+npm run build:mac   # macOS Universal .dmg
 ```
 
-Linux 只用於開發：以輪詢替代系統剪貼簿事件，所以無法偵測「重複複製同一內容」，也沒有檔案清單。
-
-### 打包
-
-```bash
-npm run build:mac   # macOS Universal .dmg（需先 rustup target add aarch64-apple-darwin x86_64-apple-darwin）
-npm run build:win   # Windows NSIS .exe
-pwsh scripts/build-msix.ps1 [-Publisher "CN=..."] [-CertPath x.pfx -CertPassword ***]   # .msix
-```
-
-`.github/workflows/release.yml` 會在 GitHub Actions 上：
-1. 執行測試。
-2. 打包 macOS `.dmg` 與 Windows `.exe`，另外產出 `.msix`。`.msix` 只放在 Actions 的私有 artifact `copyc-msix-private`，不會出現在公開 Release。
-3. 推送 `v*` tag 時建立 Release 草稿。
-
-**上架 Microsoft Store**：到 Partner Center 的「產品管理 → 產品身分識別」，把裡面的三個值填進 repo 的 **Settings → Secrets and variables → Actions → Variables**：
-- `MSIX_IDENTITY_NAME`（Package/Identity/Name）
-- `MSIX_PUBLISHER`（Package/Identity/Publisher，例如 `CN=XXXXXXXX-...`）
-- `MSIX_PUBLISHER_DISPLAY_NAME`
-
-設定好後重新跑一次建置，就會產生可以直接上傳到 Store 的 `.msix`。上傳到 Store 的套件不需要自己簽章，Store 會代簽。
-
-簽章所需的 secrets 都是選填：`APPLE_CERTIFICATE`、`APPLE_SIGNING_IDENTITY`、`APPLE_ID`、`APPLE_PASSWORD`、`APPLE_TEAM_ID`、`WINDOWS_CERTIFICATE`（base64 編碼的 pfx）、`WINDOWS_CERTIFICATE_PASSWORD`、`MSIX_PUBLISHER`。沒有設定時，產出的安裝包未簽章，安裝時會出現 Gatekeeper 或 SmartScreen 警告；未簽章的 `.msix` 則需要開啟開發人員模式才能側載。
-
-## 官網（GitHub + Cloudflare）
-
-`website/` 是純靜態網站（HTML / CSS / ES Module，不需打包），包含：
-- **主頁介紹**：可以直接在網頁上選取文字並按 Ctrl/⌘+C，體驗與 App 相同的「你已成功複製」膠囊。連按會出現 ×N 彩蛋。
-- **名字由來**：以 Kopitiam 菜單板對照 Kopi / Kopi C / Kopi O / Kopi Kosong / Kopi Peng 與各項功能。
-- **功能**：橫向手風琴（手機上改為直式）。
-- **下載**：往下滑就能看到。點擊後直接下載 GitHub Releases 的最新安裝包。
-  - Windows 只提供 `.exe` 安裝程式；`.msix` 不對外下載，只用於上架 Microsoft Store。
-  - Microsoft Store 欄位已預留：在 `website/index.html` 的 `#download` 設定 `data-ms-store-id="<Store 產品 ID>"` 後會自動啟用。
-  - 頁面會偵測訪客的作業系統並標示「為你推薦」；版本號與檔案大小會從 GitHub API 自動讀取。
-  - 還沒有任何 Release 時，下載按鈕會改連到 Releases 頁面。
-
-下載連結使用固定檔名：`CopyC-windows-x64-setup.exe`、`CopyC-macos-universal.dmg`。推送 `v*` tag 時，`release.yml` 會用這些檔名發布正式 Release，所以官網連結永遠指向最新版本。
-
-### 部署到 Cloudflare（Workers 靜態資產）
-
-官網以 Cloudflare Workers 的靜態資產服務。設定寫在 repo 根目錄的 `wrangler.jsonc`：Worker 名稱是 `copyc`，`assets.directory` 指向 `./website`。
-
-1. Cloudflare Dashboard → **Workers 和 Pages** → 匯入 Git 存放庫，選擇這個 repo，生產分支選預設分支。
-2. 組建設定：
-   - 組建命令：`npm run build`。偵測到 `WORKERS_CI=1` 時會直接略過，不會建置桌面 App。
-   - 部署命令：`npx wrangler deploy`。
-   - 根目錄：`/`。
-3. 自訂網域：Worker → **設定 → 網域和路由 → 新增 → 自訂網域**，填入 `www.copyc.app.dreamsworld.top`。需要 `dreamsworld.top` 的 DNS 由 Cloudflare 管理。
-
-之後每次推送到生產分支，Cloudflare 都會自動重新部署。
-
-### 專案結構
-
-```
-src/                     前端（無打包工具）
-  hud.html/css/js        通知框
-  settings.html/css/js   偏好設定
-  shared/compose.js      共用的文案與視覺組裝
-src-tauri/src/
-  monitor.rs             剪貼簿管線：事件 → 快照 → 識別 → 通知框
-  classify.rs            智慧內容識別與敏感內容判斷
-  hud.rs                 通知框定位、顯示／隱藏、連按防抖動、懸停輪詢
-  tray.rs                系統匣／選單列選單
-  settings.rs, state.rs  設定持久化、歷史與統計
-  platform/              windows.rs、macos.rs、fallback.rs（Linux 開發用）
-packaging/msix/          MSIX 清單（開機啟動改用 StartupTask）
-website/                 官網（Cloudflare Workers 靜態資產，設定見 wrangler.jsonc）；assets/logo.svg 為 Kopi 杯 Logo 原稿
-```
-
-## 已知限制
-- **記憶體**：Rust 常駐程序本身很小，但 WebView2／WKWebView 會另外啟動系統瀏覽器引擎程序，整體記憶體會高於規格的 25MB 目標。為了壓低用量，偏好設定視窗是需要時才建立、關閉即銷毀，平時只保留一個通知框 WebView。若要嚴格達到 25MB，需要把通知框改為原生繪製（WinUI / AppKit）。
-- **MSIX 版的開機啟動**由清單中的 StartupTask 控制。偏好設定裡的「開機自動啟動」開關只對 `.exe`、`.dmg` 版本有效；MSIX 使用者需要到「設定 → 應用程式 → 啟動」調整。
-- **macOS 透明視窗**需要開啟 `macOSPrivateApi`，因此無法上架 Mac App Store；以 `.dmg` 發行不受影響。
+</details>
