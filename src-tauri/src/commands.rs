@@ -1,6 +1,7 @@
 //! 前端可呼叫的指令。
 
 use crate::{
+    autostart::{self, Autostart},
     classify::{Clip, Payload, SensitiveReason},
     hud, i18n, monitor, platform,
     settings::Settings,
@@ -10,7 +11,6 @@ use crate::{
 use serde::Serialize;
 use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter, Manager};
-use tauri_plugin_autostart::ManagerExt;
 
 /// 儲存並套用設定，同步系統匣選單與所有視窗。
 pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
@@ -46,8 +46,7 @@ pub struct Overview {
     stats: Stats,
     history: Vec<HistoryOut>,
     recent_apps: Vec<String>,
-    autostart: bool,
-    /// Microsoft Store（MSIX）版：開機啟動交給 Windows 管理
+    /// Microsoft Store（MSIX）版：由商店負責更新
     packaged: bool,
     /// 有新版本時的版本號（不含 v）
     update: Option<String>,
@@ -65,7 +64,6 @@ pub fn get_overview(app: AppHandle, state: tauri::State<'_, AppState>) -> Overvi
         stats: *state.stats.lock(),
         history: state.history_out(0, 10),
         recent_apps: state.recent_apps.lock().clone(),
-        autostart: app.autolaunch().is_enabled().unwrap_or(false),
         packaged: platform::is_packaged(),
         update: state.update.lock().clone(),
     }
@@ -119,14 +117,15 @@ pub fn clear_history(app: AppHandle, state: tauri::State<'_, AppState>) {
     let _ = app.emit("overview:changed", ());
 }
 
+// 開機啟動會呼叫阻塞的系統 API（MSIX 版是 WinRT 非同步作業），用 async 指令避開主執行緒
 #[tauri::command]
-pub fn set_autostart(app: AppHandle, enabled: bool) -> bool {
-    if platform::is_packaged() {
-        return false;
-    }
-    let launcher = app.autolaunch();
-    let _ = if enabled { launcher.enable() } else { launcher.disable() };
-    launcher.is_enabled().unwrap_or(false)
+pub async fn get_autostart(app: AppHandle) -> Autostart {
+    autostart::state(&app)
+}
+
+#[tauri::command]
+pub async fn set_autostart(app: AppHandle, enabled: bool) -> Autostart {
+    autostart::set(&app, enabled)
 }
 
 #[tauri::command]

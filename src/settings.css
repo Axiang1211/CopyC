@@ -982,6 +982,10 @@ body[data-platform="macos"] .island {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: transform 360ms var(--spring), width 200ms var(--ease-out);
 }
+.switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
 .switch:checked {
   background: var(--brand);
 }

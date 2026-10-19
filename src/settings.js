@@ -44,14 +44,9 @@ const platformLabel = (p) => ({ macos: 'macOS', windows: 'Windows', linux: t('pl
 function applyPlatform(platform) {
   document.body.dataset.platform = platform;
   $('#hero-platform').textContent = platformLabel(platform);
-  // Microsoft Store 版的開機啟動由 Windows 管理，App 內無法切換
-  const store = overview.packaged;
-  $('#autostart').hidden = store;
   // 商店版由 Microsoft Store 負責更新
-  $('#updates-row').hidden = store;
-  $('#autostart-hint').textContent = t(
-    store ? 'general.autostartStore' : platform === 'macos' ? 'general.autostartMac' : 'general.autostartWin',
-  );
+  $('#updates-row').hidden = overview.packaged;
+  renderAutostart();
   $('#about-version').textContent = t('about.version', overview.version, platformLabel(platform));
 }
 
@@ -153,9 +148,33 @@ $$('input.switch[data-setting]').forEach((el) =>
 
 $('#status-toggle').addEventListener('click', () => set('paused', !settings.paused));
 
+/* ---------------- 開機自動啟動 ---------------- */
+
+// 實際狀態以系統為準（使用者也可能在 Windows 設定 / 系統設定裡改），開窗與回到視窗時重新讀取
+let autostart = { enabled: false, blocked: false };
+
+function renderAutostart() {
+  const sw = $('#autostart');
+  sw.checked = autostart.enabled;
+  sw.disabled = autostart.blocked;
+  const hint = autostart.blocked
+    ? 'general.autostartBlocked'
+    : overview.platform === 'macos'
+      ? 'general.autostartMac'
+      : 'general.autostartWin';
+  $('#autostart-hint').textContent = t(hint);
+}
+
+async function refreshAutostart() {
+  autostart = await invoke('get_autostart');
+  renderAutostart();
+}
+
 $('#autostart').addEventListener('change', async (e) => {
-  e.target.checked = await invoke('set_autostart', { enabled: e.target.checked });
+  autostart = await invoke('set_autostart', { enabled: e.target.checked });
+  renderAutostart();
 });
+window.addEventListener('focus', () => refreshAutostart().catch(() => {}));
 
 /* ---------------- 總覽：預覽、托盤、按壓傾斜 ---------------- */
 
@@ -844,7 +863,6 @@ async function refreshOverview() {
   if (overview.lang !== getLang()) applyLanguage(overview.lang);
   setStat($('#stat-copies'), overview.stats.copies);
   setStat($('#stat-confirms'), overview.stats.confirms);
-  $('#autostart').checked = overview.autostart;
   renderHistory();
   renderUpdate();
 }
@@ -858,7 +876,7 @@ async function init() {
   $('#version').textContent = `v${overview.version}`;
   $('#stat-copies').textContent = overview.stats.copies;
   $('#stat-confirms').textContent = overview.stats.confirms;
-  $('#autostart').checked = overview.autostart;
+  refreshAutostart();
   renderHistory();
   renderUpdate();
   syncAll();

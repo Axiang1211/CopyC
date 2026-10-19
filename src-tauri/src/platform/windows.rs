@@ -10,7 +10,9 @@ use std::{
     thread,
     time::Duration,
 };
+use crate::autostart::Autostart;
 use windows::{
+    ApplicationModel::{StartupTask, StartupTaskState},
     core::{w, HSTRING, PCWSTR, PWSTR},
     Win32::{
         Foundation::{CloseHandle, HANDLE, HGLOBAL, HWND, LPARAM, LRESULT, RECT, WPARAM},
@@ -240,12 +242,45 @@ fn window_app(hwnd: HWND) -> Option<AppInfo> {
     }
 }
 
-/// MSIX 封裝版：登錄檔 Run 機碼會被虛擬化而失效，開機啟動改由清單裡的 StartupTask 負責，
-/// 使用者在「設定 → 應用程式 → 啟動」管理。
+/// MSIX 封裝版：登錄檔 Run 機碼會被虛擬化而失效，開機啟動改由清單裡的 StartupTask 負責。
 pub fn is_packaged() -> bool {
     const APPMODEL_ERROR_NO_PACKAGE: u32 = 15700;
     let mut len = 0u32;
     unsafe { GetCurrentPackageFullName(&mut len, None).0 != APPMODEL_ERROR_NO_PACKAGE }
+}
+
+/// 與 packaging/msix/AppxManifest.xml 裡 StartupTask 的 TaskId 一致。
+const STARTUP_TASK_ID: &str = "CopyCStartup";
+
+fn startup_task() -> windows::core::Result<StartupTask> {
+    StartupTask::GetAsync(&HSTRING::from(STARTUP_TASK_ID))?.join()
+}
+
+fn to_autostart(state: StartupTaskState) -> Autostart {
+    Autostart {
+        enabled: matches!(state, StartupTaskState::Enabled | StartupTaskState::EnabledByPolicy),
+        blocked: matches!(
+            state,
+            StartupTaskState::DisabledByUser | StartupTaskState::DisabledByPolicy | StartupTaskState::EnabledByPolicy
+        ),
+    }
+}
+
+/// MSIX 版的開機啟動狀態。WinRT 的 .join() 會阻塞，只能在背景執行緒呼叫。
+pub fn startup_task_state() -> Autostart {
+    startup_task().and_then(|t| t.State()).map(to_autostart).unwrap_or_default()
+}
+
+/// 使用者在系統設定關閉過（DisabledByUser）時，RequestEnableAsync 不會重新開啟，
+/// 回傳的 blocked 讓偏好設定提示改到 Windows 設定裡開啟。
+pub fn set_startup_task(enabled: bool) -> Autostart {
+    let Ok(task) = startup_task() else { return Autostart::default() };
+    let state = if enabled {
+        task.RequestEnableAsync().and_then(|op| op.join())
+    } else {
+        task.Disable().and_then(|_| task.State())
+    };
+    state.map(to_autostart).unwrap_or_default()
 }
 
 pub fn shell_open(url: &str) {

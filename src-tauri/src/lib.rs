@@ -1,5 +1,6 @@
 //! CopyC：常駐背景的複製即時回饋工具。
 
+mod autostart;
 mod classify;
 mod commands;
 mod hud;
@@ -14,7 +15,7 @@ mod tray;
 use settings::Settings;
 use state::AppState;
 use tauri::{Manager, RunEvent};
-use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
+use tauri_plugin_autostart::MacosLauncher;
 
 const AUTOSTART_FLAG: &str = "--autostart";
 
@@ -30,6 +31,7 @@ pub fn run() {
             commands::update_settings,
             commands::get_overview,
             commands::clear_history,
+            commands::get_autostart,
             commands::set_autostart,
             commands::preview_hud,
             commands::hud_finished,
@@ -50,10 +52,9 @@ pub fn run() {
             let settings = Settings::load(&settings_path);
             if first_run {
                 let _ = settings.save(&settings_path);
-                // 規格：安裝即用、開機自動啟動（MSIX 版由清單的 StartupTask 負責）
-                if !platform::is_packaged() {
-                    let _ = app.autolaunch().enable();
-                }
+                // 規格：安裝即用、預設開機自動啟動；使用者可在偏好設定 → 一般關閉
+                let handle = app.handle().clone();
+                std::thread::spawn(move || autostart::set(&handle, true));
             }
             app.manage(AppState::new(settings, settings_path));
 
