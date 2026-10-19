@@ -11,3 +11,4 @@ marketing/video/.cache/
 store/
 # 介紹影片的製作原始檔只留在本機
 marketing/
+.wrangler/
