@@ -1284,6 +1284,10 @@ kbd.is-pressed {
   .platform-wrap > .platform {
     align-self: stretch;
   }
+  /* 托盤只取自己的高度：同一列的另一個托盤展開時，這一列變高也不會把它拉長 */
+  .platform-wrap > .tray {
+    align-self: start;
+  }
 }
 .platform-wrap.is-recommended {
   order: -1;
@@ -1663,6 +1667,85 @@ html[lang="en"] .menu-row {
     writing-mode: horizontal-tb;
     transform: none;
   }
+}
+
+/* ---------- 30 秒介紹影片 ---------- */
+
+.trailer {
+  padding-block: 48px 104px;
+}
+.trailer-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: clamp(18px, 3vw, 32px);
+  background: var(--espresso);
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--line);
+}
+.trailer-frame video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* 播放鈕放右下角：封面中央是 Logo 與標語、左下角是像素 Claude，只有這裡是空的 */
+.trailer-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: clamp(10px, 2.4vw, 28px);
+  border: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(20, 12, 8, 0.45));
+  cursor: pointer;
+}
+.trailer-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: clamp(8px, 1.2vw, 12px) clamp(14px, 2vw, 22px) clamp(8px, 1.2vw, 12px) clamp(8px, 1.2vw, 12px);
+  border-radius: 999px;
+  background: var(--caramel);
+  color: #fff;
+  font: 700 clamp(13px, 1.4vw, 16px) / 1 var(--sans);
+  box-shadow: 0 0 0 8px rgba(200, 137, 77, 0.22), var(--shadow-lg);
+  transition: transform 260ms var(--spring), box-shadow 260ms ease;
+}
+.trailer-play-ico {
+  display: grid;
+  place-items: center;
+  width: clamp(28px, 3vw, 36px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+}
+.trailer-play-ico svg {
+  width: 52%;
+  margin-left: 8%;
+  fill: currentColor;
+}
+.trailer-play:hover .trailer-play-btn,
+.trailer-play:focus-visible .trailer-play-btn {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 12px rgba(200, 137, 77, 0.28), var(--shadow-lg);
+}
+.trailer-play:focus-visible {
+  outline: 3px solid var(--caramel);
+  outline-offset: -3px;
+}
+@media (max-width: 640px) {
+  .trailer-play-btn {
+    padding: 4px;
+    font-size: 0;
+    gap: 0;
+  }
+  .trailer-play-btn .num {
+    display: none;
+  }
+}
+.trailer-frame.is-playing .trailer-play {
+  display: none;
 }
 
 /* ---------- 隱私權政策等文件頁 ----------

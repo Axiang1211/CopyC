@@ -342,7 +342,21 @@ if (storeId) {
 
 /* ---------------- 捲動進場 ---------------- */
 
-const revealTargets = $$('.section-head, .story-text, .menu-board, .accordion, .platform-wrap, .faq-list');
+/* ---------------- 介紹影片 ---------------- */
+
+// 沒有 JS 時保留原生控制列；有 JS 時先只顯示封面與播放鈕，點了才載入、播放
+const trailerFrame = $('#trailer-frame');
+if (trailerFrame) {
+  const video = $('#trailer-video');
+  video.controls = false;
+  $('#trailer-play').addEventListener('click', () => {
+    trailerFrame.classList.add('is-playing');
+    video.controls = true;
+    video.play().catch(() => {});
+  });
+}
+
+const revealTargets = $$('.section-head, .story-text, .menu-board, .accordion, .trailer-frame, .platform-wrap, .faq-list');
 revealTargets.forEach((el) => el.classList.add('reveal'));
 const revealer = new IntersectionObserver(
   (entries) =>
