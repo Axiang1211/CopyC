@@ -96,15 +96,17 @@ jobs:
         env:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # Microsoft Store 上架時，到 repo Settings → Variables 填入 Partner Center「產品身分識別」的三個值
+          # 預設使用 build-msix.ps1 裡的 Partner Center 身分值；要覆寫時到 repo Settings → Variables 設定
           MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
           MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
           MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+          MSIX_DISPLAY_NAME: ${{ vars.MSIX_DISPLAY_NAME }}
         run: |
           $opts = @{}
           if ($env:MSIX_IDENTITY_NAME) { $opts.IdentityName = $env:MSIX_IDENTITY_NAME }
           if ($env:MSIX_PUBLISHER) { $opts.Publisher = $env:MSIX_PUBLISHER }
           if ($env:MSIX_PUBLISHER_DISPLAY_NAME) { $opts.PublisherDisplayName = $env:MSIX_PUBLISHER_DISPLAY_NAME }
+          if ($env:MSIX_DISPLAY_NAME) { $opts.DisplayName = $env:MSIX_DISPLAY_NAME }
           if ($env:WINDOWS_CERTIFICATE) {
             $opts.CertPath = "$env:RUNNER_TEMP\cert.pfx"
             $opts.CertPassword = $env:WINDOWS_CERTIFICATE_PASSWORD
