@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Privacy Policy — CopyC</title>
+    <meta name="description" content="CopyC works entirely on your computer. It never uploads, sells or shares anything you copy, and it does not collect personal data." />
     <link rel="canonical" href="https://www.copyc.app.dreamsworld.top/en/privacy/" />
     <link rel="alternate" hreflang="zh-Hant" href="https://www.copyc.app.dreamsworld.top/privacy/" />
     <link rel="alternate" hreflang="en" href="https://www.copyc.app.dreamsworld.top/en/privacy/" />
@@ -16,51 +17,104 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="legal-nav gutter">
-      <a href="/en/"><img src="/assets/logo.svg" alt="" width="36" height="36" />CopyC</a>
-      <a class="lang" href="/privacy/" lang="zh-Hant">中文</a>
+    <header class="legal-top gutter">
+      <a class="legal-brand" href="/en/"><img src="/assets/logo.svg" alt="" width="36" height="36" />CopyC</a>
+      <nav aria-label="Site">
+        <a href="/en/">Home</a>
+        <a href="/en/#download">Download</a>
+        <a class="lang" href="/privacy/" lang="zh-Hant">中文</a>
+      </nav>
     </header>
-    <main class="legal gutter">
-      <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: October 18, 2026 · Applies to CopyC 1.0 and later (Windows, macOS and Microsoft Store versions)</p>
 
-      <p class="tldr"><b>In short:</b> CopyC works entirely on your computer. It never uploads, sells or shares anything you copy, and it does not collect personal data. The only network request the app makes is an update check.</p>
+    <main class="legal">
+      <div class="legal-hero">
+        <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Privacy Policy</p>
+        <h1>Your clipboard stays on your computer.</h1>
+        <p class="legal-lead">CopyC works entirely on your computer. It never uploads, sells or shares anything you copy, and it does not collect personal data.</p>
+        <p class="legal-updated">Last updated: October 18, 2026 · Applies to CopyC 1.0 and later (Windows, macOS and Microsoft Store versions)</p>
+      </div>
 
-      <h2>What CopyC reads</h2>
-      <ul>
-        <li><b>Clipboard content:</b> each time you copy, CopyC reads the clipboard to work out what kind of content it is (text, image, files, color, link) and show a confirmation. It listens to the system clipboard event and <b>does not log keystrokes</b>.</li>
-        <li><b>The foreground app's name:</b> to show which app you copied from and to apply your app blocklist.</li>
-        <li><b>Whether an app is fullscreen:</b> to switch to an unobtrusive indicator while you watch videos, play games or present.</li>
+      <ul class="legal-points">
+        <li>
+          <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 19h20"/></svg></span>
+          <b>Processed locally</b>
+          <span>What you copy is only used to draw the confirmation on your own computer. It never leaves it.</span>
+        </li>
+        <li>
+          <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.4-3 8-7 9-4-1-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <b>No uploads, no tracking</b>
+          <span>No analytics, ads or trackers. The only network request is an update check, which you can turn off.</span>
+        </li>
+        <li>
+          <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M3 3l18 18"/></svg></span>
+          <b>No account</b>
+          <span>No sign-in, no account, and nothing is ever sold or shared.</span>
+        </li>
       </ul>
 
-      <h2>What CopyC stores</h2>
-      <ul>
-        <li><b>Recent copies:</b> up to 20 items, kept <b>in memory only</b>. They are gone when you quit the app and are never written to disk.</li>
-        <li><b>Your settings:</b> such as position, language and app blocklist, saved in a settings file on your computer.</li>
-      </ul>
-      <p>Content that password managers mark as confidential, and content that looks like a password or key, is masked automatically. With Privacy mode on, confirmations and recent copies show only the content type, never the content.</p>
-
-      <h2>Update check</h2>
-      <p>The version downloaded from the website asks GitHub for the latest version number when it starts (and once a day while it keeps running), and lets you know if a new version is available on the website. The request contains nothing you copied and no personal data; as with any web request, GitHub sees your IP address. You can turn it off in Preferences → General → Check for updates. The Microsoft Store version is updated by the Store, does not perform this check and makes no network connections.</p>
-
-      <h2>What CopyC never does</h2>
-      <ul>
-        <li>It never sends what you copy or any personal data over the network, and contains no analytics, ads or trackers.</li>
-        <li>It has no accounts and needs no sign-in.</li>
-        <li>It never sells or shares data with third parties.</li>
-      </ul>
-
-      <h2>This website</h2>
-      <p>This website (copyc.app.dreamsworld.top) is hosted on Cloudflare and uses cookie-free Cloudflare Web Analytics to count anonymous visits. The download section asks GitHub for the latest version number. None of this involves the app.</p>
-
-      <h2>Children's privacy</h2>
-      <p>CopyC does not collect personal data from anyone, including children under 13.</p>
-
-      <h2>Changes</h2>
-      <p>If this policy changes, we will update this page and the date above.</p>
-
-      <h2>Contact</h2>
-      <p>Questions are welcome on <a href="https://github.com/Axiang1211/CopyC/issues" rel="noopener">GitHub Issues</a>.</p>
+      <article class="legal-body">
+        <section>
+          <h2>What CopyC reads</h2>
+          <ul>
+            <li><b>Clipboard content:</b> each time you copy, CopyC reads the clipboard to work out what kind of content it is (text, image, files, color, link) and show a confirmation. It listens to the system clipboard event and <b>does not log keystrokes</b>.</li>
+            <li><b>The foreground app's name:</b> to show which app you copied from and to apply your app blocklist.</li>
+            <li><b>Whether an app is fullscreen:</b> to switch to an unobtrusive indicator while you watch videos, play games or present.</li>
+          </ul>
+        </section>
+        <section>
+          <h2>What CopyC stores</h2>
+          <ul>
+            <li><b>Recent copies:</b> up to 20 items, kept <b>in memory only</b>. They are gone when you quit the app and are never written to disk.</li>
+            <li><b>Your settings:</b> such as position, language and app blocklist, saved in a settings file on your computer.</li>
+          </ul>
+          <p>Content that password managers mark as confidential, and content that looks like a password or key, is masked automatically. With Privacy mode on, confirmations and recent copies show only the content type, never the content.</p>
+        </section>
+        <section>
+          <h2>Update check</h2>
+          <p>The version downloaded from the website asks GitHub for the latest version number when it starts (and once a day while it keeps running), and lets you know if a new version is available on the website. The request contains nothing you copied and no personal data; as with any web request, GitHub sees your IP address. You can turn it off in Preferences → General → Check for updates. The Microsoft Store version is updated by the Store, does not perform this check and makes no network connections.</p>
+        </section>
+        <section>
+          <h2>What CopyC never does</h2>
+          <ul>
+            <li>It never sends what you copy or any personal data over the network, and contains no analytics, ads or trackers.</li>
+            <li>It has no accounts and needs no sign-in.</li>
+            <li>It never sells or shares data with third parties.</li>
+          </ul>
+        </section>
+        <section>
+          <h2>This website</h2>
+          <p>This website (copyc.app.dreamsworld.top) is hosted on Cloudflare and uses cookie-free Cloudflare Web Analytics to count anonymous visits. The download section asks GitHub for the latest version number. None of this involves the app.</p>
+        </section>
+        <section>
+          <h2>Children's privacy</h2>
+          <p>CopyC does not collect personal data from anyone, including children under 13.</p>
+        </section>
+        <section>
+          <h2>Changes</h2>
+          <p>If this policy changes, we will update this page and the date above.</p>
+        </section>
+        <section>
+          <h2>Contact</h2>
+          <p>Questions are welcome on <a href="https://github.com/Axiang1211/CopyC/issues" rel="noopener">GitHub Issues</a>.</p>
+        </section>
+      </article>
     </main>
+
+    <footer class="footer gutter">
+      <div class="footer-brand">
+        <img src="/assets/logo.svg" alt="" width="44" height="44" />
+        <div>
+          <b>CopyC</b>
+          <span>Copy, meet Kopi. Every copy gets a reply.</span>
+        </div>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="/en/#download">Download</a>
+        <a href="https://github.com/Axiang1211/CopyC" rel="noopener">GitHub</a>
+        <a href="https://github.com/Axiang1211/CopyC/issues" rel="noopener">Report an issue</a>
+        <a href="/en/privacy/">Privacy</a>
+      </nav>
+      <p class="footer-copy">© <span class="num">2026</span> DreamsWorld · copyc.app.dreamsworld.top</p>
+    </footer>
   </body>
 </html>

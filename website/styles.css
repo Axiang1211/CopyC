@@ -1665,16 +1665,18 @@ html[lang="en"] .menu-row {
   }
 }
 
-/* ---------- 隱私權政策等文件頁 ---------- */
+/* ---------- 隱私權政策等文件頁 ----------
+ * 版心固定寬度、自己算左右留白：.gutter 的留白是依整個視窗計算的，
+ * 跟 max-width 疊在同一個元素上，寬螢幕時會把內容擠成一字一行。 */
 
-.legal-nav {
+.legal-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-block: 24px;
+  padding-block: 22px;
 }
-.legal-nav a {
+.legal-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -1682,47 +1684,139 @@ html[lang="en"] .menu-row {
   font: 800 20px/1 var(--display);
   text-decoration: none;
 }
-.legal-nav .lang {
-  font: 600 14px/1 var(--sans);
-  color: var(--text-2);
+.legal-top nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.legal-top nav a {
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+.legal-top nav a:hover {
+  background: var(--paper);
+  color: var(--text);
+}
+
 .legal {
-  max-width: 760px;
+  width: min(820px, 100% - 2 * var(--page-gutter));
   margin-inline: auto;
-  padding-block: 24px 72px;
+  padding-block: 40px 88px;
   color: var(--text);
   font: 400 16px/1.8 var(--sans);
 }
-.legal h1 {
-  margin: 0 0 8px;
-  font: 900 clamp(32px, 6vw, 44px) / 1.2 var(--serif);
+.legal-hero h1 {
+  margin: 0 0 16px;
+  font: 900 clamp(34px, 5.6vw, 54px) / 1.15 var(--serif);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
-.legal .updated {
-  margin: 0 0 32px;
+.legal-lead {
+  max-width: 640px;
+  margin: 0 0 10px;
+  color: var(--text-2);
+  font-size: 18px;
+}
+.legal-updated {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.legal-points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 36px 0 28px;
+  padding: 0;
+  list-style: none;
+}
+.legal-points li {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 22px;
+  border-radius: 22px;
+  background: var(--paper);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--line);
+}
+.legal-points b {
+  font-size: 16px;
+}
+.legal-points span {
   color: var(--text-2);
   font-size: 14px;
+  line-height: 1.65;
 }
-.legal h2 {
-  margin: 40px 0 8px;
-  font: 700 22px/1.4 var(--serif);
+.legal-ico {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: var(--milk);
+  color: var(--caramel-deep);
 }
-.legal p,
-.legal ul {
-  margin: 0 0 12px;
+.legal-ico svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
-.legal ul {
-  padding-left: 1.3em;
-}
-.legal li + li {
-  margin-top: 6px;
-}
-.legal .tldr {
-  padding: 20px 24px;
-  border-radius: 20px;
+
+.legal-body {
+  padding: clamp(24px, 4.5vw, 48px);
+  border-radius: 28px;
   background: var(--paper);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg), inset 0 0 0 1px var(--line);
+}
+.legal-body section + section {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.legal-body h2 {
+  margin: 0 0 10px;
+  font: 700 clamp(20px, 2.6vw, 24px) / 1.4 var(--serif);
+}
+.legal-body p,
+.legal-body ul {
+  margin: 0 0 10px;
+}
+.legal-body p:last-child,
+.legal-body ul:last-child {
+  margin-bottom: 0;
+}
+.legal-body ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 1.2em;
+}
+.legal-body li::marker {
+  color: var(--caramel);
 }
 .legal a {
   color: var(--caramel-deep);
+  text-underline-offset: 3px;
   overflow-wrap: anywhere;
+}
+@media (prefers-color-scheme: dark) {
+  .legal-ico,
+  .legal a {
+    color: var(--crema);
+  }
+}
+@media (max-width: 560px) {
+  .legal-top nav a:not(.lang) {
+    display: none;
+  }
 }
