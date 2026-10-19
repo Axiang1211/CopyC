@@ -96,7 +96,7 @@ jobs:
         env:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          # 預設使用 build-msix.ps1 裡的 Partner Center 身分值；要覆寫時到 repo Settings → Variables 設定
+          # 上架用的 Partner Center 身分值與保留名稱：repo Settings → Secrets and variables → Actions → Variables
           MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
           MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
           MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
@@ -122,10 +122,12 @@ jobs:
           name: copyc-windows-installer
           path: dist/release/*
       # .msix 只給開發者（上架 Microsoft Store 用），不會附加到公開 Release
+      # 公開 repo 的 artifact 登入 GitHub 的人都能下載，只保留 1 天，下載後就過期
       - uses: actions/upload-artifact@v4
         with:
           name: copyc-msix-private
           path: dist/*.msix
+          retention-days: 1
 
   # 推送 v* tag，或手動執行時填入 release_tag，就會發布正式 Release（tag 不存在時自動建立在本次 commit）
   release:

@@ -9,3 +9,5 @@ marketing/video/out/
 marketing/video/.cache/
 # Microsoft Store 上架資料（文案、截圖、審核備註、資料包腳本）只留在本機，不上傳
 store/
+# 介紹影片的製作原始檔只留在本機
+marketing/
