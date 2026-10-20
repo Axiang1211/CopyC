@@ -289,14 +289,16 @@
                 <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5.3 10.4 4.3v7.1H3zM11.4 4.1 21 2.8v8.6h-9.6zM3 12.6h7.4v7.1L3 18.7zM11.4 12.6H21v8.6l-9.6-1.3z"/></svg></span>
                 <div>
                   <h3>Windows</h3>
-                  <p>Windows 10 / 11 · 64 位元</p>
+                  <p>Windows 10 / 11 · x64 與 ARM64</p>
                 </div>
               </div>
 
-              <a class="btn btn-primary btn-block" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
+              <a class="btn btn-primary btn-block" id="win-download" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
                 <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
                 <span>下載 .exe 安裝程式</span>
               </a>
+              <!-- 另一個架構的下載連結；ARM 電腦（Chromium 系瀏覽器）會由 main.js 自動對調 -->
+              <p class="arch-note" id="arch-note">ARM 電腦（例如 Snapdragon）？<a id="arch-alt" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe" download data-arch="arm64">下載 ARM64 版</a></p>
 
               <!-- Microsoft Store 欄位：設定 data-ms-store-id 後自動啟用 -->
               <a class="store-btn" id="ms-store" aria-disabled="true" tabindex="-1">

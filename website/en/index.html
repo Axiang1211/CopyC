@@ -275,14 +275,16 @@
                 <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5.3 10.4 4.3v7.1H3zM11.4 4.1 21 2.8v8.6h-9.6zM3 12.6h7.4v7.1L3 18.7zM11.4 12.6H21v8.6l-9.6-1.3z"/></svg></span>
                 <div>
                   <h3>Windows</h3>
-                  <p>Windows 10 / 11 · 64-bit</p>
+                  <p>Windows 10 / 11 · x64 and ARM64</p>
                 </div>
               </div>
 
-              <a class="btn btn-primary btn-block" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
+              <a class="btn btn-primary btn-block" id="win-download" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
                 <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
                 <span>Download .exe installer</span>
               </a>
+              <!-- Link to the other architecture; main.js swaps them on ARM PCs (Chromium browsers) -->
+              <p class="arch-note" id="arch-note">On an ARM PC (e.g. Snapdragon)? <a id="arch-alt" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe" download data-arch="arm64">Get the ARM64 version</a></p>
               <a class="store-btn" id="ms-store" aria-disabled="true" tabindex="-1">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H6.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/><path d="M9.5 12h2.2v2.2H9.5zM12.3 12h2.2v2.2h-2.2zM9.5 14.8h2.2V17H9.5zM12.3 14.8h2.2V17h-2.2z" fill="currentColor" stroke="none"/></svg>
                 <span><small>Get it from</small><b>Microsoft Store</b></span>

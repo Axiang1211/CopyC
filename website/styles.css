@@ -184,6 +184,17 @@ ul {
   width: 100%;
   height: 54px;
 }
+.arch-note {
+  margin: 10px 0 0;
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: center;
+}
+.arch-note a {
+  color: inherit;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
 .btn-primary {
   background: var(--espresso);
   color: #fbf3e7;

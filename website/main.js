@@ -26,6 +26,9 @@ const T = EN
       relax: 'Relax — it’s safely on your clipboard.',
       brewing: 'The first cup is still brewing — first release coming soon ☕',
       latest: (tag, date) => `Latest ${tag} · released ${date} · Free, no ads — click to download.`,
+      dlArm: 'Download .exe installer (ARM64)',
+      altX64Lead: 'Not on an ARM PC? ',
+      altX64: 'Get the x64 version',
       locale: 'en-US',
       menuOpen: 'Open menu',
       menuClose: 'Close menu',
@@ -43,6 +46,9 @@ const T = EN
       relax: '放心吧！內容已經安全躺在剪貼簿裡了',
       brewing: '第一杯正在沖泡中，首個版本即將發布 ☕',
       latest: (tag, date) => `最新版本 ${tag} · ${date} 發布 · 免費、無廣告，點擊直接下載。`,
+      dlArm: '下載 .exe 安裝程式（ARM64）',
+      altX64Lead: '不是 ARM 電腦？',
+      altX64: '下載 x64 版',
       locale: 'zh-TW',
       menuOpen: '開啟選單',
       menuClose: '關閉選單',
@@ -60,6 +66,26 @@ if (os !== 'other') {
   card.classList.add('is-recommended');
   $('.recommend', card).hidden = false;
   $('#hero-download-label').textContent = isMac ? T.dlMac : T.dlWin;
+}
+
+// Windows on ARM：Chromium 系瀏覽器（Edge / Chrome）才回報 CPU 架構；偵測不到時維持 x64，
+// Windows 11 on ARM 也能以模擬方式執行 x64 版
+if (os === 'windows') {
+  navigator.userAgentData
+    ?.getHighEntropyValues(['architecture'])
+    .then(({ architecture }) => {
+      if (architecture !== 'arm') return;
+      const main = $('#win-download');
+      const alt = $('#arch-alt');
+      const base = 'https://github.com/Axiang1211/CopyC/releases/latest/download/';
+      main.href = base + 'CopyC-windows-arm64-setup.exe';
+      main.dataset.asset = 'CopyC-windows-arm64-setup.exe';
+      $('span', main).firstChild.textContent = T.dlArm;
+      alt.href = base + 'CopyC-windows-x64-setup.exe';
+      alt.textContent = T.altX64;
+      $('#arch-note').firstChild.textContent = T.altX64Lead;
+    })
+    .catch(() => {});
 }
 
 /* ---------------- 頁面 HUD：跟 App 一樣的回饋 ---------------- */

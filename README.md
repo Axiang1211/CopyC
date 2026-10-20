@@ -21,7 +21,7 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 | 平台 | 下載 | 系統需求 |
 | --- | --- | --- |
-| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)（推薦，自動更新）或 [CopyC-windows-x64-setup.exe](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe) | Windows 10 / 11，64 位元 |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)（推薦，自動更新）或 .exe 安裝程式：[x64](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe)／[ARM64](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe) | Windows 10 / 11（Intel / AMD 選 x64；Snapdragon 等 ARM 電腦選 ARM64） |
 | macOS | [CopyC-macos-universal.dmg](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-macos-universal.dmg) | macOS 11 以上，Apple Silicon 與 Intel 都可用 |
 
 免費、無廣告。
