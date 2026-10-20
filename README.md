@@ -21,13 +21,17 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 | 平台 | 下載 | 系統需求 |
 | --- | --- | --- |
-| Windows | [CopyC-windows-x64-setup.exe](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe) | Windows 10 / 11，64 位元 |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)（推薦，自動更新）或 [CopyC-windows-x64-setup.exe](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe) | Windows 10 / 11，64 位元 |
 | macOS | [CopyC-macos-universal.dmg](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-macos-universal.dmg) | macOS 11 以上，Apple Silicon 與 Intel 都可用 |
 
-免費、無廣告。Microsoft Store 版即將上架。
+免費、無廣告。
 
 ### 安裝
-**Windows**
+**Windows：Microsoft Store（推薦）**
+
+打開 [Copy C 的商店頁](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)，按「取得」就完成，之後會自動更新。
+
+**Windows：.exe 安裝程式**
 1. 執行下載的 `.exe` 安裝程式。
 2. 如果出現 SmartScreen「Windows 已保護您的電腦」，按「其他資訊 → 仍要執行」。
 3. 安裝完成後，CopyC 會出現在右下角的系統匣（杯子圖示）。
@@ -37,7 +41,7 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 2. 第一次開啟如果被擋下，在 Finder 對 CopyC 按右鍵 →「打開」。
 3. CopyC 只會出現在頂部選單列，不會出現在 Dock。
 
-> 目前的安裝包還沒有付費的程式碼簽章，所以系統會出現一次安全性提醒，照上面的步驟操作即可。
+> 官網下載的安裝包還沒有付費的程式碼簽章，所以系統會出現一次安全性提醒，照上面的步驟操作即可。Microsoft Store 版不會有這個提醒。
 
 ## 功能
 
