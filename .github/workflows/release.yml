@@ -80,11 +80,15 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
       - run: npm ci
       - run: npx tauri build --bundles nsis
+      # ARM64（Snapdragon 等 Windows on ARM）：在 x64 機器上交叉編譯
+      - run: npx tauri build --target aarch64-pc-windows-msvc --bundles nsis
       - name: Decode signing certificate
         if: env.WINDOWS_CERTIFICATE != ''
         env:
@@ -113,11 +117,13 @@ jobs:
             $opts.CertPassword = $env:WINDOWS_CERTIFICATE_PASSWORD
           }
           ./scripts/build-msix.ps1 @opts
+          ./scripts/build-msix.ps1 @opts -Exe src-tauri/target/aarch64-pc-windows-msvc/release/copyc.exe -Arch arm64
       - name: Stage release files
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist/release | Out-Null
           Copy-Item (Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe)[0] dist/release/CopyC-windows-x64-setup.exe
+          Copy-Item (Get-ChildItem src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis/*.exe)[0] dist/release/CopyC-windows-arm64-setup.exe
       - uses: actions/upload-artifact@v4
         with:
           name: copyc-windows-installer
