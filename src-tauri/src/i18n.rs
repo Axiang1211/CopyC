@@ -1,4 +1,4 @@
-//! 介面語言：繁體中文 / English。設定為「跟隨系統」時依作業系統語系決定。
+//! 七種介面語言。設定為「跟隨系統」時依作業系統語系決定。
 //! Rust 端只負責系統匣選單、視窗標題與預覽範例；其餘文案在前端 shared/i18n.js。
 
 use crate::settings::Language;
@@ -10,14 +10,33 @@ pub enum Lang {
     Zh,
     #[serde(rename = "en")]
     En,
+    #[serde(rename = "zh-Hans")]
+    ZhHans,
+    #[serde(rename = "ja")]
+    Ja,
+    #[serde(rename = "ko")]
+    Ko,
+    #[serde(rename = "fr")]
+    Fr,
+    #[serde(rename = "ms")]
+    Ms,
 }
 
-/// 語系字串（例如 zh-TW、zh-Hant-HK、en-US）對應到介面語言；非中文一律使用英文。
+/// BCP-47 / POSIX 語系；明確 script 優先於地區，不支援的語系回退英文。
 pub fn from_locale(locale: &str) -> Lang {
-    if locale.to_ascii_lowercase().starts_with("zh") {
-        Lang::Zh
-    } else {
-        Lang::En
+    let normalized = locale.to_ascii_lowercase().replace('_', "-");
+    let base = normalized.split(['.', '@']).next().unwrap_or("");
+    let parts: Vec<_> = base.split('-').collect();
+    match parts[0] {
+        "zh" if parts.contains(&"hant") => Lang::Zh,
+        "zh" if parts.contains(&"hans") => Lang::ZhHans,
+        "zh" if parts.iter().any(|p| ["cn", "sg", "my"].contains(p)) => Lang::ZhHans,
+        "zh" => Lang::Zh,
+        "ja" => Lang::Ja,
+        "ko" => Lang::Ko,
+        "fr" => Lang::Fr,
+        "ms" => Lang::Ms,
+        _ => Lang::En,
     }
 }
 
@@ -25,6 +44,11 @@ pub fn resolve(pref: Language) -> Lang {
     match pref {
         Language::ZhHant => Lang::Zh,
         Language::En => Lang::En,
+        Language::ZhHans => Lang::ZhHans,
+        Language::Ja => Lang::Ja,
+        Language::Ko => Lang::Ko,
+        Language::Fr => Lang::Fr,
+        Language::Ms => Lang::Ms,
         Language::Auto => sys_locale::get_locale().as_deref().map(from_locale).unwrap_or(Lang::En),
     }
 }
@@ -96,10 +120,17 @@ const EN: Strings = Strings {
     sample_file: "Requirements.pdf",
 };
 
+include!("i18n_extra.rs");
+
 pub fn strings(lang: Lang) -> &'static Strings {
     match lang {
         Lang::Zh => &ZH,
         Lang::En => &EN,
+        Lang::ZhHans => &ZH_HANS,
+        Lang::Ja => &JA,
+        Lang::Ko => &KO,
+        Lang::Fr => &FR,
+        Lang::Ms => &MS,
     }
 }
 
@@ -109,14 +140,14 @@ mod tests {
 
     #[test]
     fn chinese_locales_map_to_traditional_chinese() {
-        for l in ["zh-TW", "zh-Hant-HK", "zh_HK", "ZH-CN"] {
+        for l in ["zh-TW", "zh-Hant-HK", "zh_HK", "zh-Hant-CN"] {
             assert_eq!(from_locale(l), Lang::Zh, "{l}");
         }
     }
 
     #[test]
     fn other_locales_fall_back_to_english() {
-        for l in ["en-US", "ms-MY", "ja-JP", ""] {
+        for l in ["en-US", "de-DE", "zhx", ""] {
             assert_eq!(from_locale(l), Lang::En, "{l}");
         }
     }
@@ -131,5 +162,29 @@ mod tests {
     fn serializes_as_bcp47_tags() {
         assert_eq!(serde_json::to_string(&Lang::Zh).unwrap(), "\"zh-Hant\"");
         assert_eq!(serde_json::to_string(&Lang::En).unwrap(), "\"en\"");
+    }
+
+    #[test]
+    fn added_locales_resolve_serialize_and_preserve_settings() {
+        for (pref, lang, tag, system) in [
+            (Language::ZhHans, Lang::ZhHans, "zh-Hans", "ZH_CN.UTF-8"),
+            (Language::Ja, Lang::Ja, "ja", "ja_JP"),
+            (Language::Ko, Lang::Ko, "ko", "ko-KR"),
+            (Language::Fr, Lang::Fr, "fr", "fr-CA"),
+            (Language::Ms, Lang::Ms, "ms", "ms-MY"),
+        ] {
+            assert_eq!(resolve(pref), lang);
+            assert_eq!(from_locale(system), lang);
+            assert_eq!(serde_json::to_string(&lang).unwrap(), format!("\"{tag}\""));
+            let settings = crate::settings::Settings { language: pref, sound: true, ..Default::default() };
+            let json = serde_json::to_string(&settings).unwrap();
+            let restored: crate::settings::Settings = serde_json::from_str(&json).unwrap();
+            assert_eq!(restored.language, pref);
+            assert!(restored.sound);
+            assert!(!strings(lang).quit.is_empty());
+        }
+        assert_eq!(from_locale("zh-Hans-TW"), Lang::ZhHans);
+        assert_eq!(from_locale("zh-SG"), Lang::ZhHans);
+        assert_eq!(from_locale("zh-MO"), Lang::Zh);
     }
 }

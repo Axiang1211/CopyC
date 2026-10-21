@@ -26,6 +26,8 @@ let lastKey = '';
 let hideTimer = 0;
 let exitTimer = 0;
 let audio = null;
+let lastEvent = null;
+let hoverItems = [];
 
 function restart(el, cls) {
   el.classList.remove(cls);
@@ -119,6 +121,7 @@ function tick(repeat) {
 }
 
 function show(ev) {
+  lastEvent = ev;
   seq = ev.seq;
   setLang(ev.lang);
   applyI18n();
@@ -160,6 +163,7 @@ function show(ev) {
 }
 
 function onHover({ inside, history }) {
+  hoverItems = history;
   if (!shown) return;
   hovering = inside;
   if (inside) {
@@ -222,3 +226,13 @@ setInterval(checkUpdate, UPDATE_EVERY_MS);
 
 listen('hud:show', (e) => show(e.payload));
 listen('hud:hover', (e) => onHover(e.payload));
+listen('settings:changed', async () => {
+  const overview = await invoke('get_overview');
+  setLang(overview.lang);
+  applyI18n();
+  if (shown && lastEvent) {
+    render(lastEvent);
+    if (hovering) renderHistory(hoverItems);
+    requestAnimationFrame(reportRect);
+  }
+});

@@ -26,10 +26,15 @@ pub const POSITIONS: [(Position, &str); 6] = [
     (Position::BottomRight, "bottom-right"),
 ];
 /// 語言選項：選單 id、設定值、固定顯示名稱（語言名稱本身不翻譯）。
-const LANGUAGES: [(&str, Language, Option<&str>); 3] = [
+const LANGUAGES: [(&str, Language, Option<&str>); 8] = [
     ("auto", Language::Auto, None),
     ("zh-hant", Language::ZhHant, Some("繁體中文")),
     ("en", Language::En, Some("English")),
+    ("zh-hans", Language::ZhHans, Some("简体中文")),
+    ("ja", Language::Ja, Some("日本語")),
+    ("ko", Language::Ko, Some("한국어")),
+    ("fr", Language::Fr, Some("Français")),
+    ("ms", Language::Ms, Some("Bahasa Melayu")),
 ];
 fn as_refs(items: &[CheckMenuItem<Wry>]) -> Vec<&dyn IsMenuItem<Wry>> {
     items.iter().map(|i| i as &dyn IsMenuItem<Wry>).collect()
@@ -53,7 +58,11 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
     let durations = DURATIONS
         .iter()
         .map(|ms| {
-            let label = format!("{:.1} {}", *ms as f64 / 1000.0, t.seconds);
+            let number = format!("{:.1}", *ms as f64 / 1000.0);
+            let number = if i18n::resolve(s.language) == i18n::Lang::Fr {
+                number.replace('.', ",")
+            } else { number };
+            let label = format!("{number} {}", t.seconds);
             CheckMenuItem::with_id(app, format!("dur:{ms}"), label, true, s.duration_ms == *ms, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
@@ -61,7 +70,10 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
         .iter()
         .map(|pct| {
             let checked = ((s.opacity * 100.0).round() as u32) == *pct;
-            CheckMenuItem::with_id(app, format!("op:{pct}"), format!("{pct}%"), true, checked, None::<&str>)
+            let label = if i18n::resolve(s.language) == i18n::Lang::Fr {
+                format!("{pct}\u{a0}%")
+            } else { format!("{pct}%") };
+            CheckMenuItem::with_id(app, format!("op:{pct}"), label, true, checked, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
     let languages = LANGUAGES

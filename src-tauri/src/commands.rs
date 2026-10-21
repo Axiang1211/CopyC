@@ -106,8 +106,8 @@ pub fn update_found(app: AppHandle, state: tauri::State<'_, AppState>, version: 
 pub fn open_download(state: tauri::State<'_, AppState>) {
     let lang = i18n::resolve(state.settings.lock().language);
     platform::open_url(match lang {
-        i18n::Lang::En => "https://www.copyc.app.dreamsworld.top/en/#download",
-        _ => "https://www.copyc.app.dreamsworld.top/#download",
+        i18n::Lang::Zh | i18n::Lang::ZhHans => "https://www.copyc.app.dreamsworld.top/#download",
+        _ => "https://www.copyc.app.dreamsworld.top/en/#download",
     });
 }
 

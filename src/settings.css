@@ -1581,6 +1581,8 @@ body[data-platform="macos"] .spot-br {
 }
 .select-panel {
   top: calc(100% + 6px);
+  max-height: min(360px, 55vh);
+  overflow-y: auto;
   right: 0;
   min-width: 100%;
   transform-origin: top right;

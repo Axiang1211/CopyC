@@ -1,6 +1,6 @@
 // 偏好設定視窗
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
-import { applyI18n, getLang, setLang, t } from './shared/i18n.js';
+import { applyI18n, formatNumber, getLang, setLang, t } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -53,6 +53,9 @@ function applyPlatform(platform) {
 /** 套用語言：靜態文字、動態文字與所有元件重新繪製。 */
 function applyLanguage(lang) {
   setLang(lang);
+  tagsList.replaceChildren();
+  if (suggest.classList.contains('is-open')) openSuggest();
+  ticks.forEach((tick, i) => (tick.textContent = formatNumber(DURATIONS[i] / 1000, { minimumFractionDigits: 1 })));
   applyI18n();
   document.title = t('doc.title');
   applyPlatform(overview.platform);
@@ -255,7 +258,7 @@ function renderHistory() {
 }
 
 function setStat(el, value) {
-  const next = String(value);
+  const next = formatNumber(value);
   if (el.textContent !== next) {
     el.textContent = next;
     restart(el, 'bump');
@@ -330,9 +333,10 @@ function paintDial(index, offset, snapping) {
   dialTrack.style.setProperty('--offset', `${offset}px`);
   ticks.forEach((t, i) => t.classList.toggle('is-current', i === index));
   const seconds = (DURATIONS[index] / 1000).toFixed(1);
-  $('#duration-label').textContent = seconds;
+  const localizedSeconds = formatNumber(DURATIONS[index] / 1000, { minimumFractionDigits: 1 });
+  $('#duration-label').textContent = localizedSeconds;
   dial.setAttribute('aria-valuenow', seconds);
-  dial.setAttribute('aria-valuetext', t('dial.valuetext', seconds));
+  dial.setAttribute('aria-valuetext', t('dial.valuetext', localizedSeconds));
 }
 function dialTo(index, commit = true) {
   dialIndex = Math.max(0, Math.min(DURATIONS.length - 1, index));
@@ -401,7 +405,7 @@ dial.addEventListener('keydown', (e) => {
 const opacity = $('#opacity');
 function paintOpacity(v) {
   opacity.style.setProperty('--p', `${((v - 60) / 40) * 100}%`);
-  $('#opacity-value').textContent = `${v}%`;
+  $('#opacity-value').textContent = formatNumber(v / 100, { style: 'percent' });
 }
 opacity.addEventListener('input', () => {
   const v = Number(opacity.value);
@@ -869,13 +873,10 @@ async function refreshOverview() {
 
 async function init() {
   [settings, overview] = await Promise.all([invoke('get_settings'), invoke('get_overview')]);
-  setLang(overview.lang);
-  applyI18n();
-  document.title = t('doc.title');
-  applyPlatform(overview.platform);
+  applyLanguage(overview.lang);
   $('#version').textContent = `v${overview.version}`;
-  $('#stat-copies').textContent = overview.stats.copies;
-  $('#stat-confirms').textContent = overview.stats.confirms;
+  $('#stat-copies').textContent = formatNumber(overview.stats.copies);
+  $('#stat-confirms').textContent = formatNumber(overview.stats.confirms);
   refreshAutostart();
   renderHistory();
   renderUpdate();

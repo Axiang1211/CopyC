@@ -1,4 +1,9 @@
-// 介面文案：繁體中文 / English。語言由 Rust 端決定（設定或跟隨系統），前端只負責套用。
+import hans from './locales/zh-Hans.js';
+import ja from './locales/ja.js';
+import ko from './locales/ko.js';
+import fr from './locales/fr.js';
+import ms from './locales/ms.js';
+// 語言由 Rust 端決定（設定或跟隨系統），前端只負責套用。
 // 值可以是字串或函式（需要參數或單複數時）。
 
 const zh = {
@@ -353,22 +358,39 @@ const en = {
   'platform.linux': 'Linux (dev mode)',
 };
 
-const DICTS = { 'zh-Hant': zh, en };
+export const DICTS = { 'zh-Hant': zh, 'zh-Hans': hans, en, ja, ko, fr, ms };
 let current = 'zh-Hant';
 
+export function normalizeLang(lang) {
+  const parts = String(lang ?? '').toLowerCase().replaceAll('_', '-').split(/[.@]/)[0].split('-');
+  if (parts[0] === 'zh') {
+    if (parts.includes('hant')) return 'zh-Hant';
+    if (parts.includes('hans')) return 'zh-Hans';
+    return parts.some((p) => ['cn', 'sg', 'my'].includes(p)) ? 'zh-Hans' : 'zh-Hant';
+  }
+  return ['en', 'ja', 'ko', 'fr', 'ms'].includes(parts[0]) ? parts[0] : 'en';
+}
+
 export function setLang(lang) {
-  current = DICTS[lang] ? lang : 'zh-Hant';
-  document.documentElement.lang = current;
+  current = normalizeLang(lang);
+  if (typeof document !== 'undefined') document.documentElement.lang = current;
 }
 
 export const getLang = () => current;
-export const locale = () => (current === 'en' ? 'en-US' : 'zh-TW');
+export const locale = () => ({ 'zh-Hant': 'zh-TW', 'zh-Hans': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', ms: 'ms-MY' })[current];
+export const formatNumber = (n, options) => new Intl.NumberFormat(locale(), options).format(n);
 
 /** 取得文案；找不到時退回繁中，再退回 key 本身。 */
 export function t(key, ...args) {
   const v = DICTS[current][key] ?? zh[key];
   if (v === undefined) return key;
-  return typeof v === 'function' ? v(...args) : v;
+  if (typeof v === 'function') return v(...args);
+  if (Array.isArray(v)) return v[args[0] ? 1 : 0];
+  const values = key === 'hud.imageSize' ? [args[0], args[1], args[2] ? ` (${args[2]})` : ''] : args;
+  return v.replace(/\{(\d+)\}/g, (_, index) => {
+    const value = values[index];
+    return typeof value === 'number' ? formatNumber(value) : String(value ?? '');
+  });
 }
 
 /** 套用到帶有 data-i18n / data-i18n-aria / data-i18n-placeholder / data-i18n-title 的元素。 */

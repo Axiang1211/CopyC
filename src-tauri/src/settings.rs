@@ -38,10 +38,16 @@ pub enum BlacklistAction {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Language {
-    /// 跟隨作業系統語系
-    Auto,
     ZhHant,
+    ZhHans,
     En,
+    Ja,
+    Ko,
+    Fr,
+    Ms,
+    /// 跟隨作業系統語系；未知語言不應導致整份設定重設。
+    #[serde(other)]
+    Auto,
 }
 
 /// 各內容類型是否啟用智慧預覽；關閉時以通用文案呈現。
@@ -186,6 +192,10 @@ mod tests {
         assert_eq!(s.language, Language::ZhHant);
         let s: Settings = serde_json::from_str(r#"{"language":"en"}"#).unwrap();
         assert_eq!(s.language, Language::En);
+        let s: Settings = serde_json::from_str(r#"{"language":"future-locale","sound":true,"durationMs":2000}"#).unwrap();
+        assert_eq!(s.language, Language::Auto);
+        assert!(s.sound);
+        assert_eq!(s.duration_ms, 2000);
     }
 
     #[test]

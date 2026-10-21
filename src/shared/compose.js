@@ -103,7 +103,7 @@ export function summary(p) {
     case 'text':
       return [seg(`${p.preview}${p.truncated ? '…' : ''}`)];
     case 'image':
-      return [seg(t('sum.image')), seg(`${p.width} × ${p.height}`, 'num muted')];
+      return [seg(t('sum.image')), seg(`${num(p.width)} × ${num(p.height)}`, 'num muted')];
     case 'files':
       return p.count > 1 ? [seg(p.first), seg(t('sum.filesMore', p.count), 'muted')] : [seg(p.first)];
     case 'color':
@@ -199,5 +199,5 @@ export function timeAgo(ms) {
   if (s < 60) return t('ago.sec', s);
   if (s < 3600) return t('ago.min', Math.floor(s / 60));
   const d = new Date(ms);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return new Intl.DateTimeFormat(locale(), { hour: '2-digit', minute: '2-digit' }).format(d);
 }

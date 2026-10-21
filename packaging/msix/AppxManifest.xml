@@ -25,6 +25,11 @@
   <Resources>
     <Resource Language="zh-TW" />
     <Resource Language="en-US" />
+    <Resource Language="zh-CN" />
+    <Resource Language="ja-JP" />
+    <Resource Language="ko-KR" />
+    <Resource Language="fr-FR" />
+    <Resource Language="ms-MY" />
   </Resources>
 
   <Capabilities>

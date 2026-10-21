@@ -1,7 +1,7 @@
 {
   "name": "copyc",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "CopyC — 桌面複製即時回饋工具（Windows & macOS）",
   "scripts": {
     "tauri": "tauri",
@@ -10,6 +10,7 @@
     "build:mac": "tauri build --target universal-apple-darwin --bundles dmg",
     "build:win": "tauri build --bundles nsis",
     "test": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "test:i18n": "node --test tests/i18n.test.mjs",
     "build:app": "tauri build"
   },
   "devDependencies": {
