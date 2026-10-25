@@ -85,6 +85,13 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 - **Windows**：設定 → 應用程式 → 已安裝的應用程式 → CopyC → 解除安裝。
 - **macOS**：先從選單列的杯子圖示選「結束」，再把「應用程式」資料夾裡的 CopyC 移到垃圾桶。
 
+## Give me a Kopi ☕
+
+CopyC 永遠免費、沒有廣告。如果它幫你少按了幾次 Ctrl+C，歡迎請我喝杯 Kopi，金額隨意：
+
+- **馬來西亞（MYR）**：到[官網的 Give me a Kopi](https://www.copyc.app.dreamsworld.top/#kopi) 用任何銀行 App 或電子錢包掃 DuitNow QR。
+- **其他地區**：透過 [GitHub Sponsors](https://github.com/sponsors/Axiang1211) 贊助。
+
 ## 常見問題
 
 **它會把我複製的內容傳到網路上嗎？**

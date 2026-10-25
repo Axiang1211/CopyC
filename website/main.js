@@ -368,6 +368,33 @@ if (storeId) {
 
 /* ---------------- 捲動進場 ---------------- */
 
+/* ---------------- Give me a Kopi：依地區預設貨幣分頁 ---------------- */
+
+const kopiTabs = $$('.kopi-tabs [role="tab"]');
+if (kopiTabs.length) {
+  const selectKopi = (tab, focus = false) => {
+    kopiTabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      $('#' + t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+  };
+  kopiTabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => selectKopi(tab));
+    tab.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      selectKopi(kopiTabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + kopiTabs.length) % kopiTabs.length], true);
+    });
+  });
+  // 馬來西亞的訪客（時區或語言）預設顯示 MYR；其他地區預設 GitHub Sponsors
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+  const inMalaysia = /^Asia\/(Kuala_Lumpur|Kuching)$/.test(tz) || navigator.languages?.some((l) => /^ms\b|-MY$/i.test(l));
+  if (!inMalaysia) selectKopi($('#kopi-tab-other'));
+}
+
 /* ---------------- 介紹影片 ---------------- */
 
 // 沒有 JS 時保留原生控制列；有 JS 時先只顯示封面與播放鈕，點了才載入、播放

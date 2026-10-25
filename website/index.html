@@ -382,6 +382,42 @@
           </details>
         </div>
       </section>
+
+      <!-- Give me a Kopi：自願贊助。MYR 用 DuitNow QR，其他貨幣用 GitHub Sponsors -->
+      <section class="kopi gutter" id="kopi">
+        <div class="section-head">
+          <p class="eyebrow">支持開發</p>
+          <h2>Give me a Kopi ☕</h2>
+          <p class="section-sub">CopyC 永遠免費、沒有廣告。如果它幫你少按了幾次 Ctrl+C，歡迎請我喝杯 Kopi，金額隨意。</p>
+        </div>
+        <div class="kopi-card">
+          <div class="kopi-tabs" role="tablist" aria-label="選擇付款貨幣">
+            <button type="button" role="tab" id="kopi-tab-myr" aria-controls="kopi-myr" aria-selected="true">MYR · 馬來西亞</button>
+            <button type="button" role="tab" id="kopi-tab-other" aria-controls="kopi-other" aria-selected="false" tabindex="-1">其他貨幣</button>
+          </div>
+          <div class="kopi-panel" id="kopi-myr" role="tabpanel" aria-labelledby="kopi-tab-myr">
+            <img class="kopi-qr" src="assets/kopi/duitnow-qr.png" width="902" height="1281" loading="lazy" alt="DuitNow QR 付款碼（收款人：Axiang）" />
+            <div class="kopi-body">
+              <h3>用 DuitNow QR 掃碼</h3>
+              <ol>
+                <li>打開任何馬來西亞銀行 App 或電子錢包（Touch ’n Go、MAE、GrabPay、ShopeePay⋯）。</li>
+                <li>掃描 QR，輸入你想請的金額就完成了。</li>
+                <li>在手機上看這頁？先儲存 QR 圖片，再在 App 裡選「從相簿掃描」。</li>
+              </ol>
+              <a class="btn btn-ghost" href="assets/kopi/duitnow-qr.png" download="CopyC-DuitNow-QR.png">儲存 QR 圖片</a>
+            </div>
+          </div>
+          <div class="kopi-panel" id="kopi-other" role="tabpanel" aria-labelledby="kopi-tab-other" hidden>
+            <span class="kopi-heart" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.1A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.8c0 5.5-7.5 10.1-7.5 10.1z"/></svg></span>
+            <div class="kopi-body">
+              <h3>透過 GitHub Sponsors</h3>
+              <p>用信用卡或 PayPal，世界各地都能付款（以美元計價）。個人贊助 GitHub 不抽成，你的心意會完整送到。</p>
+              <a class="btn btn-primary" href="https://github.com/sponsors/Axiang1211" rel="noopener">在 GitHub 上贊助</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <footer class="footer gutter">
@@ -394,6 +430,7 @@
       </div>
       <nav class="footer-links" aria-label="頁尾連結">
         <a href="#download">下載</a>
+        <a href="#kopi">Give me a Kopi</a>
         <a href="https://github.com/Axiang1211/CopyC" rel="noopener">GitHub</a>
         <a href="https://github.com/Axiang1211/CopyC/issues" rel="noopener">回報問題</a>
         <a href="/privacy/">隱私權政策</a>
