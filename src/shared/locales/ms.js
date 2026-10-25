@@ -173,5 +173,8 @@ export default {
   "reset.done": "Ditetapkan semula ✓",
   "about.tagline": "· Copy ≈ Kopi — secawan kopi untuk setiap salinan.",
   "about.version": "Versi {0} · {1}",
+  "kopi.title": "Give me a Kopi ☕",
+  "kopi.desc": "CopyC percuma selama-lamanya, tanpa iklan. Jika anda suka, belanja saya secawan Kopi — berapa pun jumlahnya.",
+  "kopi.go": "Belanja Kopi",
   "platform.linux": "Linux (mod pembangunan)"
 };

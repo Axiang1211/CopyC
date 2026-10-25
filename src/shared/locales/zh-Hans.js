@@ -173,5 +173,8 @@ export default {
   "reset.done": "已重置 ✓",
   "about.tagline": "· Copy 通 Kopi，每次复制都有一杯咖啡的回应。",
   "about.version": "版本 {0} · {1}",
+  "kopi.title": "Give me a Kopi ☕",
+  "kopi.desc": "支持开发：CopyC 永远免费、没有广告。喜欢的话，请我喝杯 Kopi，金额随意。",
+  "kopi.go": "请喝 Kopi",
   "platform.linux": "Linux（开发模式）"
 };

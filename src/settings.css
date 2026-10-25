@@ -250,6 +250,7 @@ body[data-platform="macos"] .island {
 .status-text {
   font-weight: 600;
   font-size: 13px;
+  white-space: nowrap;
 }
 .status-hint {
   font-size: 11.5px;
@@ -897,6 +898,11 @@ body[data-platform="macos"] .island {
 }
 .row[hidden] {
   display: none;
+}
+/* 列右側的按鈕維持一行：日文、法文等較長的文字不會被擠成兩行 */
+.row > .btn {
+  flex: none;
+  white-space: nowrap;
 }
 
 /* 新版本提示卡：貼在頂欄下方，所有分頁都看得到 */

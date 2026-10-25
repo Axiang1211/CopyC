@@ -857,6 +857,7 @@ function renderUpdate() {
 }
 
 $('#update-go').addEventListener('click', () => invoke('open_download'));
+$('#kopi').addEventListener('click', () => invoke('open_kopi'));
 $('#update-later').addEventListener('click', () => {
   updateDismissed = overview.update;
   renderUpdate();

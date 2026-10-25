@@ -40,6 +40,7 @@ pub fn run() {
             commands::update_check,
             commands::update_found,
             commands::open_download,
+            commands::open_kopi,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock

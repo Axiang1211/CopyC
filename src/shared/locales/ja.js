@@ -173,5 +173,8 @@ export default {
   "reset.done": "リセットしました ✓",
   "about.tagline": "· Copy ≈ Kopi — コピーのたびに一杯のコーヒーを。",
   "about.version": "バージョン {0} · {1}",
+  "kopi.title": "Give me a Kopi ☕",
+  "kopi.desc": "CopyC はずっと無料で、広告もありません。気に入ったら Kopi（コーヒー）を一杯おごってください。金額は自由です。",
+  "kopi.go": "Kopi をおごる",
   "platform.linux": "Linux（開発モード）"
 };

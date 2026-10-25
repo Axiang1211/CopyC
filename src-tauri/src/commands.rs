@@ -104,11 +104,23 @@ pub fn update_found(app: AppHandle, state: tauri::State<'_, AppState>, version: 
 /// 用瀏覽器打開官網下載區（依介面語言選中文或英文頁）。
 #[tauri::command]
 pub fn open_download(state: tauri::State<'_, AppState>) {
+    open_site(&state, "download");
+}
+
+/// Give me a Kopi：打開官網的贊助區塊（MYR 用 DuitNow QR，其他貨幣用 GitHub Sponsors）。
+#[tauri::command]
+pub fn open_kopi(state: tauri::State<'_, AppState>) {
+    open_site(&state, "kopi");
+}
+
+/// 官網只有中文與英文版：中文介面開中文頁，其他語言開英文頁。
+fn open_site(state: &AppState, anchor: &str) {
     let lang = i18n::resolve(state.settings.lock().language);
-    platform::open_url(match lang {
-        i18n::Lang::Zh | i18n::Lang::ZhHans => "https://www.copyc.app.dreamsworld.top/#download",
-        _ => "https://www.copyc.app.dreamsworld.top/en/#download",
-    });
+    let base = match lang {
+        i18n::Lang::Zh | i18n::Lang::ZhHans => "https://www.copyc.app.dreamsworld.top/",
+        _ => "https://www.copyc.app.dreamsworld.top/en/",
+    };
+    platform::open_url(&format!("{base}#{anchor}"));
 }
 
 #[tauri::command]

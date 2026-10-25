@@ -558,7 +558,7 @@ dependencies = [
 
 [[package]]
 name = "copyc"
-version = "1.0.6"
+version = "1.0.7"
 dependencies = [
  "arboard",
  "base64 0.22.1",

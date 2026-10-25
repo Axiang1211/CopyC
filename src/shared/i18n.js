@@ -180,6 +180,9 @@ const zh = {
   'reset.done': '已重設 ✓',
   'about.tagline': '· Copy 通 Kopi——每一次複製，都有一杯咖啡的回應。',
   'about.version': (v, p) => `版本 ${v} · ${p}`,
+  'kopi.title': 'Give me a Kopi ☕',
+  'kopi.desc': '支持開發：CopyC 永遠免費、沒有廣告。喜歡的話，請我喝杯 Kopi，金額隨意。',
+  'kopi.go': '請喝 Kopi',
   'platform.linux': 'Linux（開發模式）',
 };
 
@@ -355,6 +358,9 @@ const en = {
   'reset.done': 'Reset ✓',
   'about.tagline': '· Copy ≈ Kopi — every copy comes with a cup of coffee.',
   'about.version': (v, p) => `Version ${v} · ${p}`,
+  'kopi.title': 'Give me a Kopi ☕',
+  'kopi.desc': 'CopyC is free forever, with no ads. If you like it, buy me a Kopi — any amount helps.',
+  'kopi.go': 'Buy a Kopi',
   'platform.linux': 'Linux (dev mode)',
 };
 
