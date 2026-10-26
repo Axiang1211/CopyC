@@ -1669,3 +1669,191 @@ body[data-platform="macos"] .spot-br {
     color: #052e22;
   }
 }
+
+/* ---------- 歷史紀錄頁 ---------- */
+
+.history-panel {
+  padding: 16px 16px 12px;
+}
+.history-tools {
+  display: grid;
+  gap: 12px;
+}
+.history-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition: box-shadow 160ms ease;
+}
+.history-search:focus-within {
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+.history-search svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--text-3);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.history-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+.history-search input::placeholder {
+  color: var(--text-3);
+}
+.chip-count {
+  margin-left: 6px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.history-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 13px;
+}
+.history-note[hidden],
+.history-empty[hidden],
+.history-more[hidden] {
+  display: none;
+}
+/* 列表限高、在面板內捲動，不把整頁拉長 */
+.history-list {
+  max-height: 440px;
+  margin: 8px -6px 0;
+  padding: 0 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+.history-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border-top: 1px solid var(--line);
+}
+.history-item:first-child {
+  border-top-color: transparent;
+}
+.history-item .mini {
+  width: 24px;
+  height: 24px;
+}
+.history-body {
+  min-width: 0;
+}
+.history-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.history-text .domain {
+  color: var(--brand-strong);
+}
+.history-text .muted {
+  color: var(--text-3);
+}
+.history-text .mask {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(224, 90, 71, 0.12);
+  color: var(--coral);
+}
+.history-meta {
+  margin: 2px 0 0;
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.history-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0.5;
+  transition: opacity 160ms ease;
+}
+.history-item:hover .history-actions,
+.history-item:focus-within .history-actions {
+  opacity: 1;
+}
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 200ms var(--spring);
+}
+.icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.icon-btn:active {
+  transform: scale(0.9);
+}
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.history-item.is-copied {
+  animation: hist-copied 900ms ease;
+}
+@keyframes hist-copied {
+  from {
+    background: var(--brand-soft);
+  }
+}
+.history-item.is-removing {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.history-empty {
+  margin: 28px 0 20px;
+  color: var(--text-3);
+  font-size: 13.5px;
+  text-align: center;
+}
+.history-more {
+  display: block;
+  margin: 12px auto 4px;
+}
+/* 「清除」按第一次後變紅，提醒再按一次才會執行 */
+.btn.is-armed {
+  background: var(--coral);
+  box-shadow: none;
+  color: #fff;
+}

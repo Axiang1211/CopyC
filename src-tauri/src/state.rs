@@ -1,11 +1,12 @@
-//! 全域狀態：設定、通知框狀態機、微歷史與統計。
+//! 全域狀態：設定、通知框狀態機、微歷史（記憶體，給通知框與總覽用）、本機歷史資料庫與統計。
 
-use crate::{classify::Payload, hud::HudState, settings::Settings};
+use crate::{classify::Payload, history::History, hud::HudState, settings::Settings};
 use parking_lot::Mutex;
 use serde::Serialize;
 use std::{
     collections::VecDeque,
     path::PathBuf,
+    sync::OnceLock,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -46,6 +47,8 @@ pub struct AppState {
     pub recent_apps: Mutex<Vec<String>>,
     /// 本次執行期間發現的新版本號（不含 v），已通知過就不再重複開視窗
     pub update: Mutex<Option<String>>,
+    /// 本機歷史資料庫；開啟失敗時保持空的，歷史功能停用
+    pub store: OnceLock<History>,
 }
 
 pub fn now_ms() -> u64 {
@@ -62,6 +65,7 @@ impl AppState {
             stats: Mutex::new(Stats::default()),
             recent_apps: Mutex::new(Vec::new()),
             update: Mutex::new(None),
+            store: OnceLock::new(),
         }
     }
 

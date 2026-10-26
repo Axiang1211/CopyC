@@ -1,6 +1,6 @@
 // 偏好設定視窗
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
-import { applyI18n, formatNumber, getLang, setLang, t } from './shared/i18n.js';
+import { applyI18n, formatNumber, getLang, locale, setLang, t } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -64,6 +64,7 @@ function applyLanguage(lang) {
   renderHistory();
   renderUpdate();
   syncAll();
+  renderHistoryPage();
 }
 
 /* ---------------- 錨點導航 + 滾動收縮頂欄 ---------------- */
@@ -863,6 +864,176 @@ $('#update-later').addEventListener('click', () => {
   renderUpdate();
 });
 
+/* ---------------- 歷史紀錄（本機資料庫） ---------------- */
+
+const HISTORY_PAGE = 50;
+const HISTORY_CATS = ['text', 'link', 'email', 'phone', 'color', 'image', 'files', 'secret'];
+const COPY_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M5 15.5V6.8A1.8 1.8 0 0 1 6.8 5h8.7"/></svg>';
+const DELETE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/></svg>';
+const hist = { q: '', category: null, items: [], total: 0, counts: {}, token: 0 };
+
+/** 一天內用「剛剛 / N 分鐘前 / 時:分」，更早的加上日期。 */
+function historyTime(ms) {
+  const d = new Date(ms);
+  if (Date.now() - ms < 86_400_000 && d.getDate() === new Date().getDate()) return timeAgo(ms);
+  return new Intl.DateTimeFormat(locale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
+}
+
+/** 重新查詢；keep 為 true 時保留目前已載入的筆數（資料變動時刷新用）。 */
+async function loadHistory({ append = false, keep = false } = {}) {
+  const token = ++hist.token;
+  const offset = append ? hist.items.length : 0;
+  const limit = keep ? Math.max(HISTORY_PAGE, hist.items.length) : HISTORY_PAGE;
+  const page = await invoke('history_query', { q: hist.q, category: hist.category, offset, limit }).catch(() => null);
+  if (!page || token !== hist.token) return;
+  hist.items = append ? hist.items.concat(page.items) : page.items;
+  hist.total = page.total;
+  hist.counts = page.counts;
+  renderHistoryPage();
+}
+const refreshHistory = debounce(() => loadHistory({ keep: true }), 250);
+
+function renderHistoryChips() {
+  const total = Object.values(hist.counts).reduce((a, b) => a + b, 0);
+  const cats = [null, ...HISTORY_CATS.filter((c) => hist.counts[c] || hist.category === c)];
+  $('#hist-chips').replaceChildren(
+    ...cats.map((cat) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.setAttribute('aria-pressed', String(hist.category === cat));
+      const label = document.createElement('span');
+      label.textContent = t(cat ? `history.cat.${cat}` : 'history.all');
+      const count = document.createElement('span');
+      count.className = 'chip-count num';
+      count.textContent = formatNumber(cat ? hist.counts[cat] ?? 0 : total);
+      chip.append(label, count);
+      chip.addEventListener('click', () => {
+        hist.category = cat;
+        loadHistory();
+      });
+      return chip;
+    }),
+  );
+}
+
+/** 列表文字：文字類顯示全文開頭，檔案顯示路徑，其他用與通知框相同的摘要。 */
+function historyText(item, el) {
+  if (item.text) {
+    el.textContent = item.text;
+  } else if (item.paths.length) {
+    const more = item.payload?.count > item.paths.length ? `\n${t('sum.filesMore', item.payload.count)}` : '';
+    el.textContent = item.paths.join('\n') + more;
+  } else {
+    fill(el, summary(item.payload));
+  }
+}
+
+function renderHistoryPage() {
+  renderHistoryChips();
+  const note = $('#hist-note');
+  note.hidden = !(settings?.privacyMode || settings?.historyEnabled === false);
+  note.textContent = settings?.privacyMode ? t('history.privacyNote') : t('history.offNote');
+
+  $('#hist-list').replaceChildren(
+    ...hist.items.map((item) => {
+      const li = document.createElement('li');
+      li.className = 'history-item';
+      const body = document.createElement('div');
+      body.className = 'history-body';
+      const text = document.createElement('p');
+      text.className = 'history-text';
+      historyText(item, text);
+      const meta = document.createElement('p');
+      meta.className = 'history-meta';
+      meta.textContent = [t(`history.cat.${item.category}`), item.source, historyTime(item.at)].filter(Boolean).join(' · ');
+      body.append(text, meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'history-actions';
+      if (item.canCopy) {
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'icon-btn';
+        copy.innerHTML = COPY_ICON;
+        copy.title = t('history.copy');
+        copy.setAttribute('aria-label', copy.title);
+        copy.addEventListener('click', async () => {
+          const result = await invoke('history_copy', { id: item.id }).catch(() => 'error');
+          if (result === 'ok') {
+            li.classList.remove('is-copied');
+            void li.offsetWidth;
+            li.classList.add('is-copied');
+            copy.title = t('history.copied');
+          } else {
+            showHistoryNote(t(result === 'missing' ? 'history.missing' : 'history.unavailable'));
+          }
+        });
+        actions.append(copy);
+      }
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'icon-btn';
+      del.innerHTML = DELETE_ICON;
+      del.title = t('history.delete');
+      del.setAttribute('aria-label', del.title);
+      del.addEventListener('click', () => {
+        li.classList.add('is-removing');
+        invoke('history_delete', { id: item.id }).catch(() => {});
+      });
+      actions.append(del);
+
+      li.append(buildLead(compose(item.payload).lead, 'mini'), body, actions);
+      return li;
+    }),
+  );
+
+  const empty = $('#hist-empty');
+  empty.hidden = hist.items.length > 0;
+  empty.textContent = t(hist.q || hist.category ? 'history.noMatch' : 'history.empty');
+  $('#hist-more').hidden = hist.items.length >= hist.total;
+}
+
+let noteTimer = 0;
+function showHistoryNote(text) {
+  const note = $('#hist-note');
+  note.textContent = text;
+  note.hidden = false;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(renderHistoryPage, 4000);
+}
+
+$('#hist-search').addEventListener(
+  'input',
+  debounce((e) => {
+    hist.q = e.target.value;
+    loadHistory();
+  }, 200),
+);
+$('#hist-more').addEventListener('click', () => loadHistory({ append: true }));
+
+// 清除全部：按兩次才執行，避免誤觸
+let clearArmed = 0;
+$('#hist-clear').addEventListener('click', (e) => {
+  const btn = e.currentTarget;
+  if (!clearArmed) {
+    btn.textContent = t('history.clearConfirm');
+    btn.classList.add('is-armed');
+    clearArmed = setTimeout(() => {
+      clearArmed = 0;
+      btn.textContent = t('history.clearBtn');
+      btn.classList.remove('is-armed');
+    }, 3000);
+    return;
+  }
+  clearTimeout(clearArmed);
+  clearArmed = 0;
+  btn.textContent = t('history.clearBtn');
+  btn.classList.remove('is-armed');
+  invoke('history_clear').catch(() => {});
+});
+
 async function refreshOverview() {
   overview = await invoke('get_overview');
   if (overview.lang !== getLang()) applyLanguage(overview.lang);
@@ -882,13 +1053,16 @@ async function init() {
   renderHistory();
   renderUpdate();
   syncAll();
+  loadHistory();
   activate('overview');
 
   listen('settings:changed', (e) => {
     settings = e.payload;
     syncAll();
     refreshOverview();
+    refreshHistory(); // 隱私打碼、保存開關、保留筆數都會影響列表
   });
+  listen('history:changed', refreshHistory);
   listen('overview:changed', debounce(refreshOverview, 150));
   setInterval(() => overview && renderHistory(), 30_000);
 }

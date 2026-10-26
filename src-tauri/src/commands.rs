@@ -2,7 +2,8 @@
 
 use crate::{
     autostart::{self, Autostart},
-    classify::{Clip, Payload, SensitiveReason},
+    classify::{Category, Clip, Payload, SensitiveReason},
+    history::{Content, Page},
     hud, i18n, monitor, platform,
     settings::Settings,
     state::{AppState, HistoryOut, Stats},
@@ -16,7 +17,22 @@ use tauri::{AppHandle, Emitter, Manager};
 pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
     let next = next.sanitized();
     let state = app.state::<AppState>();
-    *state.settings.lock() = next.clone();
+    let prev = std::mem::replace(&mut *state.settings.lock(), next.clone());
+    if let Some(store) = state.store.get() {
+        // 調低上限時立刻刪掉多出來的舊紀錄；關閉「保存密碼」時把已保存的密碼一併刪掉
+        let mut changed = false;
+        if next.history_limit < prev.history_limit {
+            let _ = store.trim(next.history_limit);
+            changed = true;
+        }
+        if prev.history_secrets && !next.history_secrets {
+            let _ = store.delete_category(Category::Secret);
+            changed = true;
+        }
+        if changed {
+            let _ = app.emit("history:changed", ());
+        }
+    }
     if let Err(e) = next.save(&state.settings_path) {
         eprintln!("copyc: 無法儲存設定：{e}");
     }
@@ -24,6 +40,69 @@ pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
     crate::settings_window::retitle(app);
     let _ = app.emit("settings:changed", &next);
     next
+}
+
+/* ---------------- 本機歷史紀錄 ---------------- */
+
+#[tauri::command]
+pub fn history_query(
+    state: tauri::State<'_, AppState>,
+    q: String,
+    category: Option<String>,
+    offset: u32,
+    limit: u32,
+) -> Result<Page, String> {
+    let Some(store) = state.store.get() else {
+        return Ok(Page { items: Vec::new(), total: 0, counts: Default::default() });
+    };
+    let mut page = store.query(&q, category.as_deref(), offset, limit.min(200)).map_err(|e| e.to_string())?;
+    // 隱私打碼模式：分享螢幕時連歷史列表也只顯示類型
+    if state.settings.lock().privacy_mode {
+        for item in &mut page.items {
+            item.payload = serde_json::json!({ "kind": "private" });
+            item.text = None;
+            item.paths.clear();
+            item.source = None;
+        }
+    }
+    Ok(page)
+}
+
+/// 把一筆歷史寫回剪貼簿。回傳 "ok"、"missing"（檔案都不存在）或 "unavailable"（圖片或超長文字）。
+#[tauri::command]
+pub fn history_copy(state: tauri::State<'_, AppState>, id: i64) -> Result<&'static str, String> {
+    let Some(store) = state.store.get() else { return Ok("unavailable") };
+    let Some(content) = store.content(id).map_err(|e| e.to_string())? else { return Ok("unavailable") };
+    let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
+    match content {
+        Content::Text(text) => clipboard.set_text(text).map_err(|e| e.to_string())?,
+        Content::Files(paths) => {
+            let existing: Vec<_> = paths.into_iter().filter(|p| p.exists()).collect();
+            if existing.is_empty() {
+                return Ok("missing");
+            }
+            clipboard.set().file_list(&existing).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok("ok")
+}
+
+#[tauri::command]
+pub fn history_delete(app: AppHandle, state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
+    if let Some(store) = state.store.get() {
+        store.delete(id).map_err(|e| e.to_string())?;
+        let _ = app.emit("history:changed", ());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn history_clear(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<(), String> {
+    if let Some(store) = state.store.get() {
+        store.clear().map_err(|e| e.to_string())?;
+        let _ = app.emit("history:changed", ());
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -222,6 +301,7 @@ pub fn run_preview(app: &AppHandle, kind: &str) {
         payload,
         hash: base.bytes().fold(0xC0FFEEu64, |h, b| h.rotate_left(5) ^ b as u64),
         source: Some("CopyC".into()),
+        entry: None,
     };
     match kind {
         "repeat" => {

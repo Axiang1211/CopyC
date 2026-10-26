@@ -1,6 +1,6 @@
 [package]
 name = "copyc"
-version = "1.0.7"
+version = "1.0.8"
 description = "CopyC — 桌面複製即時回饋工具"
 authors = ["CopyC"]
 edition = "2021"
@@ -25,6 +25,7 @@ base64 = "0.22"
 regex = "1"
 parking_lot = "0.12"
 sys-locale = "0.3"
+rusqlite = { version = "0.40.2", features = ["bundled"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

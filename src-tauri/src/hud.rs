@@ -138,6 +138,15 @@ pub fn handle(app: &AppHandle, outcome: Outcome) {
     };
     state.record(&clip.payload, clip.source.as_deref(), repeat);
     let _ = app.emit("overview:changed", ());
+    if let (Some(entry), Some(store)) = (&clip.entry, state.store.get()) {
+        let at = crate::state::now_ms();
+        match store.add(entry, clip.source.as_deref(), clip.hash, at, settings.history_limit) {
+            Ok(()) => {
+                let _ = app.emit("history:changed", ());
+            }
+            Err(e) => eprintln!("copyc: 無法寫入歷史紀錄：{e}"),
+        }
+    }
 
     if settings.paused {
         return;

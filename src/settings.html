@@ -29,6 +29,10 @@
             <svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>
             <span data-i18n="nav.overview">總覽</span>
           </a>
+          <a class="nav-item" href="#history" data-target="history">
+            <svg viewBox="0 0 24 24"><path d="M4.6 12a7.4 7.4 0 1 0 2.2-5.3"/><path d="M4.4 4.6v3.4h3.4"/><path d="M12 8v4.3l2.9 1.8"/></svg>
+            <span data-i18n="nav.history">歷史紀錄</span>
+          </a>
           <a class="nav-item" href="#display" data-target="display">
             <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/><rect x="9" y="6.8" width="6" height="2.4" rx="1.2"/></svg>
             <span data-i18n="nav.display">顯示與動畫</span>
@@ -161,6 +165,54 @@
                 <span class="quick-text"><strong data-i18n="quick.sound">提示音效</strong><span data-i18n="quick.soundDesc">成功複製時輕輕「叮」一聲</span></span>
                 <input type="checkbox" class="switch" data-setting="sound" />
               </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 歷史紀錄：本機資料庫，可搜尋、分類、重新複製 -->
+        <section class="section" id="history" data-title="歷史紀錄" data-i18n-title="nav.history">
+          <h2 class="section-title" data-i18n="history.title">歷史紀錄</h2>
+          <div class="panel history-panel">
+            <div class="history-tools">
+              <label class="history-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                <input id="hist-search" type="search" placeholder="搜尋複製過的內容…" data-i18n-placeholder="history.search" autocomplete="off" spellcheck="false" aria-label="搜尋複製過的內容" data-i18n-aria="history.search" />
+              </label>
+              <div class="chips history-chips" id="hist-chips" role="radiogroup" aria-label="依類型篩選" data-i18n-aria="history.filter"></div>
+            </div>
+            <p class="history-note" id="hist-note" hidden></p>
+            <ol class="history-list" id="hist-list" aria-live="polite"></ol>
+            <p class="history-empty" id="hist-empty" hidden></p>
+            <button class="btn history-more" id="hist-more" type="button" data-i18n="history.more" hidden>載入更多</button>
+          </div>
+          <div class="panel">
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="history.enabled">保存複製紀錄</h3>
+                <p data-i18n="history.enabledDesc">保存在這台電腦上，不會上傳。圖片只保存縮圖，檔案只記錄位置</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="historyEnabled" aria-label="保存複製紀錄" data-i18n-aria="history.enabled" />
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="history.limit">最多保留筆數</h3>
+                <p data-i18n="history.limitDesc">超過時自動刪除最舊的紀錄</p>
+              </div>
+              <div class="select" data-setting="historyLimit" data-options='[[100,"100"],[500,"500"],[1000,"1,000"],[5000,"5,000"]]'></div>
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="history.secrets">保存密碼與敏感內容</h3>
+                <p data-i18n="history.secretsDesc">預設不保存。開啟後密碼會以明文存在這台電腦上（列表中仍會遮蔽）；關閉時會刪除已保存的密碼</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="historySecrets" aria-label="保存密碼與敏感內容" data-i18n-aria="history.secrets" />
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="history.clear">清除所有歷史紀錄</h3>
+                <p data-i18n="history.clearDesc">從這台電腦刪除全部複製紀錄，無法復原</p>
+              </div>
+              <button class="btn" id="hist-clear" type="button" data-i18n="history.clearBtn">清除</button>
             </div>
           </div>
         </section>

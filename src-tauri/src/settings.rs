@@ -90,7 +90,16 @@ pub struct Settings {
     pub smart_types: SmartTypes,
     pub paused: bool,
     pub language: Language,
+    /// 把複製紀錄保存在本機資料庫，可以搜尋、分類與重新複製。
+    pub history_enabled: bool,
+    /// 本機最多保留的筆數，超過時刪除最舊的。
+    pub history_limit: u32,
+    /// 也保存密碼與敏感內容。預設不保存，必須由使用者明確開啟。
+    pub history_secrets: bool,
 }
+
+/// 「最多保留筆數」可選的值。
+pub const HISTORY_LIMITS: [u32; 4] = [100, 500, 1000, 5000];
 
 pub const DEFAULT_BLACKLIST: &[&str] = &[
     "1Password",
@@ -119,6 +128,9 @@ impl Default for Settings {
             smart_types: SmartTypes::default(),
             paused: false,
             language: Language::Auto,
+            history_enabled: true,
+            history_limit: 1000,
+            history_secrets: false,
         }
     }
 }
@@ -135,6 +147,9 @@ impl Settings {
             .filter(|s| !s.is_empty())
             .collect();
         self.blacklist.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+        if !HISTORY_LIMITS.contains(&self.history_limit) {
+            self.history_limit = 1000;
+        }
         self
     }
 

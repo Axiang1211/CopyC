@@ -3,6 +3,7 @@
 mod autostart;
 mod classify;
 mod commands;
+mod history;
 mod hud;
 mod i18n;
 mod monitor;
@@ -41,6 +42,10 @@ pub fn run() {
             commands::update_found,
             commands::open_download,
             commands::open_kopi,
+            commands::history_query,
+            commands::history_copy,
+            commands::history_delete,
+            commands::history_clear,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock
@@ -58,6 +63,13 @@ pub fn run() {
                 std::thread::spawn(move || autostart::set(&handle, true));
             }
             app.manage(AppState::new(settings, settings_path));
+            // 本機複製紀錄：開不起來（例如磁碟唯讀）時只停用歷史功能，不影響通知框
+            match history::History::open(&app.path().app_data_dir()?.join("history.sqlite3")) {
+                Ok(store) => {
+                    let _ = app.state::<AppState>().store.set(store);
+                }
+                Err(e) => eprintln!("copyc: 無法開啟歷史資料庫：{e}"),
+            }
 
             let handle = app.handle();
             hud::create(handle)?;

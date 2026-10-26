@@ -1,9 +1,10 @@
 //! 智慧內容識別：把剪貼簿快照轉成通知框要呈現的結構化資料。
 //!
 //! 文案（「你已成功複製……」）統一由前端組字，這裡只負責判斷型別與擷取必要欄位。
-//! 敏感內容在這一層就丟棄明文，確保之後的事件、歷史紀錄都拿不到原文。
+//! 敏感內容在這一層就丟棄明文，確保之後的事件拿不到原文；
+//! 要不要寫進本機歷史（[`Entry`]）也在這裡依隱私規則決定，密碼預設不保存。
 
-use crate::settings::{BlacklistAction, Settings};
+use crate::settings::{BlacklistAction, Settings, SmartTypes};
 use regex::Regex;
 use serde::Serialize;
 use std::{
@@ -70,6 +71,47 @@ pub enum Payload {
     Generic { label: String },
 }
 
+/// 歷史紀錄的分類，方便查找。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Category {
+    Text,
+    Link,
+    Email,
+    Phone,
+    Color,
+    Image,
+    Files,
+    /// 密碼與敏感內容，只有使用者開啟「保存密碼與敏感內容」時才會出現。
+    Secret,
+}
+
+impl Category {
+    pub fn key(self) -> &'static str {
+        match self {
+            Category::Text => "text",
+            Category::Link => "link",
+            Category::Email => "email",
+            Category::Phone => "phone",
+            Category::Color => "color",
+            Category::Image => "image",
+            Category::Files => "files",
+            Category::Secret => "secret",
+        }
+    }
+}
+
+/// 要寫進本機歷史的內容。圖片只保留尺寸與縮圖；檔案只記錄本機路徑。
+#[derive(Debug, Clone)]
+pub struct Entry {
+    pub category: Category,
+    /// 歷史列表顯示用（不受隱私打碼與智慧預覽開關影響）。
+    pub payload: Payload,
+    /// 文字類內容的全文，用於搜尋與重新複製。
+    pub text: Option<String>,
+    pub paths: Vec<PathBuf>,
+}
+
 /// 一次可顯示的複製事件。
 #[derive(Debug, Clone)]
 pub struct Clip {
@@ -77,10 +119,12 @@ pub struct Clip {
     /// 內容雜湊，用來判斷「連按」是否為同一份內容。
     pub hash: u64,
     pub source: Option<String>,
+    /// 要寫進本機歷史的內容；None 代表這次不保存。
+    pub entry: Option<Entry>,
 }
 
 pub enum Outcome {
-    Show(Clip),
+    Show(Box<Clip>),
     /// 黑名單設定為「完全不提示」。
     Silent,
     /// 剪貼簿被清空或沒有內容，不應誤報。
@@ -104,14 +148,88 @@ pub fn classify(snap: Snapshot, settings: &Settings) -> Outcome {
     } else if snap.sensitive_marker && settings.mask_sensitive {
         Payload::Sensitive { reason: SensitiveReason::Marker }
     } else {
-        detect(snap, settings)
+        detect(&snap, settings)
     };
 
+    // 黑名單 App 的內容一律不保存
+    let entry = (settings.history_enabled && !blacklisted).then(|| history_entry(&snap, settings)).flatten();
     let payload = if settings.privacy_mode { Payload::Private } else { payload };
-    Outcome::Show(Clip { payload, hash, source })
+    Outcome::Show(Box::new(Clip { payload, hash, source, entry }))
 }
 
-fn detect(snap: Snapshot, settings: &Settings) -> Payload {
+/// 依隱私規則決定這次複製要不要寫進本機歷史。
+/// 密碼管理器的標記或高熵值內容視為密碼：預設不保存，使用者開啟「保存密碼與敏感內容」才保存。
+fn history_entry(snap: &Snapshot, settings: &Settings) -> Option<Entry> {
+    let text = snap.text.as_deref().filter(|t| !t.trim().is_empty());
+    let secret = snap.sensitive_marker || text.is_some_and(|t| looks_like_secret(t.trim()));
+    if secret && !settings.history_secrets {
+        return None;
+    }
+
+    if !snap.files.is_empty() {
+        return Some(Entry {
+            category: Category::Files,
+            payload: detect(snap, &all_smart(settings)),
+            text: None,
+            paths: snap.files.iter().map(|f| f.path.clone()).collect(),
+        });
+    }
+    if let Some(text) = text {
+        let (category, payload) = if secret {
+            let reason = if snap.sensitive_marker { SensitiveReason::Marker } else { SensitiveReason::Entropy };
+            (Category::Secret, Payload::Sensitive { reason })
+        } else {
+            (text_category(text.trim()), detect(snap, &all_smart(settings)))
+        };
+        return Some(Entry { category, payload, text: Some(text.to_string()), paths: Vec::new() });
+    }
+    snap.image.as_ref().map(|_| Entry {
+        category: Category::Image,
+        payload: detect(snap, &all_smart(settings)),
+        text: None,
+        paths: Vec::new(),
+    })
+}
+
+/// 歷史列表用的設定：不受智慧預覽開關與自動遮罩影響（密碼已在 history_entry 另外判斷）。
+fn all_smart(settings: &Settings) -> Settings {
+    Settings { smart_types: SmartTypes::default(), mask_sensitive: false, ..settings.clone() }
+}
+
+fn text_category(s: &str) -> Category {
+    if parse_url(s).is_some() {
+        Category::Link
+    } else if parse_color(s).is_some() {
+        Category::Color
+    } else if is_email(s) {
+        Category::Email
+    } else if is_phone(s) {
+        Category::Phone
+    } else {
+        Category::Text
+    }
+}
+
+fn is_email(s: &str) -> bool {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r"^(?:mailto:)?[\w.+-]+@[\w-]+(?:\.[\w-]+)+$").unwrap());
+    s.len() <= 254 && re.is_match(s)
+}
+
+/// 電話號碼：可有 + 與常見分隔符，數字 7–15 位（E.164 上限）。2024-10-18 這類日期不算。
+fn is_phone(s: &str) -> bool {
+    static RE: OnceLock<[Regex; 2]> = OnceLock::new();
+    let [phone, date] = RE.get_or_init(|| {
+        [
+            Regex::new(r"^(?:tel:)?\+?[\d\s().-]{7,24}$").unwrap(),
+            Regex::new(r"^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}$").unwrap(),
+        ]
+    });
+    let digits = s.chars().filter(char::is_ascii_digit).count();
+    phone.is_match(s) && !date.is_match(s) && (7..=15).contains(&digits)
+}
+
+fn detect(snap: &Snapshot, settings: &Settings) -> Payload {
     let smart = &settings.smart_types;
 
     if let Some(first) = snap.files.first() {
@@ -160,11 +278,16 @@ fn detect(snap: Snapshot, settings: &Settings) -> Payload {
         };
     }
 
-    if let Some(img) = snap.image {
+    if let Some(img) = &snap.image {
         if !smart.image {
             return generic("image");
         }
-        return Payload::Image { width: img.width, height: img.height, format: img.format, thumb: img.thumb };
+        return Payload::Image {
+            width: img.width,
+            height: img.height,
+            format: img.format.clone(),
+            thumb: img.thumb.clone(),
+        };
     }
 
     generic("content")
@@ -451,6 +574,71 @@ mod tests {
         let mut s = Settings::default();
         s.smart_types.color = false;
         assert_eq!(show(text_snap("#FFFFFF"), &s), Payload::Generic { label: "color".into() });
+    }
+
+    fn entry(snap: Snapshot, s: &Settings) -> Option<Entry> {
+        match classify(snap, s) {
+            Outcome::Show(c) => c.entry,
+            _ => panic!("expected Show"),
+        }
+    }
+
+    #[test]
+    fn history_categories() {
+        let s = Settings::default();
+        let cat = |t: &str| entry(text_snap(t), &s).unwrap().category;
+        assert_eq!(cat("hello world"), Category::Text);
+        assert_eq!(cat("https://example.com/a"), Category::Link);
+        assert_eq!(cat("someone@example.com"), Category::Email);
+        assert_eq!(cat("+60 12-345 6789"), Category::Phone);
+        assert_eq!(cat("2024-10-18"), Category::Text);
+        assert_eq!(cat("#10B981"), Category::Color);
+    }
+
+    #[test]
+    fn history_keeps_full_text_even_when_preview_is_hidden() {
+        let long = "第一行\n".repeat(50);
+        let s = Settings { privacy_mode: true, ..Default::default() };
+        let e = entry(text_snap(&long), &s).unwrap();
+        assert_eq!(e.text.as_deref(), Some(long.as_str()));
+        assert!(matches!(e.payload, Payload::Text { .. }));
+    }
+
+    #[test]
+    fn passwords_are_not_saved_unless_allowed() {
+        assert!(entry(text_snap("Tr0ub4dor&3x!"), &Settings::default()).is_none());
+        let mut marked = text_snap("plain words");
+        marked.sensitive_marker = true;
+        assert!(entry(marked.clone(), &Settings::default()).is_none());
+
+        let allow = Settings { history_secrets: true, ..Default::default() };
+        let e = entry(text_snap("Tr0ub4dor&3x!"), &allow).unwrap();
+        assert_eq!(e.category, Category::Secret);
+        assert_eq!(e.payload, Payload::Sensitive { reason: SensitiveReason::Entropy });
+        assert_eq!(entry(marked, &allow).unwrap().category, Category::Secret);
+    }
+
+    #[test]
+    fn blacklisted_apps_and_disabled_history_save_nothing() {
+        let mut snap = text_snap("plain words");
+        snap.source = Some(AppInfo { name: "1Password".into(), id: String::new() });
+        let allow = Settings { history_secrets: true, ..Default::default() };
+        assert!(entry(snap, &allow).is_none());
+        let off = Settings { history_enabled: false, ..Default::default() };
+        assert!(entry(text_snap("hello"), &off).is_none());
+    }
+
+    #[test]
+    fn files_are_saved_as_local_paths() {
+        let snap = Snapshot {
+            format_count: 1,
+            files: vec![FileEntry { path: "/tmp/a.pdf".into(), icon: None }],
+            ..Default::default()
+        };
+        let e = entry(snap, &Settings::default()).unwrap();
+        assert_eq!(e.category, Category::Files);
+        assert_eq!(e.paths, [PathBuf::from("/tmp/a.pdf")]);
+        assert!(e.text.is_none());
     }
 
     #[test]
