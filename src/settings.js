@@ -87,8 +87,24 @@ function activate(id) {
   restart(title, 'is-swap');
 }
 
+// 點左側導航後的平滑捲動途中，不讓經過的段落搶走高亮（否則高光會先跳到目標、又被拉回中間段落）。
+// 捲動停下約 150ms 後解除；使用者自己滾輪、觸控或按鍵時立即解除。
+let navLock = false;
+let navLockTimer;
+function holdNav() {
+  navLock = true;
+  clearTimeout(navLockTimer);
+  navLockTimer = setTimeout(() => (navLock = false), 150);
+}
+function releaseNav() {
+  navLock = false;
+  clearTimeout(navLockTimer);
+}
+for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) scroller.addEventListener(type, releaseNav, { passive: true });
+
 const spy = new IntersectionObserver(
   (entries) => {
+    if (navLock) return;
     const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
     if (hit) activate(hit.target.id);
   },
@@ -100,6 +116,10 @@ scroller.addEventListener(
   'scroll',
   () => {
     $('#topbar').classList.toggle('is-compact', scroller.scrollTop > 12);
+    if (navLock) {
+      holdNav();
+      return;
+    }
     // 最後一段較短，捲到底時直接高亮
     if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) activate(sections.at(-1).id);
   },
@@ -110,6 +130,7 @@ navItems.forEach((item) =>
   item.addEventListener('click', (e) => {
     e.preventDefault();
     const target = document.getElementById(item.dataset.target);
+    holdNav();
     scroller.scrollTo({ top: target.offsetTop - 70, behavior: 'smooth' });
     activate(item.dataset.target);
   }),
