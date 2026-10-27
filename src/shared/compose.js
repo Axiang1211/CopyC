@@ -43,7 +43,8 @@ const seg = (t, cls) => ({ t, cls });
  * 把後端 payload 轉成 { lead, title, detail, badge }。
  * title / detail 是片段陣列：{ t: 文字, cls?: 樣式 } 或 { dot: 顏色 }。
  */
-export function compose(p, count = 1) {
+/** `via`：內容是其他電腦即時同步過來的，那台電腦的名稱。 */
+export function compose(p, count = 1, via = null) {
   let lead = { type: 'check' };
   let title;
   let detail = null;
@@ -89,6 +90,13 @@ export function compose(p, count = 1) {
   }
 
   let badge = null;
+  if (via) {
+    // 不是在這台電腦複製的：標題說「已同步」，下一行說來自哪台、可以直接貼上
+    const value = { text: title?.[1], color: title?.slice(1), url: [seg(p.domain, 'strong')] }[p.kind];
+    title = value ? [seg(t('hud.syncedColon')), ...[value].flat()] : [seg(t('hud.synced'))];
+    detail = [seg(t('hud.via', via))];
+    return { lead, title, detail, badge };
+  }
   if (count > 1) {
     title = [seg(t('hud.again'))];
     badge = t('hud.badge', count);

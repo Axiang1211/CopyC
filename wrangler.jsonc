@@ -2,12 +2,19 @@
 {
   "name": "copyc",
   "compatibility_date": "2026-10-01",
-  // 只有介紹影片會先經過 Worker，用來支援 Range 請求（Safari 播放 MP4 需要）
+  // 介紹影片（Range 請求）與 App 的即時同步中繼會先經過 Worker，其他都是靜態檔案
   "main": "./worker/index.js",
   "assets": {
     "directory": "./website",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/assets/video/*"]
-  }
+    "run_worker_first": ["/assets/video/*", "/sync/*"]
+  },
+  // 即時同步：每個 Google 帳號一個房間（worker/relay.js）
+  "durable_objects": {
+    "bindings": [{ "name": "RELAY", "class_name": "Relay" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Relay"] }],
+  // GOOGLE_CLIENT_ID 在 Cloudflare 主控台設定，部署時保留，不寫進原始碼
+  "keep_vars": true
 }

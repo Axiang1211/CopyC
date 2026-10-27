@@ -12,11 +12,13 @@ const samples = {
   'tray.count': [1234], 'dial.valuetext': ['1.4'], 'content.count': [3, 5],
   'sample.aria': ['text'], 'suggest.add': ['App'], 'tag.remove': ['App'],
   'update.title': ['1.2.3'], 'update.desc': ['1.0.5'], 'about.version': ['1.0.5', 'Windows'],
+  'ob.step': [2, 6], 'ob.tryLead': ['Ctrl+C'], 'ob.syncDone': ['a@b.com'], 'sync.device': ['MY-PC'],
+  'sync.lastSync': ['2 min ago'], 'hud.via': ['MY-PC'], 'history.from': ['MY-PC'],
 };
 
 test('all seven dictionaries have complete, nonempty and renderable keys', () => {
   const keys = Object.keys(DICTS.en).sort();
-  assert.equal(keys.length, 207);
+  assert.equal(keys.length, 276);
   for (const [lang, dict] of Object.entries(DICTS)) {
     setLang(lang);
     assert.deepEqual(Object.keys(dict).sort(), keys, lang);
@@ -128,4 +130,18 @@ test('DOM application updates text, accessibility, placeholder, title and docume
       assert.equal(elements['[data-i18n-title]'][0].dataset.title, t('general.title'));
     }
   } finally { delete globalThis.document; }
+});
+
+test('content synced from another computer says where it came from', () => {
+  setLang('en');
+  const text = compose({ kind: 'text', preview: 'hello', truncated: false, chars: 5, lines: 1 }, 1, 'MY-PC');
+  assert.equal(text.title.map((s) => s.t ?? '').join(''), 'Synced:“hello”');
+  assert.equal(text.detail[0].t, 'From MY-PC — ready to paste');
+  assert.equal(text.badge, null);
+  const color = compose({ kind: 'color', value: '#10B981' }, 1, 'MY-PC');
+  assert.ok(color.title.some((s) => s.dot === '#10B981'));
+  const url = compose({ kind: 'url', scheme: 'https://', domain: 'example.com', rest: '/a' }, 1, 'MY-PC');
+  assert.equal(url.title[1].t, 'example.com');
+  // 一般複製不受影響
+  assert.equal(compose({ kind: 'private' }).title[0].t, t('hud.copied'));
 });

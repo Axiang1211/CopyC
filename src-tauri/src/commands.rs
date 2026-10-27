@@ -3,6 +3,7 @@
 use crate::{
     autostart::{self, Autostart},
     classify::{Category, Clip, Payload, SensitiveReason},
+    cloud::{self, Cloud, CloudError},
     history::{Content, Page},
     hud, i18n, monitor, platform,
     settings::Settings,
@@ -33,6 +34,9 @@ pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
             let _ = app.emit("history:changed", ());
         }
     }
+    if let Some(cloud) = app.try_state::<Cloud>() {
+        cloud.apply_settings(&next);
+    }
     if let Err(e) = next.save(&state.settings_path) {
         eprintln!("copyc: 無法儲存設定：{e}");
     }
@@ -40,6 +44,37 @@ pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
     crate::settings_window::retitle(app);
     let _ = app.emit("settings:changed", &next);
     next
+}
+
+/* ---------------- 雲端同步 ---------------- */
+
+#[tauri::command]
+pub fn cloud_status(cloud: tauri::State<'_, Cloud>) -> cloud::Status {
+    cloud.status()
+}
+
+/// 開瀏覽器登入 Google。`page` 是登入完成後瀏覽器分頁上顯示的訊息（依介面語言）。
+#[tauri::command]
+pub async fn cloud_sign_in(app: AppHandle, page: String) -> Result<(), CloudError> {
+    let page: String = page.chars().take(200).collect();
+    app.state::<Cloud>().sign_in(&page).await
+}
+
+#[tauri::command]
+pub async fn cloud_sign_out(app: AppHandle) -> Result<(), CloudError> {
+    app.state::<Cloud>().sign_out().await;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn cloud_sync_now(cloud: tauri::State<'_, Cloud>) {
+    cloud.sync_now();
+}
+
+/// 刪除 Google Drive 裡 CopyC 的所有資料並登出。
+#[tauri::command]
+pub async fn cloud_delete_all(app: AppHandle) -> Result<(), CloudError> {
+    app.state::<Cloud>().delete_all().await
 }
 
 /* ---------------- 本機歷史紀錄 ---------------- */
@@ -302,6 +337,8 @@ pub fn run_preview(app: &AppHandle, kind: &str) {
         hash: base.bytes().fold(0xC0FFEEu64, |h, b| h.rotate_left(5) ^ b as u64),
         source: Some("CopyC".into()),
         entry: None,
+        share: None,
+        via: None,
     };
     match kind {
         "repeat" => {

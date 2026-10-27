@@ -105,7 +105,7 @@
           </div>
           <ul class="facts" aria-label="重點">
             <li><strong class="num">&lt; 10</strong><span>MB 安裝包</span></li>
-            <li><strong class="num">0</strong><span>鍵盤側錄・內容不上傳</span></li>
+            <li><strong class="num">0</strong><span>鍵盤側錄・預設不上傳</span></li>
             <li><strong class="num">1.4</strong><span>秒後自動淡出</span></li>
           </ul>
         </div>
@@ -243,7 +243,7 @@
             </button>
             <div class="strip-body">
               <h3>密碼不會出現在螢幕上</h3>
-              <p>從 1Password、Bitwarden 等密碼管理器複製，或內容像高強度密碼時自動遮罩；開會分享螢幕時可切換隱私打碼模式。複製的內容不會上傳，只留在你的電腦。</p>
+              <p>從 1Password、Bitwarden 等密碼管理器複製，或內容像高強度密碼時自動遮罩；開會分享螢幕時可切換隱私打碼模式。複製的內容預設只留在你的電腦；開啟跨裝置同步時，也會先在你的電腦上加密。</p>
               <div class="mini-hud"><span class="mini-lead lead-lock"></span><span><b>你已成功複製敏感內容 <i class="mini-mask">••••••••</i></b><small>（已啟動隱私安全遮罩保護）</small></span></div>
             </div>
           </article>
@@ -366,7 +366,7 @@
         <div class="faq-list">
           <details>
             <summary>CopyC 會把我複製的內容傳到網路上嗎？</summary>
-            <p>不會。複製內容只用來在本機產生提示；歷史紀錄只存在你自己的電腦上（可以隨時清除或關閉），密碼預設不保存。CopyC 唯一的連網動作是向 GitHub 查詢最新版本號，不包含任何內容，也可以在設定裡關閉。</p>
+            <p>預設不會。複製內容只用來在本機產生提示，歷史紀錄存在你自己的電腦上（可以隨時清除或關閉），密碼預設不保存。只有你自己登入 Google 開啟跨裝置同步時，文字類內容才會先在你的電腦上加密，再傳到你的其他電腦與你自己的 Google Drive；圖片、檔案與密碼永遠不會同步。詳見<a href="/privacy/">隱私權政策</a>。</p>
           </details>
           <details>
             <summary>它是靠監聽鍵盤來偵測的嗎？</summary>

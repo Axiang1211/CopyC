@@ -77,6 +77,8 @@ struct ShowEvent<'a> {
     seq: u64,
     payload: &'a crate::classify::Payload,
     source: Option<&'a str>,
+    /// 從其他電腦即時同步過來：那台電腦的名稱
+    via: Option<&'a str>,
     count: u32,
     anchor: Anchor,
     /// pill：螢幕正上方膠囊；bubble：游標旁微氣泡；card：螢幕四角
@@ -123,9 +125,11 @@ fn is_repeat(last_hash: Option<u64>, last_at: Option<Instant>, visible: bool, ha
 
 /// 剪貼簿管線的終點：記錄歷史、套用暫停 / 全螢幕規則後顯示。
 pub fn handle(app: &AppHandle, outcome: Outcome) {
-    let Outcome::Show(clip) = outcome else { return };
+    let Outcome::Show(mut clip) = outcome else { return };
     let state = app.state::<AppState>();
     let settings = state.settings.lock().clone();
+    let cloud = app.state::<crate::cloud::Cloud>();
+    clip.via = cloud.take_incoming(clip.hash);
 
     let (count, repeat) = {
         let mut h = state.hud.lock();
@@ -136,16 +140,28 @@ pub fn handle(app: &AppHandle, outcome: Outcome) {
         h.last_at = Some(now);
         (h.count, repeat)
     };
-    state.record(&clip.payload, clip.source.as_deref(), repeat);
+    state.record(&clip.payload, clip.via.as_deref().or(clip.source.as_deref()), repeat);
     let _ = app.emit("overview:changed", ());
     if let (Some(entry), Some(store)) = (&clip.entry, state.store.get()) {
         let at = crate::state::now_ms();
-        match store.add(entry, clip.source.as_deref(), clip.hash, at, settings.history_limit) {
+        // 其他電腦同步來的內容標上那台電腦，不再備份（那台會自己備份）
+        let saved = match &clip.via {
+            Some(device) => store.add_remote(entry, clip.hash, at, device).map(drop),
+            None => store.add(entry, clip.source.as_deref(), clip.hash, at, settings.history_limit),
+        };
+        match saved {
             Ok(()) => {
                 let _ = app.emit("history:changed", ());
+                if clip.via.is_none() && entry.category.syncable() {
+                    cloud.nudge();
+                }
             }
             Err(e) => eprintln!("copyc: 無法寫入歷史紀錄：{e}"),
         }
+    }
+    // 同一份內容連按不重複傳送
+    if let (None, Some(text), false) = (&clip.via, &clip.share, repeat) {
+        cloud.send_live(text);
     }
 
     if settings.paused {
@@ -228,6 +244,7 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
             seq,
             payload: &clip.payload,
             source: clip.source.as_deref(),
+            via: clip.via.as_deref(),
             count,
             anchor,
             variant,

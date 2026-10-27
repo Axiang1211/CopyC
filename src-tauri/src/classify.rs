@@ -8,7 +8,6 @@ use crate::settings::{BlacklistAction, Settings, SmartTypes};
 use regex::Regex;
 use serde::Serialize;
 use std::{
-    collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
     path::PathBuf,
     sync::OnceLock,
@@ -87,6 +86,11 @@ pub enum Category {
 }
 
 impl Category {
+    /// 可以同步到其他裝置的分類：只有文字類。圖片、檔案與密碼永遠只留在這台電腦。
+    pub fn syncable(self) -> bool {
+        matches!(self, Category::Text | Category::Link | Category::Email | Category::Phone | Category::Color)
+    }
+
     pub fn key(self) -> &'static str {
         match self {
             Category::Text => "text",
@@ -121,6 +125,10 @@ pub struct Clip {
     pub source: Option<String>,
     /// 要寫進本機歷史的內容；None 代表這次不保存。
     pub entry: Option<Entry>,
+    /// 可以即時同步到其他電腦的文字：黑名單、密碼與檔案都不會有。
+    pub share: Option<String>,
+    /// 這份內容是其他電腦即時同步過來的：那台電腦的名稱（剪貼簿管線填入）。
+    pub via: Option<String>,
 }
 
 pub enum Outcome {
@@ -154,7 +162,13 @@ pub fn classify(snap: Snapshot, settings: &Settings) -> Outcome {
     // 黑名單 App 的內容一律不保存
     let entry = (settings.history_enabled && !blacklisted).then(|| history_entry(&snap, settings)).flatten();
     let payload = if settings.privacy_mode { Payload::Private } else { payload };
-    Outcome::Show(Box::new(Clip { payload, hash, source, entry }))
+    let share = snap
+        .text
+        .as_deref()
+        .filter(|_| !blacklisted && !snap.sensitive_marker && snap.files.is_empty())
+        .filter(|t| !t.trim().is_empty() && !looks_like_secret(t.trim()))
+        .map(str::to_string);
+    Outcome::Show(Box::new(Clip { payload, hash, source, entry, share, via: None }))
 }
 
 /// 依隱私規則決定這次複製要不要寫進本機歷史。
@@ -187,6 +201,26 @@ fn history_entry(snap: &Snapshot, settings: &Settings) -> Option<Entry> {
         category: Category::Image,
         payload: detect(snap, &all_smart(settings)),
         text: None,
+        paths: Vec::new(),
+    })
+}
+
+/// 和本機複製同一段純文字時算出的雜湊相同，用來比對其他裝置傳來的內容。
+pub fn text_hash(text: &str) -> u64 {
+    content_hash(&Snapshot { format_count: 1, text: Some(text.to_string()), ..Default::default() })
+}
+
+/// 其他裝置同步來的文字轉成歷史紀錄。看起來像密碼的內容一律不收（傳送端本來就不會送）。
+pub fn remote_entry(text: &str) -> Option<Entry> {
+    if text.trim().is_empty() || looks_like_secret(text.trim()) {
+        return None;
+    }
+    let snap = Snapshot { format_count: 1, text: Some(text.to_string()), ..Default::default() };
+    let settings = all_smart(&Settings::default());
+    Some(Entry {
+        category: text_category(text.trim()),
+        payload: detect(&snap, &settings),
+        text: Some(text.to_string()),
         paths: Vec::new(),
     })
 }
@@ -297,8 +331,24 @@ fn generic(label: &str) -> Payload {
     Payload::Generic { label: label.to_string() }
 }
 
+/// FNV-1a：不同電腦、不同版本算出來的值都一樣，跨裝置同步與刪除才對得起來。
+/// （標準函式庫的 DefaultHasher 不保證跨版本一致。）
+struct Fnv(u64);
+
+impl Hasher for Fnv {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        for b in bytes {
+            self.0 = (self.0 ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3);
+        }
+    }
+}
+
 fn content_hash(snap: &Snapshot) -> u64 {
-    let mut h = DefaultHasher::new();
+    let mut h = Fnv(0xcbf2_9ce4_8422_2325);
     snap.sensitive_marker.hash(&mut h);
     for f in &snap.files {
         f.path.hash(&mut h);

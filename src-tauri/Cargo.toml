@@ -1,6 +1,6 @@
 [package]
 name = "copyc"
-version = "1.0.8"
+version = "1.1.0"
 description = "CopyC — 桌面複製即時回饋工具"
 authors = ["CopyC"]
 edition = "2021"
@@ -26,8 +26,16 @@ regex = "1"
 parking_lot = "0.12"
 sys-locale = "0.3"
 rusqlite = { version = "0.40.2", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["native-tls", "json"] }
+tokio = { version = "1", features = ["net", "time", "sync", "macros", "io-util"] }
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+chacha20poly1305 = "0.10"
+rand = "0.8"
+sha2 = "0.10"
 
 [target.'cfg(windows)'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
 windows = { version = "0.62", features = [
   "ApplicationModel",
   "Foundation",

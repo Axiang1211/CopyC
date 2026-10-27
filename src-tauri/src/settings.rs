@@ -96,6 +96,14 @@ pub struct Settings {
     pub history_limit: u32,
     /// 也保存密碼與敏感內容。預設不保存，必須由使用者明確開啟。
     pub history_secrets: bool,
+    /// 是否已看過首次使用引導。設定檔缺這個欄位（舊版升級）視為看過，只有全新安裝才會顯示。
+    pub onboarded: bool,
+    /// 登入 Google 後：把文字類歷史加密備份到 Google Drive，並合併其他裝置的紀錄。
+    pub cloud_backup: bool,
+    /// 登入 Google 後：複製的文字即時（加密）傳到同一帳號的其他電腦。
+    pub cloud_live: bool,
+    /// 其他電腦即時傳來的內容直接放進這台電腦的剪貼簿。
+    pub cloud_apply: bool,
 }
 
 /// 「最多保留筆數」可選的值。
@@ -131,6 +139,10 @@ impl Default for Settings {
             history_enabled: true,
             history_limit: 1000,
             history_secrets: false,
+            onboarded: true,
+            cloud_backup: true,
+            cloud_live: true,
+            cloud_apply: true,
         }
     }
 }
@@ -190,6 +202,12 @@ mod tests {
         let s = Settings { duration_ms: 99_999, opacity: 0.1, ..Default::default() }.sanitized();
         assert_eq!(s.duration_ms, 3000);
         assert!((s.opacity - 0.6).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn upgrades_skip_onboarding() {
+        let s: Settings = serde_json::from_str(r#"{"position":"top"}"#).unwrap();
+        assert!(s.onboarded);
     }
 
     #[test]

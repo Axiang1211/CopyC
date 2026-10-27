@@ -1,7 +1,10 @@
-//! 本機複製紀錄：SQLite 資料庫，存在使用者的 App 資料夾，不會上傳。
+//! 本機複製紀錄：SQLite 資料庫，存在使用者的 App 資料夾。
 //!
 //! 文字類內容保存全文，用於搜尋與重新複製；圖片只保存尺寸與縮圖；檔案只記錄本機路徑。
 //! 同一份內容（雜湊相同）再次複製時只更新時間與來源，不會重複一筆。
+//!
+//! 登入雲端同步後，這台電腦的文字類紀錄（`origin IS NULL`）會依「天」加密備份到 Google Drive，
+//! 其他裝置的紀錄下載後以 `origin`（裝置名稱）標記。刪除會留下墓碑，讓其他裝置也一起刪。
 
 use crate::classify::{Category, Entry};
 use parking_lot::Mutex;
@@ -18,6 +21,11 @@ const MAX_TEXT_BYTES: usize = 1 << 20;
 const LIST_TEXT_CHARS: u32 = 600;
 /// 列表最多列出的檔案路徑數（payload 裡有總數）。
 const LIST_PATHS: usize = 5;
+/// 一天的毫秒數；雲端備份以 UTC 日為單位分檔。
+pub const DAY_MS: u64 = 86_400_000;
+/// 超過這個大小的文字不同步到雲端（只留在本機）。
+pub const CLOUD_MAX_BYTES: usize = 256 * 1024;
+const SYNCABLE: &str = "('text', 'link', 'email', 'phone', 'color')";
 
 pub struct History {
     conn: Mutex<Connection>,
@@ -31,6 +39,8 @@ pub struct Item {
     pub at: u64,
     pub category: String,
     pub source: Option<String>,
+    /// 從其他裝置同步來的紀錄：那台裝置的名稱
+    pub origin: Option<String>,
     /// 顯示用的 Payload（與通知框相同結構）
     pub payload: serde_json::Value,
     /// 文字類內容的開頭；密碼類永遠是 None
@@ -82,8 +92,24 @@ impl History {
                 truncated INTEGER NOT NULL DEFAULT 0,
                 paths TEXT
             );
-            CREATE INDEX IF NOT EXISTS entries_at ON entries(at DESC);",
+            CREATE INDEX IF NOT EXISTS entries_at ON entries(at DESC);
+            CREATE TABLE IF NOT EXISTS tombstones (
+                hash INTEGER PRIMARY KEY,
+                at INTEGER NOT NULL,
+                day INTEGER,
+                pushed INTEGER NOT NULL DEFAULT 0
+            );",
         )?;
+        // 1.0.8 的資料庫沒有同步欄位，補上即可（舊紀錄都是這台電腦的、尚未備份）
+        let has_origin = conn
+            .prepare("SELECT 1 FROM pragma_table_info('entries') WHERE name = 'origin'")?
+            .exists([])?;
+        if !has_origin {
+            conn.execute_batch(
+                "ALTER TABLE entries ADD COLUMN origin TEXT;
+                 ALTER TABLE entries ADD COLUMN synced INTEGER NOT NULL DEFAULT 0;",
+            )?;
+        }
         Ok(Self { conn: Mutex::new(conn) })
     }
 
@@ -100,13 +126,30 @@ impl History {
         });
         let payload = serde_json::to_string(&entry.payload).unwrap_or_default();
         let conn = self.conn.lock();
+        // 在這台電腦重新複製：變成本機紀錄、重新排入備份；之前刪除留下的墓碑也作廢
         conn.execute(
-            "INSERT INTO entries (at, hash, category, source, payload, content, truncated, paths)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
-             ON CONFLICT(hash) DO UPDATE SET at = excluded.at, source = excluded.source",
+            "INSERT INTO entries (at, hash, category, source, payload, content, truncated, paths, origin, synced)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, 0)
+             ON CONFLICT(hash) DO UPDATE SET at = excluded.at, source = excluded.source, origin = NULL, synced = 0",
             params![at as i64, hash as i64, entry.category.key(), source, payload, content, truncated, paths],
         )?;
+        conn.execute("DELETE FROM tombstones WHERE hash = ?1", params![hash as i64])?;
         trim(&conn, limit)
+    }
+
+    /// 其他裝置的紀錄。已經有同一份內容時只更新成較新的時間；被刪除過（有墓碑）的不再加回來。
+    /// 回傳是否有變動。
+    pub fn add_remote(&self, entry: &Entry, hash: u64, at: u64, origin: &str) -> rusqlite::Result<bool> {
+        let payload = serde_json::to_string(&entry.payload).unwrap_or_default();
+        let conn = self.conn.lock();
+        let changed = conn.execute(
+            "INSERT INTO entries (at, hash, category, source, payload, content, truncated, paths, origin, synced)
+             SELECT ?1, ?2, ?3, NULL, ?4, ?5, 0, NULL, ?6, 1
+             WHERE NOT EXISTS (SELECT 1 FROM tombstones WHERE hash = ?2)
+             ON CONFLICT(hash) DO UPDATE SET at = excluded.at WHERE excluded.at > entries.at",
+            params![at as i64, hash as i64, entry.category.key(), payload, entry.text, origin],
+        )?;
+        Ok(changed > 0)
     }
 
     /// 只保留最新的 limit 筆。
@@ -119,7 +162,7 @@ impl History {
         let q = q.trim();
         let like = format!("%{}%", escape_like(q));
         let filter = "(?1 = '' OR (category != 'secret' AND content LIKE ?2 ESCAPE '\\')
-                      OR paths LIKE ?2 ESCAPE '\\' OR source LIKE ?2 ESCAPE '\\')";
+                      OR paths LIKE ?2 ESCAPE '\\' OR source LIKE ?2 ESCAPE '\\' OR origin LIKE ?2 ESCAPE '\\')";
         let conn = self.conn.lock();
 
         let mut counts = BTreeMap::new();
@@ -137,7 +180,7 @@ impl History {
         let mut stmt = conn.prepare(&format!(
             "SELECT id, at, category, source, payload,
                     CASE WHEN category = 'secret' THEN NULL ELSE substr(content, 1, {LIST_TEXT_CHARS}) END,
-                    truncated, paths
+                    truncated, paths, origin
              FROM entries WHERE {filter} AND (?3 IS NULL OR category = ?3)
              ORDER BY at DESC LIMIT ?4 OFFSET ?5"
         ))?;
@@ -160,6 +203,7 @@ impl History {
                     id: r.get(0)?,
                     at: r.get::<_, i64>(1)? as u64,
                     source: r.get(3)?,
+                    origin: r.get(8)?,
                     payload: serde_json::from_str(&payload).unwrap_or(serde_json::Value::Null),
                     text,
                     paths: paths.into_iter().take(LIST_PATHS).collect(),
@@ -199,12 +243,123 @@ impl History {
         }))
     }
 
+    /// 刪除一筆。文字類紀錄會留下墓碑：其他裝置同步時一起刪除，這台電腦的雲端備份也會重寫那一天。
     pub fn delete(&self, id: i64) -> rusqlite::Result<()> {
-        self.conn.lock().execute("DELETE FROM entries WHERE id = ?1", params![id]).map(drop)
+        let conn = self.conn.lock();
+        conn.execute(
+            &format!(
+                "INSERT OR REPLACE INTO tombstones (hash, at, day, pushed)
+                 SELECT hash, ?2, CASE WHEN origin IS NULL THEN at / {DAY_MS} END, 0
+                 FROM entries WHERE id = ?1 AND category IN {SYNCABLE}"
+            ),
+            params![id, crate::state::now_ms() as i64],
+        )?;
+        conn.execute("DELETE FROM entries WHERE id = ?1", params![id]).map(drop)
     }
 
     pub fn clear(&self) -> rusqlite::Result<()> {
         self.conn.lock().execute("DELETE FROM entries", []).map(drop)
+    }
+
+    /// 需要重寫雲端備份的日子：有尚未備份的本機紀錄，或那天有紀錄被刪除。
+    pub fn dirty_days(&self) -> rusqlite::Result<Vec<u64>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(&format!(
+            "SELECT at / {DAY_MS} FROM entries WHERE origin IS NULL AND synced = 0 AND category IN {SYNCABLE}
+             UNION SELECT day FROM tombstones WHERE pushed = 0 AND day IS NOT NULL"
+        ))?;
+        let days = stmt.query_map([], |r| r.get::<_, i64>(0))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(days.into_iter().map(|d| d as u64).collect())
+    }
+
+    /// 某一天（UTC）這台電腦要備份的文字紀錄：(id, 時間, 全文)。超長或被截斷的不備份。
+    pub fn day_texts(&self, day: u64) -> rusqlite::Result<Vec<(i64, u64, String)>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(&format!(
+            "SELECT id, at, content FROM entries
+             WHERE origin IS NULL AND at / {DAY_MS} = ?1 AND category IN {SYNCABLE}
+               AND truncated = 0 AND content IS NOT NULL AND length(CAST(content AS BLOB)) <= {CLOUD_MAX_BYTES}
+             ORDER BY at"
+        ))?;
+        let rows = stmt
+            .query_map(params![day as i64], |r| Ok((r.get(0)?, r.get::<_, i64>(1)? as u64, r.get(2)?)))?
+            .collect();
+        rows
+    }
+
+    /// 那一天的備份已上傳：標記那幾筆，並把那天的墓碑標成已處理。
+    pub fn mark_day_synced(&self, day: u64, ids: &[i64]) -> rusqlite::Result<()> {
+        let mut conn = self.conn.lock();
+        let tx = conn.transaction()?;
+        for id in ids {
+            tx.execute("UPDATE entries SET synced = 1 WHERE id = ?1", params![id])?;
+        }
+        // 那天沒有可備份內容的本機紀錄（例如超長文字）也不用再處理
+        tx.execute(
+            &format!("UPDATE entries SET synced = 1 WHERE origin IS NULL AND at / {DAY_MS} = ?1"),
+            params![day as i64],
+        )?;
+        tx.execute("UPDATE tombstones SET day = NULL WHERE day = ?1", params![day as i64])?;
+        tx.commit()
+    }
+
+    /// 是否有還沒發布的墓碑。
+    pub fn has_unpushed_tombstones(&self) -> rusqlite::Result<bool> {
+        self.conn.lock().prepare("SELECT 1 FROM tombstones WHERE pushed = 0")?.exists([])
+    }
+
+    /// 最近（since 之後）的墓碑雜湊，發布給其他裝置。順便清掉更舊的墓碑。
+    pub fn tombstones_since(&self, since: u64) -> rusqlite::Result<Vec<u64>> {
+        let conn = self.conn.lock();
+        conn.execute("DELETE FROM tombstones WHERE at < ?1 AND day IS NULL", params![since as i64])?;
+        let mut stmt = conn.prepare("SELECT hash FROM tombstones WHERE at >= ?1")?;
+        let rows = stmt.query_map(params![since as i64], |r| r.get::<_, i64>(0).map(|h| h as u64))?.collect();
+        rows
+    }
+
+    pub fn mark_tombstones_pushed(&self) -> rusqlite::Result<()> {
+        self.conn.lock().execute("UPDATE tombstones SET pushed = 1", []).map(drop)
+    }
+
+    /// 套用其他裝置的刪除。這台電腦自己的紀錄也要重寫雲端備份，所以留下尚未處理的墓碑。
+    pub fn apply_tombstones(&self, hashes: &[u64]) -> rusqlite::Result<bool> {
+        let mut conn = self.conn.lock();
+        let tx = conn.transaction()?;
+        let now = crate::state::now_ms() as i64;
+        let mut changed = false;
+        for &hash in hashes {
+            let hash = hash as i64;
+            let row: Option<(i64, Option<String>)> = tx
+                .query_row("SELECT at, origin FROM entries WHERE hash = ?1", params![hash], |r| Ok((r.get(0)?, r.get(1)?)))
+                .optional()?;
+            match row {
+                Some((at, None)) => {
+                    tx.execute(
+                        "INSERT OR REPLACE INTO tombstones (hash, at, day, pushed) VALUES (?1, ?2, ?3, 0)",
+                        params![hash, now, at / DAY_MS as i64],
+                    )?;
+                }
+                _ => {
+                    tx.execute(
+                        "INSERT OR IGNORE INTO tombstones (hash, at, day, pushed) VALUES (?1, ?2, NULL, 1)",
+                        params![hash, now],
+                    )?;
+                }
+            }
+            changed |= tx.execute("DELETE FROM entries WHERE hash = ?1", params![hash])? > 0;
+        }
+        tx.commit()?;
+        Ok(changed)
+    }
+
+    /// 加密金鑰換了：所有本機紀錄與墓碑都要用新金鑰重新上傳。
+    pub fn mark_all_unsynced(&self) -> rusqlite::Result<()> {
+        self.conn.lock().execute_batch("UPDATE entries SET synced = 0 WHERE origin IS NULL; UPDATE tombstones SET pushed = 0;")
+    }
+
+    /// 登出時刪掉其他裝置同步來的紀錄（例如共用電腦上登出後不該留下別台的內容）。
+    pub fn delete_remote(&self) -> rusqlite::Result<()> {
+        self.conn.lock().execute("DELETE FROM entries WHERE origin IS NOT NULL", []).map(drop)
     }
 
     /// 關閉「保存密碼與敏感內容」時，把已保存的密碼類紀錄一併刪掉。

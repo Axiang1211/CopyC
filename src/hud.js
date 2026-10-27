@@ -36,7 +36,7 @@ function restart(el, cls) {
 }
 
 function render(ev) {
-  const view = compose(ev.payload, ev.count);
+  const view = compose(ev.payload, ev.count, ev.via);
   leadSlot.replaceChildren(buildLead(view.lead));
   fill(titleEl, view.title);
   fill(detailEl, view.detail);

@@ -33,6 +33,10 @@
             <svg viewBox="0 0 24 24"><path d="M4.6 12a7.4 7.4 0 1 0 2.2-5.3"/><path d="M4.4 4.6v3.4h3.4"/><path d="M12 8v4.3l2.9 1.8"/></svg>
             <span data-i18n="nav.history">歷史紀錄</span>
           </a>
+          <a class="nav-item" href="#sync" data-target="sync">
+            <svg viewBox="0 0 24 24"><path d="M7 18.5h10.2a4 4 0 0 0 .6-8 5.8 5.8 0 0 0-11.2 1.3A3.4 3.4 0 0 0 7 18.5z"/><path d="M10 13.2l2-2 2 2M12 11.2v4.6"/></svg>
+            <span data-i18n="nav.sync">同步</span>
+          </a>
           <a class="nav-item" href="#display" data-target="display">
             <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/><rect x="9" y="6.8" width="6" height="2.4" rx="1.2"/></svg>
             <span data-i18n="nav.display">顯示與動畫</span>
@@ -189,7 +193,7 @@
             <div class="row">
               <div class="row-text">
                 <h3 data-i18n="history.enabled">保存複製紀錄</h3>
-                <p data-i18n="history.enabledDesc">保存在這台電腦上，不會上傳。圖片只保存縮圖，檔案只記錄位置</p>
+                <p data-i18n="history.enabledDesc"></p>
               </div>
               <input type="checkbox" class="switch" data-setting="historyEnabled" aria-label="保存複製紀錄" data-i18n-aria="history.enabled" />
             </div>
@@ -215,6 +219,67 @@
               <button class="btn" id="hist-clear" type="button" data-i18n="history.clearBtn">清除</button>
             </div>
           </div>
+        </section>
+
+        <!-- 跨裝置同步：Google 登入、Drive 備份、即時同步（預設關閉） -->
+        <section class="section" id="sync" data-title="同步" data-i18n-title="nav.sync">
+          <h2 class="section-title" data-i18n="sync.title">跨裝置同步</h2>
+          <div class="panel sync-card">
+            <div class="sync-head" id="sync-out">
+              <span class="sync-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 18.5h10.2a4 4 0 0 0 .6-8 5.8 5.8 0 0 0-11.2 1.3A3.4 3.4 0 0 0 7 18.5z"/><path d="M10 13.2l2-2 2 2M12 11.2v4.6"/></svg></span>
+              <div class="row-text">
+                <h3 data-i18n="sync.outTitle">在你的所有電腦之間同步</h3>
+                <p data-i18n="sync.outDesc">用 Google 帳號登入後，在一台電腦複製的文字，其他電腦可以直接貼上</p>
+              </div>
+              <button class="btn btn-google" id="sync-signin" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14a6 6 0 0 1 0-3.9V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5L6.4 10C7.2 7.8 9.4 6 12 6z"/></svg>
+                <span data-i18n="sync.signIn">使用 Google 登入</span>
+              </button>
+            </div>
+            <div class="sync-head" id="sync-in" hidden>
+              <span class="sync-avatar" id="sync-avatar" aria-hidden="true"></span>
+              <div class="row-text">
+                <h3 id="sync-email"></h3>
+                <p id="sync-state"></p>
+              </div>
+              <div class="sync-actions">
+                <button class="btn" id="sync-now" type="button" data-i18n="sync.now">立即同步</button>
+                <button class="btn" id="sync-signout" type="button" data-i18n="sync.signOut">登出</button>
+              </div>
+            </div>
+            <p class="sync-note" id="sync-note" hidden></p>
+          </div>
+          <div class="panel" id="sync-options">
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="sync.live">即時同步到其他電腦</h3>
+                <p data-i18n="sync.liveDesc">複製的文字加密後，傳到登入同一個 Google 帳號的其他電腦</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="cloudLive" aria-label="即時同步到其他電腦" data-i18n-aria="sync.live" />
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="sync.apply">直接放進剪貼簿</h3>
+                <p data-i18n="sync.applyDesc">其他電腦傳來的內容直接放進這台電腦的剪貼簿，馬上就能貼上</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="cloudApply" aria-label="直接放進剪貼簿" data-i18n-aria="sync.apply" />
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="sync.backup">備份歷史紀錄到 Google Drive</h3>
+                <p data-i18n="sync.backupDesc">加密存在你 Google Drive 的 App 專用資料夾</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="cloudBackup" aria-label="備份歷史紀錄到 Google Drive" data-i18n-aria="sync.backup" />
+            </div>
+            <div class="row" id="sync-delete-row">
+              <div class="row-text">
+                <h3 data-i18n="sync.delete">刪除雲端資料</h3>
+                <p data-i18n="sync.deleteDesc">刪除 Google Drive 裡 CopyC 的所有備份與金鑰，並在這台電腦登出</p>
+              </div>
+              <button class="btn" id="sync-delete" type="button" data-i18n="sync.deleteBtn">刪除</button>
+            </div>
+          </div>
+          <p class="sync-fine" data-i18n="sync.fine">只同步文字、連結、Email、電話與色碼，而且在你的電腦上就先加密。</p>
         </section>
 
         <!-- 顯示與動畫 -->
@@ -406,6 +471,13 @@
             </div>
             <div class="row">
               <div class="row-text">
+                <h3 data-i18n="general.onboarding">新手引導</h3>
+                <p data-i18n="general.onboardingDesc">再看一次第一次開啟時的設定引導</p>
+              </div>
+              <button class="btn" id="onboarding-open" type="button" data-i18n="general.onboardingBtn">開始</button>
+            </div>
+            <div class="row">
+              <div class="row-text">
                 <h3 data-i18n="general.reset">重設為預設值</h3>
                 <p data-i18n="general.resetDesc">還原所有顯示、內容與隱私設定（黑名單會恢復預設清單）</p>
               </div>
@@ -420,6 +492,103 @@
           </footer>
         </section>
       </main>
+    </div>
+    <!-- 首次使用引導：全新安裝第一次開啟時顯示，也可以從「一般」重新開啟 -->
+    <div class="ob" id="ob" hidden role="dialog" aria-modal="true" aria-labelledby="ob-heading">
+      <div class="ob-card">
+        <header class="ob-top">
+          <div class="ob-dots" id="ob-dots" aria-hidden="true"></div>
+          <button class="text-btn ob-skip" id="ob-skip" type="button" data-i18n="ob.skip">略過</button>
+        </header>
+        <div class="ob-steps">
+          <section class="ob-step" data-step="welcome">
+            <img class="ob-logo" src="assets/logo.png" alt="" />
+            <h2 id="ob-heading" data-i18n="ob.welcomeTitle">歡迎使用 CopyC</h2>
+            <p class="ob-lead" data-i18n="ob.welcomeLead"></p>
+            <div class="ob-free" role="note">
+              <span class="ob-free-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5l7 2.8v5.1c0 4.3-2.9 7.7-7 9.1-4.1-1.4-7-4.8-7-9.1V6.3z"/><path d="M9.3 12.2l1.9 1.9 3.6-3.7"/></svg></span>
+              <div>
+                <strong data-i18n="ob.freeTitle">CopyC 完全免費</strong>
+                <p data-i18n="ob.freeBody"></p>
+                <p class="ob-free-src" data-i18n="ob.freeSource"></p>
+              </div>
+            </div>
+            <div class="ob-lang">
+              <span class="ob-label" data-i18n="ob.language">介面語言</span>
+              <div class="ob-lang-list" id="ob-lang" role="radiogroup" aria-label="Language"></div>
+            </div>
+          </section>
+
+          <section class="ob-step" data-step="try" hidden>
+            <h2 data-i18n="ob.tryTitle">先試一次</h2>
+            <p class="ob-lead" id="ob-try-lead"></p>
+            <p class="ob-sample" id="ob-sample" data-i18n="ob.trySample"></p>
+            <div class="ob-try-row">
+              <button class="btn" id="ob-copy" type="button" data-i18n="ob.tryButton">幫我複製</button>
+              <span class="ob-try-status" id="ob-try-status" aria-live="polite"></span>
+            </div>
+          </section>
+
+          <section class="ob-step" data-step="position" hidden>
+            <h2 data-i18n="ob.positionTitle">提示要出現在哪裡？</h2>
+            <p class="ob-lead" data-i18n="ob.positionLead"></p>
+            <div class="ob-positions" id="ob-positions" role="radiogroup"></div>
+            <button class="btn" id="ob-preview" type="button" data-i18n="ob.preview">試一下提示</button>
+          </section>
+
+          <section class="ob-step" data-step="privacy" hidden>
+            <h2 data-i18n="ob.privacyTitle">歷史紀錄與隱私</h2>
+            <p class="ob-lead" data-i18n="ob.privacyLead"></p>
+            <div class="panel ob-panel">
+              <div class="row">
+                <div class="row-text">
+                  <h3 data-i18n="history.enabled">保存複製紀錄</h3>
+                  <p data-i18n="history.enabledDesc"></p>
+                </div>
+                <input type="checkbox" class="switch" data-setting="historyEnabled" aria-label="保存複製紀錄" data-i18n-aria="history.enabled" />
+              </div>
+              <div class="row">
+                <div class="row-text">
+                  <h3 data-i18n="history.secrets">保存密碼與敏感內容</h3>
+                  <p data-i18n="history.secretsDesc"></p>
+                </div>
+                <input type="checkbox" class="switch" data-setting="historySecrets" aria-label="保存密碼與敏感內容" data-i18n-aria="history.secrets" />
+              </div>
+              <div class="row">
+                <div class="row-text">
+                  <h3 data-i18n="privacy.mode">隱私打碼模式</h3>
+                  <p data-i18n="privacy.modeDesc"></p>
+                </div>
+                <input type="checkbox" class="switch" data-setting="privacyMode" aria-label="隱私打碼模式" data-i18n-aria="privacy.mode" />
+              </div>
+            </div>
+          </section>
+
+          <section class="ob-step" data-step="sync" hidden>
+            <span class="ob-hero-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 18.5h10.2a4 4 0 0 0 .6-8 5.8 5.8 0 0 0-11.2 1.3A3.4 3.4 0 0 0 7 18.5z"/><path d="M10 13.2l2-2 2 2M12 11.2v4.6"/></svg></span>
+            <h2 data-i18n="ob.syncTitle">在其他電腦也能貼上（選用）</h2>
+            <p class="ob-lead" data-i18n="ob.syncLead"></p>
+            <button class="btn btn-google" id="ob-signin" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14a6 6 0 0 1 0-3.9V7.5H3.1a10 10 0 0 0 0 9z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5L6.4 10C7.2 7.8 9.4 6 12 6z"/></svg>
+              <span data-i18n="sync.signIn">使用 Google 登入</span>
+            </button>
+            <p class="ob-sync-state" id="ob-sync-state" aria-live="polite"></p>
+            <p class="sync-fine" data-i18n="sync.fine"></p>
+          </section>
+
+          <section class="ob-step" data-step="done" hidden>
+            <span class="ob-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span>
+            <h2 data-i18n="ob.doneTitle">一切就緒！</h2>
+            <p class="ob-lead" id="ob-done-lead"></p>
+            <p class="ob-hint" data-i18n="ob.doneAgain"></p>
+          </section>
+        </div>
+        <footer class="ob-foot">
+          <button class="btn" id="ob-back" type="button" data-i18n="ob.back">上一步</button>
+          <span class="ob-count" id="ob-count"></span>
+          <button class="btn btn-primary" id="ob-next" type="button" data-i18n="ob.next">下一步</button>
+        </footer>
+      </div>
     </div>
   </body>
 </html>

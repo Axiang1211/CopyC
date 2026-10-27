@@ -30,6 +30,10 @@ jobs:
   macos:
     needs: test
     runs-on: macos-latest
+    # Google 登入（跨裝置同步）用的用戶端，建置時編進 App；沒設定時 App 會顯示「這個版本尚未開放同步」
+    env:
+      COPYC_GOOGLE_CLIENT_ID: ${{ secrets.COPYC_GOOGLE_CLIENT_ID }}
+      COPYC_GOOGLE_CLIENT_SECRET: ${{ secrets.COPYC_GOOGLE_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -73,6 +77,10 @@ jobs:
   windows:
     needs: test
     runs-on: windows-latest
+    # Google 登入（跨裝置同步）用的用戶端，建置時編進 App；沒設定時 App 會顯示「這個版本尚未開放同步」
+    env:
+      COPYC_GOOGLE_CLIENT_ID: ${{ secrets.COPYC_GOOGLE_CLIENT_ID }}
+      COPYC_GOOGLE_CLIENT_SECRET: ${{ secrets.COPYC_GOOGLE_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

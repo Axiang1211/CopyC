@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Privacy Policy — CopyC</title>
-    <meta name="description" content="CopyC works entirely on your computer. It never uploads, sells or shares anything you copy, and it does not collect personal data." />
+    <meta name="description" content="CopyC works on your computer by default; optional sync is encrypted on your computer first. We never sell or share what you copy, and we can't read it." />
     <link rel="canonical" href="https://www.copyc.app.dreamsworld.top/en/privacy/" />
     <link rel="alternate" hreflang="zh-Hant" href="https://www.copyc.app.dreamsworld.top/privacy/" />
     <link rel="alternate" hreflang="en" href="https://www.copyc.app.dreamsworld.top/en/privacy/" />
@@ -29,26 +29,26 @@
     <main class="legal">
       <div class="legal-hero">
         <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Privacy Policy</p>
-        <h1>Your clipboard stays on your computer.</h1>
-        <p class="legal-lead">CopyC works entirely on your computer. It never uploads, sells or shares anything you copy, and it does not collect personal data.</p>
-        <p class="legal-updated">Policy version 1.1 · Last updated: October 26, 2026 · Applies to all versions of CopyC (Windows, macOS and Microsoft Store versions)</p>
+        <h1>Your clipboard goes only where you decide.</h1>
+        <p class="legal-lead">By default CopyC works entirely on your computer. Only if you sign in with Google to turn on sync is text content <b>encrypted on your computer first</b> and then sent to your other computers and your own Google Drive. We never sell or share it, and we can't read what you copy.</p>
+        <p class="legal-updated">Policy version 1.2 · Last updated: October 27, 2026 · Applies to all versions of CopyC (Windows, macOS and Microsoft Store versions)</p>
       </div>
 
       <ul class="legal-points">
         <li>
           <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 19h20"/></svg></span>
-          <b>Processed locally</b>
-          <span>What you copy is only used for the confirmation and your history on your own computer. It never leaves it.</span>
+          <b>Local by default</b>
+          <span>Without sync, what you copy is only used for the confirmation and your history on your own computer. It never leaves it.</span>
+        </li>
+        <li>
+          <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <b>Sync is optional and encrypted</b>
+          <span>Sync is off by default. When on, content is encrypted on your computer, so the relay server can't read it. Images, files and passwords are never synced.</span>
         </li>
         <li>
           <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.4-3 8-7 9-4-1-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-          <b>No uploads, no tracking</b>
-          <span>No analytics, ads or trackers. The only network request is an update check, which you can turn off.</span>
-        </li>
-        <li>
-          <span class="legal-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M3 3l18 18"/></svg></span>
-          <b>No account</b>
-          <span>No sign-in, no account, and nothing is ever sold or shared.</span>
+          <b>No tracking, no selling</b>
+          <span>No analytics, ads or trackers, and nothing is ever sold or shared.</span>
         </li>
       </ul>
 
@@ -62,15 +62,30 @@
           </ul>
         </section>
         <section>
-          <h2>What CopyC stores</h2>
+          <h2>What CopyC stores on your computer</h2>
           <ul>
-            <li><b>History (from 1.0.8):</b> the text, links and color codes you copy, plus image thumbnails and file locations (paths), are saved in a <b>local database on your computer</b> so you can search and copy them again later. By default up to 1,000 entries are kept and the oldest are removed automatically. You can change the limit (100–5,000), delete single entries, clear everything, or turn history off in Preferences → History. Files themselves are never copied or stored.</li>
-            <li><b>Passwords are not saved:</b> content that password managers mark as confidential, and content that looks like a password or key, is <b>not</b> written to history by default. It is only saved if you turn on “Save passwords and sensitive content” (stored in plain text on your computer and still masked in the list). Turning that option off deletes the saved passwords.</li>
-            <li><b>App blocklist:</b> nothing copied from an app on your blocklist is written to history.</li>
+            <li><b>History:</b> the text, links and color codes you copy, plus image thumbnails and file locations (paths), are saved in a local database on your computer so you can search and copy them again later. By default up to 1,000 entries are kept and the oldest are removed automatically. You can change the limit (100–5,000), delete single entries, clear everything, or turn history off in Preferences → History. Files themselves are never copied or stored.</li>
+            <li><b>Passwords are not saved by default:</b> content that password managers mark as confidential, and content that looks like a password or key, is <b>not</b> written to history by default. It is only saved if you turn on “Save passwords and sensitive content” (stored in plain text on your computer and still masked in the list). Turning that option off deletes the saved passwords.</li>
+            <li><b>App blocklist:</b> nothing copied from an app on your blocklist is written to history or synced.</li>
             <li><b>“Recent copies” on the Overview:</b> up to 20 items, kept in memory only and gone when you quit the app.</li>
             <li><b>Your settings:</b> such as position, language and app blocklist, saved in a settings file on your computer.</li>
+            <li><b>If you sign in to sync:</b> your Google account email, your Google account ID, a randomly generated device ID, and the authorization token (refresh token) Google issues to CopyC. On Windows the token is kept in Credential Manager; on macOS in a settings file only you can read.</li>
           </ul>
-          <p>All of this stays on your computer and is <b>never uploaded</b> to any server. To remove everything, click Clear in Preferences → History and then uninstall. The Microsoft Store version deletes all of its data when uninstalled; for the other versions the data lives in “%APPDATA%\top.dreamsworld.copyc” on Windows and “~/Library/Application Support/top.dreamsworld.copyc” on macOS, and you can delete it by hand.</p>
+          <p>To remove everything, click Clear in Preferences → History (and, if you use sync, Delete cloud data in Preferences → Sync), then uninstall. The Microsoft Store version deletes all of its local data when uninstalled; for the other versions the data lives in “%APPDATA%\top.dreamsworld.copyc” on Windows and “~/Library/Application Support/top.dreamsworld.copyc” on macOS, and you can delete it by hand.</p>
+        </section>
+        <section>
+          <h2>Sync across devices (optional, from 1.1.0)</h2>
+          <p>Sync is <b>off by default</b> and only starts when you click “Sign in with Google” in Preferences → Sync or in the welcome guide. Once on:</p>
+          <ul>
+            <li><b>What is synced:</b> text content only — text, links, email addresses, phone numbers and color codes — together with when it was copied and this computer's name.</li>
+            <li><b>Never synced:</b> images, files and file paths, passwords and sensitive content (whether or not you save passwords), and anything copied from a blocklisted app. Single entries larger than 256 KB are not synced either.</li>
+            <li><b>End-to-end encryption:</b> content is encrypted on your computer with XChaCha20-Poly1305. The encryption key is created on the first device you sign in on and stored in CopyC's private folder in your Google Drive, so your other computers on the same Google account can decrypt it. Neither Cloudflare nor our server ever has the key or can read the content.</li>
+            <li><b>History backup (Google Drive):</b> encrypted entries are stored in the application data folder (appDataFolder) of your own Google Drive. This folder is hidden from your files, and CopyC can only access this folder — never your other files. Backups are kept for 90 days and then deleted by CopyC. Entries you delete on one computer are deleted on the others too.</li>
+            <li><b>Live sync (Cloudflare):</b> when you copy text, the encrypted content passes through our relay server on Cloudflare (copyc.app.dreamsworld.top) to your other computers that are signed in to the same Google account and online, which put it on their clipboard (you can turn this off). The relay only uses your Google sign-in token to tell which account you belong to; it <b>stores no content</b> and does not store your email. As with any network connection, Cloudflare processes connection details such as your IP address.</li>
+            <li><b>Google permissions:</b> CopyC only asks for openid, email (to show which account you signed in with) and drive.appdata (read and write CopyC's own hidden folder only).</li>
+          </ul>
+          <p>You can turn off live sync or history backup at any time. Sign out revokes CopyC's access, deletes the token on this computer and removes entries synced from your other computers; Delete cloud data removes all of CopyC's backups and keys from your Google Drive. You can also remove CopyC under <a href="https://myaccount.google.com/permissions" rel="noopener">third-party access in your Google Account</a>.</p>
+          <p>CopyC's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements: this data is only used to provide the sync features you can see, is never used for advertising, never sold and never given to third parties, and is not read by humans.</p>
         </section>
         <section>
           <h2>Masking and Privacy mode</h2>
@@ -78,32 +93,34 @@
         </section>
         <section>
           <h2>Update check</h2>
-          <p>The version downloaded from the website asks GitHub for the latest version number when it starts (and once a day while it keeps running), and lets you know if a new version is available on the website. The request contains nothing you copied and no personal data; as with any web request, GitHub sees your IP address. You can turn it off in Preferences → General → Check for updates. The Microsoft Store version is updated by the Store, does not perform this check and makes no network connections.</p>
+          <p>The version downloaded from the website asks GitHub for the latest version number when it starts (and once a day while it keeps running), and lets you know if a new version is available on the website. The request contains nothing you copied and no personal data; as with any web request, GitHub sees your IP address. You can turn it off in Preferences → General → Check for updates. The Microsoft Store version is updated by the Store and does not perform this check.</p>
         </section>
         <section>
           <h2>What CopyC never does</h2>
           <ul>
-            <li>It never sends what you copy or any personal data over the network, and contains no analytics, ads or trackers.</li>
-            <li>It has no accounts and needs no sign-in.</li>
+            <li>Without sync, it never sends what you copy over the network; with sync, it only sends encrypted text content.</li>
+            <li>It contains no analytics, ads or trackers.</li>
+            <li>It needs no CopyC account; sync uses your own Google account and is optional.</li>
             <li>It never sells or shares data with third parties.</li>
           </ul>
         </section>
         <section>
           <h2>This website</h2>
-          <p>This website (copyc.app.dreamsworld.top) is hosted on Cloudflare and uses cookie-free Cloudflare Web Analytics to count anonymous visits. The download section asks GitHub for the latest version number. None of this involves the app.</p>
+          <p>This website (copyc.app.dreamsworld.top) is hosted on Cloudflare and uses cookie-free Cloudflare Web Analytics to count anonymous visits. The download section asks GitHub for the latest version number. The live sync relay also runs on this domain, as described under “Sync across devices” above.</p>
         </section>
         <section>
           <h2>Children's privacy</h2>
-          <p>CopyC does not collect personal data from anyone, including children under 13.</p>
+          <p>CopyC does not collect personal data from anyone on our side, including children under 13. Sync requires a Google account and is subject to Google's age requirements for accounts.</p>
         </section>
         <section>
           <h2>Future features</h2>
-          <p>CopyC keeps growing. If a future version adds anything that lets data leave this computer (for example sending or syncing between your own devices), we will <b>update this policy before it ships</b>, explaining what is sent, where it goes, how long it is kept and how to turn it off. You will decide whether to turn such features on.</p>
+          <p>CopyC keeps growing. If a future version adds any new feature that lets data leave this computer (for example sending files directly over your local network), we will <b>update this policy before it ships</b>, explaining what is sent, where it goes, how long it is kept and how to turn it off. You will decide whether to turn such features on.</p>
         </section>
         <section>
           <h2>Changes to this policy</h2>
           <p>Every time this policy changes we update this page, raise the policy version above and describe the change in the version history below. If you don't agree with a revised policy, you can stop using and uninstall CopyC.</p>
           <ul>
+            <li><b>1.2 (October 27, 2026):</b> added “Sync across devices” for CopyC 1.1.0: Google sign-in, end-to-end encryption, Google Drive history backup, Cloudflare live sync, and how to turn it off and delete data; added the Google API Limited Use statement.</li>
             <li><b>1.1 (October 26, 2026):</b> added History for CopyC 1.0.8: what is stored locally, passwords not saved by default, how to clear or turn it off; added the “Future features” section.</li>
             <li><b>1.0 (October 18, 2026):</b> first version.</li>
           </ul>

@@ -2,6 +2,7 @@
 
 mod autostart;
 mod classify;
+mod cloud;
 mod commands;
 mod history;
 mod hud;
@@ -46,6 +47,11 @@ pub fn run() {
             commands::history_copy,
             commands::history_delete,
             commands::history_clear,
+            commands::cloud_status,
+            commands::cloud_sign_in,
+            commands::cloud_sign_out,
+            commands::cloud_sync_now,
+            commands::cloud_delete_all,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock
@@ -55,8 +61,9 @@ pub fn run() {
 
             let settings_path = app.path().app_config_dir()?.join("settings.json");
             let first_run = !settings_path.exists();
-            let settings = Settings::load(&settings_path);
+            let mut settings = Settings::load(&settings_path);
             if first_run {
+                settings.onboarded = false;
                 let _ = settings.save(&settings_path);
                 // 規格：安裝即用、預設開機自動啟動；使用者可在偏好設定 → 一般關閉
                 let handle = app.handle().clone();
@@ -70,6 +77,11 @@ pub fn run() {
                 }
                 Err(e) => eprintln!("copyc: 無法開啟歷史資料庫：{e}"),
             }
+
+            let config_dir = app.path().app_config_dir()?;
+            let cloud = cloud::Cloud::new(app.handle().clone(), config_dir, &app.state::<AppState>().settings.lock());
+            app.manage(cloud);
+            cloud::start(app.handle());
 
             let handle = app.handle();
             hud::create(handle)?;

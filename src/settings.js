@@ -65,6 +65,8 @@ function applyLanguage(lang) {
   renderUpdate();
   syncAll();
   renderHistoryPage();
+  renderCloud();
+  renderOnboarding();
 }
 
 /* ---------------- 錨點導航 + 滾動收縮頂欄 ---------------- */
@@ -839,6 +841,8 @@ function syncAll() {
   $('#chip-count').textContent = t('content.count', on, chips.length);
 
   renderTags();
+  renderCloud();
+  renderOnboarding();
   selects.forEach((s) => s.sync());
   renderHeroPreview();
   renderGallery();
@@ -947,7 +951,8 @@ function renderHistoryPage() {
       historyText(item, text);
       const meta = document.createElement('p');
       meta.className = 'history-meta';
-      meta.textContent = [t(`history.cat.${item.category}`), item.source, historyTime(item.at)].filter(Boolean).join(' · ');
+      const from = item.origin ? t('history.from', item.origin) : item.source;
+      meta.textContent = [t(`history.cat.${item.category}`), from, historyTime(item.at)].filter(Boolean).join(' · ');
       body.append(text, meta);
 
       const actions = document.createElement('div');
@@ -1034,6 +1039,202 @@ $('#hist-clear').addEventListener('click', (e) => {
   invoke('history_clear').catch(() => {});
 });
 
+/* ---------------- 跨裝置同步 ---------------- */
+
+let cloud = null;
+
+async function refreshCloud() {
+  cloud = await invoke('cloud_status').catch(() => null);
+  renderCloud();
+  renderOnboarding();
+}
+
+/** 需要按兩次才執行的按鈕（登出、刪除雲端資料）。 */
+function confirmClick(btn, idleKey, action) {
+  let armed = 0;
+  const reset = () => {
+    clearTimeout(armed);
+    armed = 0;
+    btn.textContent = t(idleKey);
+    btn.classList.remove('is-armed');
+  };
+  btn.addEventListener('click', () => {
+    if (!armed) {
+      btn.textContent = t('sync.signOutConfirm');
+      btn.classList.add('is-armed');
+      armed = setTimeout(reset, 3000);
+      return;
+    }
+    reset();
+    action();
+  });
+}
+
+function renderCloud() {
+  if (!cloud || !settings) return;
+  const signedIn = cloud.signedIn;
+  $('#sync-out').hidden = signedIn;
+  $('#sync-in').hidden = !signedIn;
+  $('#sync-options').classList.toggle('is-off', !signedIn);
+  $('#sync-delete-row').hidden = !signedIn;
+  $$('#sync-options input.switch').forEach((el) => (el.disabled = !signedIn));
+  for (const id of ['#sync-signin', '#ob-signin']) {
+    const btn = $(id);
+    btn.disabled = !cloud.available || cloud.busy;
+    btn.querySelector('span').textContent = t(cloud.busy ? 'sync.signingIn' : 'sync.signIn');
+  }
+
+  if (signedIn) {
+    $('#sync-email').textContent = cloud.email ?? '';
+    $('#sync-avatar').textContent = [...(cloud.email ?? '?')][0];
+    const parts = [t('sync.device', cloud.deviceName)];
+    if (settings.cloudLive) parts.push(t(cloud.live === 'on' ? 'sync.liveOn' : 'sync.liveConnecting'));
+    if (cloud.syncing) parts.push(t('sync.syncing'));
+    else if (settings.cloudBackup && cloud.lastSync) parts.push(t('sync.lastSync', timeAgo(cloud.lastSync)));
+    const dot = document.createElement('span');
+    dot.className = `sync-state-dot${cloud.live === 'on' ? ' is-on' : ''}`;
+    $('#sync-state').replaceChildren(dot, parts.join(' · '));
+  }
+
+  const note = $('#sync-note');
+  const error = cloud.error && cloud.error !== 'cancelled' ? t(`sync.err.${cloud.error}`) : '';
+  const text = cloud.available ? error : t('sync.unavailable');
+  note.textContent = text;
+  note.hidden = !text;
+}
+
+async function signIn() {
+  await invoke('cloud_sign_in', { page: t('sync.browserDone') }).catch(() => {});
+  refreshCloud();
+}
+
+$('#sync-signin').addEventListener('click', signIn);
+$('#sync-now').addEventListener('click', () => invoke('cloud_sync_now'));
+confirmClick($('#sync-signout'), 'sync.signOut', () => invoke('cloud_sign_out').finally(refreshCloud));
+confirmClick($('#sync-delete'), 'sync.deleteBtn', () => invoke('cloud_delete_all').catch(() => {}).finally(refreshCloud));
+
+/* ---------------- 首次使用引導 ---------------- */
+
+const ob = $('#ob');
+const OB_STEPS = ['welcome', 'try', 'position', 'privacy', 'sync', 'done'];
+const OB_LANGS = [
+  ['zh-hant', '繁體中文', 'zh-Hant'],
+  ['zh-hans', '简体中文', 'zh-Hans'],
+  ['en', 'English', 'en'],
+  ['ja', '日本語', 'ja'],
+  ['ko', '한국어', 'ko'],
+  ['fr', 'Français', 'fr'],
+  ['ms', 'Bahasa Melayu', 'ms'],
+];
+const OB_POSITIONS = ['top', 'cursor', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
+let obSteps = OB_STEPS;
+let obIndex = 0;
+let obCopyBase = 0;
+let obCopied = false;
+
+function openOnboarding() {
+  // 這個版本沒有設定 Google 登入時略過同步那一步
+  obSteps = OB_STEPS.filter((s) => s !== 'sync' || cloud?.available);
+  obIndex = 0;
+  obCopied = false;
+  ob.hidden = false;
+  renderOnboarding();
+  $('#ob-next').focus();
+}
+
+function closeOnboarding() {
+  ob.hidden = true;
+  getSelection()?.removeAllRanges();
+  if (!settings.onboarded) set('onboarded', true);
+}
+
+function selectSample() {
+  const range = document.createRange();
+  range.selectNodeContents($('#ob-sample'));
+  const sel = getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function obStep(index) {
+  obIndex = Math.max(0, Math.min(index, obSteps.length - 1));
+  if (obSteps[obIndex] === 'try') {
+    obCopyBase = overview.stats.copies;
+    obCopied = false;
+  }
+  renderOnboarding();
+  if (obSteps[obIndex] === 'try') selectSample();
+}
+
+function pill(cls, label, checked, onClick) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = cls;
+  b.setAttribute('role', 'radio');
+  b.setAttribute('aria-checked', String(checked));
+  if (typeof label === 'string') b.textContent = label;
+  else b.append(...label);
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function renderOnboarding() {
+  if (ob.hidden || !settings || !overview) return;
+  const step = obSteps[obIndex];
+  $$('.ob-step', ob).forEach((el) => (el.hidden = el.dataset.step !== step));
+  $('#ob-dots').replaceChildren(
+    ...obSteps.map((_, i) => {
+      const d = document.createElement('span');
+      d.className = i === obIndex ? 'is-active' : i < obIndex ? 'is-done' : '';
+      return d;
+    }),
+  );
+  $('#ob-count').textContent = t('ob.step', obIndex + 1, obSteps.length);
+  $('#ob-back').hidden = obIndex === 0;
+  const last = obIndex === obSteps.length - 1;
+  $('#ob-next').textContent = t(last ? 'ob.done' : 'ob.next');
+  $('#ob-skip').hidden = last;
+
+  $('#ob-lang').replaceChildren(
+    ...OB_LANGS.map(([code, name, dict]) =>
+      pill('ob-pill', name, getLang() === dict, () => set('language', code)),
+    ),
+  );
+  $('#ob-try-lead').textContent = t('ob.tryLead', overview.platform === 'macos' ? '⌘C' : 'Ctrl+C');
+  const status = $('#ob-try-status');
+  status.textContent = t(obCopied ? 'ob.tryDone' : 'ob.tryWaiting');
+  status.classList.toggle('is-done', obCopied);
+  $('#ob-positions').replaceChildren(
+    ...OB_POSITIONS.map((p) => {
+      const screen = document.createElement('span');
+      screen.className = 'ob-screen';
+      screen.dataset.pos = p;
+      screen.append(document.createElement('i'));
+      return pill('ob-pos', [screen, t(`pos.${p}`)], settings.position === p, () => set('position', p));
+    }),
+  );
+  const signedIn = cloud?.signedIn;
+  $('#ob-signin').hidden = Boolean(signedIn);
+  $('#ob-sync-state').textContent = signedIn ? t('ob.syncDone', cloud.email ?? '') : '';
+  $('#ob-done-lead').textContent = t(overview.platform === 'macos' ? 'ob.doneMac' : 'ob.doneWin');
+}
+
+$('#ob-next').addEventListener('click', () => (obIndex === obSteps.length - 1 ? closeOnboarding() : obStep(obIndex + 1)));
+$('#ob-back').addEventListener('click', () => obStep(obIndex - 1));
+$('#ob-skip').addEventListener('click', closeOnboarding);
+$('#ob-preview').addEventListener('click', () => invoke('preview_hud', { kind: 'text' }));
+$('#ob-signin').addEventListener('click', signIn);
+$('#onboarding-open').addEventListener('click', openOnboarding);
+$('#ob-copy').addEventListener('click', async () => {
+  const text = $('#ob-sample').textContent;
+  selectSample();
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch {}
+  if (!ok) await navigator.clipboard?.writeText(text).catch(() => {});
+});
+
 async function refreshOverview() {
   overview = await invoke('get_overview');
   if (overview.lang !== getLang()) applyLanguage(overview.lang);
@@ -1041,6 +1242,11 @@ async function refreshOverview() {
   setStat($('#stat-confirms'), overview.stats.confirms);
   renderHistory();
   renderUpdate();
+  // 引導的「先試一次」：複製次數增加就代表成功了
+  if (!ob.hidden && !obCopied && overview.stats.copies > obCopyBase) {
+    obCopied = true;
+    renderOnboarding();
+  }
 }
 
 async function init() {
@@ -1055,6 +1261,9 @@ async function init() {
   syncAll();
   loadHistory();
   activate('overview');
+  await refreshCloud();
+  // 全新安裝第一次開啟：顯示引導（舊版升級上來的不會）
+  if (!settings.onboarded) openOnboarding();
 
   listen('settings:changed', (e) => {
     settings = e.payload;
@@ -1064,7 +1273,12 @@ async function init() {
   });
   listen('history:changed', refreshHistory);
   listen('overview:changed', debounce(refreshOverview, 150));
-  setInterval(() => overview && renderHistory(), 30_000);
+  listen('cloud:changed', debounce(refreshCloud, 80));
+  setInterval(() => {
+    if (!overview) return;
+    renderHistory();
+    renderCloud();
+  }, 30_000);
 }
 
 // 偏好設定的快捷鍵：⌘/Ctrl + W 關閉
