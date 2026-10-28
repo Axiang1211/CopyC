@@ -4,6 +4,7 @@
 // - /sync/ws：App 的即時同步中繼（見 relay.js）。
 
 import { googleKeys, verifyIdToken } from './google-jwt.js';
+import { deviceParam } from './relay-route.js';
 
 export { Relay } from './relay.js';
 
@@ -25,8 +26,10 @@ async function sync(request, env) {
   }
   if (!sub) return new Response('Unauthorized', { status: 401 });
   const room = env.RELAY.get(env.RELAY.idFromName(sub));
-  // 只轉交升級請求本身，token 不會傳進房間
-  return room.fetch(new Request('https://relay.internal/ws', { headers: { Upgrade: 'websocket' } }));
+  // 只轉交升級請求與裝置 ID，token 不會傳進房間
+  const device = deviceParam(request.url);
+  const inner = `https://relay.internal/ws${device ? `?d=${device}` : ''}`;
+  return room.fetch(new Request(inner, { headers: { Upgrade: 'websocket' } }));
 }
 
 export default {

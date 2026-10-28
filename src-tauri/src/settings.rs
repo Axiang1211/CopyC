@@ -104,6 +104,8 @@ pub struct Settings {
     pub cloud_live: bool,
     /// 其他電腦即時傳來的內容直接放進這台電腦的剪貼簿。
     pub cloud_apply: bool,
+    /// 即時同步時，同一個網路裡的電腦直接互傳（不經過網際網路）。
+    pub cloud_lan: bool,
 }
 
 /// 「最多保留筆數」可選的值。
@@ -143,6 +145,7 @@ impl Default for Settings {
             cloud_backup: true,
             cloud_live: true,
             cloud_apply: true,
+            cloud_lan: true,
         }
     }
 }

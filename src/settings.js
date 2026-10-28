@@ -1099,6 +1099,8 @@ function renderCloud() {
   $('#sync-options').classList.toggle('is-off', !signedIn);
   $('#sync-delete-row').hidden = !signedIn;
   $$('#sync-options input.switch').forEach((el) => (el.disabled = !signedIn));
+  // 區域網路直傳是即時同步的一部分
+  $('#sync-options [data-setting="cloudLan"]').disabled = !signedIn || !settings.cloudLive;
   for (const id of ['#sync-signin', '#ob-signin']) {
     const btn = $(id);
     btn.disabled = !cloud.available || cloud.busy;
@@ -1110,6 +1112,7 @@ function renderCloud() {
     $('#sync-avatar').textContent = [...(cloud.email ?? '?')][0];
     const parts = [t('sync.device', cloud.deviceName)];
     if (settings.cloudLive) parts.push(t(cloud.live === 'on' ? 'sync.liveOn' : 'sync.liveConnecting'));
+    if (settings.cloudLive && settings.cloudLan && cloud.lanPeers) parts.push(t('sync.lanPeers', cloud.lanPeers));
     if (cloud.syncing) parts.push(t('sync.syncing'));
     else if (settings.cloudBackup && cloud.lastSync) parts.push(t('sync.lastSync', timeAgo(cloud.lastSync)));
     const dot = document.createElement('span');

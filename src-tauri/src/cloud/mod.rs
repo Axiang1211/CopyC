@@ -4,12 +4,15 @@
 //!   App 專用資料夾，其他裝置下載後合併進自己的歷史紀錄。
 //! - **即時同步**（[`relay`]）：複製的文字加密後經 Cloudflare 轉發給同一個 Google 帳號的其他電腦，
 //!   對方直接放進剪貼簿。伺服器只轉發、不保存，也解不開內容。
+//! - **區域網路直傳**（[`lan`]）：同一個帳號的電腦在同一個網路裡時直接互傳，
+//!   沒有直接收到的裝置才經由上面的中繼轉送。
 //!
 //! 圖片、檔案與密碼類內容永遠不會離開這台電腦。
 
 pub mod auth;
 mod crypto;
 mod drive;
+mod lan;
 mod relay;
 mod sync;
 
@@ -19,6 +22,7 @@ use drive::{Drive, File};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::VecDeque,
     path::PathBuf,
     time::{Duration, Instant},
 };
@@ -32,6 +36,8 @@ const KEY_FILE: &str = "copyc-key-v1";
 pub const LIVE_MAX_BYTES: usize = 64 * 1024;
 /// 其他裝置傳來的內容寫進剪貼簿後，這段時間內看到同一份內容就當成同步來的，不再轉發。
 const ECHO_WINDOW: Duration = Duration::from_secs(5);
+/// 記住最近收過的幾則即時同步（同一則可能從區域網路與中繼各收到一次）。
+const SEEN_MAX: usize = 64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -78,12 +84,13 @@ pub enum Live {
     On,
 }
 
-/// 背景工作要不要跑：登入狀態與兩個開關。
+/// 背景工作要不要跑：登入狀態與各個開關。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 struct Config {
     signed_in: bool,
     backup: bool,
     live: bool,
+    lan: bool,
 }
 
 #[derive(Default)]
@@ -106,6 +113,8 @@ pub struct Status {
     busy: bool,
     syncing: bool,
     live: Live,
+    /// 區域網路裡找到幾台同帳號的電腦
+    lan_peers: usize,
     error: Option<CloudError>,
 }
 
@@ -130,6 +139,8 @@ pub struct Cloud {
     sync_now: Notify,
     relay_tx: Mutex<Option<mpsc::UnboundedSender<String>>>,
     incoming: Mutex<Option<Incoming>>,
+    lan: lan::Lan,
+    seen: Mutex<VecDeque<u64>>,
 }
 
 impl Cloud {
@@ -148,7 +159,12 @@ impl Cloud {
                 let _ = std::fs::write(dir.join(DEVICE_FILE), &id);
                 id
             });
-        let config = Config { signed_in: account.is_some(), backup: settings.cloud_backup, live: settings.cloud_live };
+        let config = Config {
+            signed_in: account.is_some(),
+            backup: settings.cloud_backup,
+            live: settings.cloud_live,
+            lan: settings.cloud_lan,
+        };
         Self {
             app,
             http: reqwest::Client::builder()
@@ -168,6 +184,8 @@ impl Cloud {
             sync_now: Notify::new(),
             relay_tx: Mutex::new(None),
             incoming: Mutex::new(None),
+            lan: lan::Lan::default(),
+            seen: Mutex::new(VecDeque::new()),
         }
     }
 
@@ -183,6 +201,7 @@ impl Cloud {
             busy: rt.busy,
             syncing: rt.syncing,
             live: rt.live,
+            lan_peers: self.lan.count(),
             error: rt.error,
         }
     }
@@ -199,7 +218,8 @@ impl Cloud {
     /// 設定變了（開關）時呼叫，讓背景工作開始或停止。
     pub fn apply_settings(&self, settings: &Settings) {
         self.config.send_if_modified(|c| {
-            let next = Config { backup: settings.cloud_backup, live: settings.cloud_live, ..*c };
+            let next =
+                Config { backup: settings.cloud_backup, live: settings.cloud_live, lan: settings.cloud_lan, ..*c };
             std::mem::replace(c, next) != next
         });
     }
@@ -400,14 +420,46 @@ impl Cloud {
 
     /* ---------------- 即時同步 ---------------- */
 
-    /// 這台電腦複製了文字：加密後轉發給其他裝置。
+    /// 這台電腦複製了文字：加密後先直接傳給同一個網路裡的裝置，其餘的再交給中繼轉送。
     pub fn send_live(&self, text: &str) {
-        if text.len() > LIVE_MAX_BYTES || !self.config.borrow().live {
+        let config = *self.config.borrow();
+        if text.len() > LIVE_MAX_BYTES || !config.live {
             return;
         }
         let Some(key) = self.key.lock().clone() else { return };
-        let Some(tx) = self.relay_tx.lock().clone() else { return };
-        let _ = tx.send(relay::encode(&key, text, &self.device_name));
+        let (_, data) = relay::seal(&key, text, &self.device_name);
+        let targets = if config.lan { self.lan.targets() } else { Vec::new() };
+        if targets.is_empty() {
+            if let Some(tx) = self.relay_tx.lock().clone() {
+                let _ = tx.send(relay::wire(&data, &[]));
+            }
+            return;
+        }
+        let app = self.app.clone();
+        tauri::async_runtime::spawn(async move {
+            let cloud = app.state::<Cloud>();
+            let delivered = lan::deliver(&cloud, targets, relay::wire(&data, &[])).await;
+            let tx = cloud.relay_tx.lock().clone();
+            if let Some(tx) = tx {
+                let _ = tx.send(relay::wire(&data, &delivered));
+            }
+        });
+    }
+
+    /// 這則即時同步是第一次收到嗎？（舊版送來的沒有編號，一律當成第一次。）
+    fn first_time(&self, id: u64) -> bool {
+        if id == 0 {
+            return true;
+        }
+        let mut seen = self.seen.lock();
+        if seen.contains(&id) {
+            return false;
+        }
+        if seen.len() == SEEN_MAX {
+            seen.pop_front();
+        }
+        seen.push_back(id);
+        true
     }
 
     /// 剪貼簿管線看到一份內容：如果是剛剛從其他裝置寫進來的，回傳那台裝置的名稱。
@@ -460,4 +512,6 @@ pub fn start(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { sync::run(a).await });
     let a = app.clone();
     tauri::async_runtime::spawn(async move { relay::run(a).await });
+    let a = app.clone();
+    tauri::async_runtime::spawn(async move { lan::run(a).await });
 }

@@ -1,5 +1,6 @@
 //! 即時同步（C）：連到官網 Worker 的中繼（Cloudflare Durable Object），同一個 Google 帳號的裝置
 //! 在同一個房間。複製的文字加密後送出，伺服器轉發給房間裡的其他裝置，不保存、也解不開。
+//! 已經在區域網路直接收到的裝置（見 [`super::lan`]）列在 `skip`，伺服器不會再轉給它們。
 
 use super::{crypto::Key, Cloud, CloudError, Live};
 use crate::{classify, state::AppState};
@@ -14,28 +15,39 @@ pub const RELAY_URL: &str = "wss://www.copyc.app.dreamsworld.top/sync/ws";
 /// 保持連線：Durable Object 會自動回 "pong"，不會因此被喚醒。
 const PING: Duration = Duration::from_secs(30);
 
-/// 線路上的訊息：只有密文。
+/// 線路上的訊息：只有密文，以及（送往中繼時）已經在區域網路收到的裝置 ID。
 #[derive(Serialize, Deserialize)]
 struct Wire {
     v: u32,
     data: String,
+    #[serde(default, skip_serializing_if = "<[_]>::is_empty")]
+    skip: Vec<String>,
 }
 
 /// 密文裡的內容。
 #[derive(Serialize, Deserialize)]
-struct Clip {
-    text: String,
-    device: String,
-    at: u64,
+pub(super) struct Clip {
+    pub text: String,
+    pub device: String,
+    pub at: u64,
+    /// 每次複製一個隨機編號：同一份內容可能從區域網路與中繼各收到一次，收過就略過。舊版沒有這個欄位（0）。
+    #[serde(default)]
+    pub id: u64,
 }
 
-pub fn encode(key: &Key, text: &str, device: &str) -> String {
-    let clip = Clip { text: text.to_string(), device: device.to_string(), at: crate::state::now_ms() };
-    let sealed = key.seal(&serde_json::to_vec(&clip).unwrap_or_default());
-    serde_json::to_string(&Wire { v: 1, data: STANDARD.encode(sealed) }).unwrap_or_default()
+/// 加密一次複製的內容，回傳 (編號, 密文)。區域網路與中繼送的是同一份密文。
+pub fn seal(key: &Key, text: &str, device: &str) -> (u64, String) {
+    let id = rand::random::<u64>() | 1;
+    let clip = Clip { text: text.to_string(), device: device.to_string(), at: crate::state::now_ms(), id };
+    (id, STANDARD.encode(key.seal(&serde_json::to_vec(&clip).unwrap_or_default())))
 }
 
-fn decode(key: &Key, msg: &str) -> Option<Clip> {
+/// 包成線路訊息；`skip` 是不需要中繼再轉送的裝置 ID。
+pub fn wire(data: &str, skip: &[String]) -> String {
+    serde_json::to_string(&Wire { v: 1, data: data.to_string(), skip: skip.to_vec() }).unwrap_or_default()
+}
+
+pub(super) fn decode(key: &Key, msg: &str) -> Option<Clip> {
     let wire: Wire = serde_json::from_str(msg).ok()?;
     let plain = key.open(&STANDARD.decode(wire.data).ok()?)?;
     serde_json::from_slice(&plain).ok()
@@ -86,7 +98,9 @@ async fn connect(
 ) -> Result<(), CloudError> {
     let key = cloud.key().await?;
     let id_token = cloud.id_token().await?;
-    let mut req = RELAY_URL.into_client_request().map_err(|_| CloudError::Network)?;
+    // 帶上這台裝置的 ID，中繼才知道 `skip` 指的是哪條連線
+    let url = format!("{RELAY_URL}?d={}", cloud.device_id);
+    let mut req = url.into_client_request().map_err(|_| CloudError::Network)?;
     let auth = format!("Bearer {id_token}").parse().map_err(|_| CloudError::Network)?;
     req.headers_mut().insert("Authorization", auth);
     let (ws, _) = match tokio_tungstenite::connect_async(req).await {
@@ -118,7 +132,7 @@ async fn connect(
         tokio::select! {
             msg = stream.next() => match msg {
                 Some(Ok(Message::Text(text))) if text != "pong" => {
-                    if !receive(app, cloud, &key, &text) {
+                    if !receive(app, cloud, &key, &text, None) {
                         // 解不開：可能另一台裝置換了金鑰，重新讀取後再連
                         *cloud.key.lock() = None;
                         return Ok(());
@@ -143,9 +157,16 @@ async fn connect(
     }
 }
 
-/// 收到其他裝置的內容。回傳 false 表示解不開。
-fn receive(app: &AppHandle, cloud: &Cloud, key: &Key, msg: &str) -> bool {
+/// 收到其他裝置的內容（經中繼或區域網路）。回傳 false 表示解不開。
+/// `max_age`：區域網路收到的內容太舊就不採用，避免有人錄下封包之後重播。
+pub(super) fn receive(app: &AppHandle, cloud: &Cloud, key: &Key, msg: &str, max_age: Option<Duration>) -> bool {
     let Some(clip) = decode(key, msg) else { return false };
+    if max_age.is_some_and(|age| crate::state::now_ms().abs_diff(clip.at) > age.as_millis() as u64) {
+        return true;
+    }
+    if !cloud.first_time(clip.id) {
+        return true;
+    }
     let Some(entry) = classify::remote_entry(&clip.text) else { return true };
     let hash = classify::text_hash(&clip.text);
     let state = app.state::<AppState>();
@@ -173,11 +194,25 @@ mod tests {
     #[test]
     fn wire_format_hides_content() {
         let key = Key::generate();
-        let msg = encode(&key, "hello 世界", "MY-PC");
-        assert!(!msg.contains("hello") && !msg.contains("MY-PC"));
+        let (id, data) = seal(&key, "hello 世界", "MY-PC");
+        let msg = wire(&data, &[]);
+        assert!(!msg.contains("hello") && !msg.contains("MY-PC") && !msg.contains("skip"));
         let clip = decode(&key, &msg).unwrap();
-        assert_eq!((clip.text.as_str(), clip.device.as_str()), ("hello 世界", "MY-PC"));
+        assert_eq!((clip.text.as_str(), clip.device.as_str(), clip.id), ("hello 世界", "MY-PC", id));
+        assert_ne!(id, 0);
+        // 送往中繼時帶上不用再轉送的裝置，密文不變
+        let relayed = wire(&data, &["0123456789abcdef".into()]);
+        assert!(relayed.contains(r#""skip":["0123456789abcdef"]"#));
+        assert_eq!(decode(&key, &relayed).unwrap().id, id);
         assert!(decode(&Key::generate(), &msg).is_none());
         assert!(decode(&key, "not json").is_none());
+    }
+
+    #[test]
+    fn old_clients_without_id_still_decode() {
+        let key = Key::generate();
+        let old = serde_json::json!({ "text": "hi", "device": "OLD", "at": 1 }).to_string();
+        let msg = wire(&STANDARD.encode(key.seal(old.as_bytes())), &[]);
+        assert_eq!(decode(&key, &msg).unwrap().id, 0);
     }
 }

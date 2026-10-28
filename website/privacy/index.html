@@ -31,7 +31,7 @@
         <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>隱私權政策</p>
         <h1>你的剪貼簿，由你決定去哪裡。</h1>
         <p class="legal-lead">CopyC 預設完全在本機運作。只有你自己登入 Google 開啟同步時，文字類內容才會<b>先在你的電腦上加密</b>，再傳到你的其他電腦與你自己的 Google Drive。我們不販售、不分享，也看不到你複製的內容。</p>
-        <p class="legal-updated">政策版本 1.2・最後更新：2026 年 10 月 27 日・適用 CopyC 所有版本（Windows、macOS、Microsoft Store 版）</p>
+        <p class="legal-updated">政策版本 1.3・最後更新：2026 年 10 月 28 日・適用 CopyC 所有版本（Windows、macOS、Microsoft Store 版）</p>
       </div>
 
       <ul class="legal-points">
@@ -81,7 +81,8 @@
             <li><b>永遠不會同步：</b>圖片、檔案與檔案路徑、密碼與敏感內容（不論你是否開啟「保存密碼」），以及黑名單 App 複製的內容。單筆超過 256 KB 的文字也不會同步。</li>
             <li><b>端對端加密：</b>內容在你的電腦上就以 XChaCha20-Poly1305 加密。加密金鑰在你第一台登入的裝置上產生，存放在你 Google Drive 的 CopyC 專用資料夾，讓你同一個 Google 帳號的其他電腦可以解密。Cloudflare 與我們的伺服器都拿不到金鑰，也解不開內容。</li>
             <li><b>歷史備份（Google Drive）：</b>加密後的紀錄存在你自己 Google Drive 的「應用程式專用資料夾」（appDataFolder）。這個資料夾在雲端硬碟裡看不到，CopyC 也只能存取這個資料夾，看不到你的其他檔案。備份保留 90 天，之後由 CopyC 自動刪除。你在一台電腦刪除的紀錄，其他電腦也會跟著刪除。</li>
-            <li><b>即時同步（Cloudflare）：</b>你複製文字時，加密後的內容會經由我們在 Cloudflare 上的中繼伺服器（copyc.app.dreamsworld.top）轉給你登入同一個 Google 帳號、正在連線的其他電腦，對方會直接放進剪貼簿（可以關閉）。中繼伺服器只用你的 Google 登入憑證確認你是哪個帳號，<b>不保存</b>任何內容，也不保存你的 Email；和一般網路連線一樣，Cloudflare 會處理你的 IP 位址等連線資訊。</li>
+            <li><b>即時同步（Cloudflare）：</b>你複製文字時，加密後的內容會經由我們在 Cloudflare 上的中繼伺服器（copyc.app.dreamsworld.top）轉給你登入同一個 Google 帳號、正在連線的其他電腦，對方會直接放進剪貼簿（可以關閉）。中繼伺服器只用你的 Google 登入憑證確認你是哪個帳號，並收到每台電腦隨機產生的裝置編號（用來避免重複轉送），<b>不保存</b>任何內容，也不保存你的 Email；和一般網路連線一樣，Cloudflare 會處理你的 IP 位址等連線資訊。</li>
+            <li><b>同一個網路直接互傳（CopyC 1.1.1 起）：</b>開啟即時同步時，CopyC 會在你目前連的網路（例如家裡或公司的 Wi-Fi）裡定期廣播一個加密的訊號，找出同一個網路裡、登入同一個 Google 帳號的其他電腦，再把加密後的內容直接傳給它們，不經過網際網路；沒有直接收到的電腦才改由上面的 Cloudflare 中繼轉送。訊號裡的裝置編號、名稱與連線埠同樣用你的金鑰加密，同一個網路裡的其他人看不到內容，也認不出是哪個帳號，只看得到這台電腦的 IP 位址正在發送訊號。這項功能可以在「偏好設定 → 同步 → 同一個網路直接互傳」關閉。</li>
             <li><b>Google 授權範圍：</b>CopyC 只要求 openid、email（顯示你登入的帳號）與 drive.appdata（只能讀寫 CopyC 自己的隱藏資料夾）。</li>
           </ul>
           <p>你可以隨時關閉「即時同步」或「備份歷史紀錄」；按「登出」會撤銷授權、刪除這台電腦上的授權憑證，並刪除其他電腦同步來的紀錄；按「刪除雲端資料」會刪除 Google Drive 裡 CopyC 的所有備份與金鑰。你也可以在 <a href="https://myaccount.google.com/permissions" rel="noopener">Google 帳戶的第三方存取權</a>移除 CopyC。</p>
@@ -120,6 +121,7 @@
           <h2>政策更新</h2>
           <p>每次修改，我們都會更新本頁、提高上方的政策版本號，並在下面的版本紀錄寫明改了什麼。如果你不同意修改後的內容，可以停止使用並解除安裝 CopyC。</p>
           <ul>
+            <li><b>1.3（2026 年 10 月 28 日）：</b>配合 CopyC 1.1.1 新增「同一個網路直接互傳」：說明區域網路裡傳送什麼、如何加密、如何關閉；中繼伺服器會收到隨機的裝置編號。</li>
             <li><b>1.2（2026 年 10 月 27 日）：</b>配合 CopyC 1.1.0 新增「跨裝置同步」：Google 登入、端對端加密、Google Drive 歷史備份、Cloudflare 即時同步，以及如何關閉與刪除資料；新增 Google API 有限使用聲明。</li>
             <li><b>1.1（2026 年 10 月 26 日）：</b>配合 CopyC 1.0.8 新增「歷史紀錄」：說明本機保存的內容、預設不保存密碼、如何清除或關閉；新增「之後的新功能」一節。</li>
             <li><b>1.0（2026 年 10 月 18 日）：</b>首次發佈。</li>

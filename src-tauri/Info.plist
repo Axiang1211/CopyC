@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Tauri 建置時會合併進 App 的 Info.plist。區域網路直傳（選用的即時同步）需要 macOS 的「本地網路」權限。 -->
+<plist version="1.0">
+<dict>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>CopyC sends what you copy directly to your other computers on the same network (only when sync is on). 開啟同步時，CopyC 會把複製的內容直接傳給同一個網路裡、登入同一帳號的其他電腦。</string>
+</dict>
+</plist>
