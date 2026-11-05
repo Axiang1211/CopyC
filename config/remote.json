@@ -1,7 +1,38 @@
 {
   "$comment": "遠端資料：修改後推上 GitHub，Actions 會簽章並放到官網（見 config/README.md）。App 會在啟動時與每 6 小時下載一次。",
-  "notices": [],
+  "notices": [
+    {
+      "id": "v1.1.1-released",
+      "level": "info",
+      "title": {
+        "zh-Hant": "CopyC 1.1.1 已推出",
+        "zh-Hans": "CopyC 1.1.1 已推出",
+        "en": "CopyC 1.1.1 is here",
+        "ja": "CopyC 1.1.1 をリリースしました",
+        "ko": "CopyC 1.1.1이 나왔습니다",
+        "fr": "CopyC 1.1.1 est disponible",
+        "ms": "CopyC 1.1.1 kini tersedia"
+      },
+      "body": {
+        "zh-Hant": "新功能：同一個 Wi-Fi 裡的電腦直接互傳，更快，也不經過網際網路。可以在「同步」頁開關。",
+        "zh-Hans": "新功能：同一个 Wi-Fi 里的电脑直接互传，更快，也不经过互联网。可以在“同步”页开关。",
+        "en": "New: PCs on the same Wi-Fi now send to each other directly — faster, and without going through the internet. Turn it on or off in Sync.",
+        "ja": "新機能：同じ Wi-Fi のパソコン同士は、インターネットを経由せず直接すばやく届きます。「同期」でオン・オフできます。",
+        "ko": "새 기능: 같은 Wi-Fi의 컴퓨터끼리 인터넷을 거치지 않고 바로, 더 빠르게 주고받습니다. '동기화'에서 켜고 끌 수 있습니다.",
+        "fr": "Nouveau : les PC sur le même Wi-Fi s’envoient la copie directement, plus vite et sans passer par Internet. À activer ou désactiver dans Synchronisation.",
+        "ms": "Baharu: PC dalam Wi-Fi yang sama kini saling menghantar secara terus — lebih pantas dan tanpa melalui internet. Hidupkan atau matikan dalam Segerak."
+      },
+      "url": "https://github.com/Axiang1211/CopyC/releases/tag/v1.1.1",
+      "until": 1795104000000,
+      "minVersion": "1.1.1",
+      "maxVersion": "1.1.1"
+    }
+  ],
   "blacklist": [],
   "strings": {},
-  "features": { "live": true, "lan": true, "backup": true }
+  "features": {
+    "live": true,
+    "lan": true,
+    "backup": true
+  }
 }
