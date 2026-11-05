@@ -1429,6 +1429,36 @@ kbd.is-pressed {
   display: none;
 }
 
+/* Windows 卡片：Microsoft Store 為主要按鈕，安裝程式在下面 */
+.store-main {
+  grid-template-columns: 30px 1fr;
+  min-height: 64px;
+  background: var(--espresso);
+  color: #fbf3e7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 22px -8px rgba(42, 28, 20, 0.6);
+}
+.store-main:hover {
+  background: var(--roast);
+}
+.store-note {
+  margin-top: 8px;
+}
+.or-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 10px;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+.or-line::before,
+.or-line::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
+}
+
 /* 組件托盤 */
 .tray {
   position: relative;
@@ -1639,6 +1669,14 @@ kbd.is-pressed {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 22px -8px rgba(200, 137, 77, 0.5);
   }
   .btn-primary:hover {
+    background: var(--crema);
+  }
+  .store-main {
+    background: var(--caramel);
+    color: var(--espresso);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 22px -8px rgba(200, 137, 77, 0.5);
+  }
+  .store-main:hover {
     background: var(--crema);
   }
 }

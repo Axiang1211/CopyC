@@ -323,13 +323,7 @@ $$('.tray').forEach((tray) => {
 
 const download = $('#download');
 const storeId = download.dataset.msStoreId?.trim();
-if (storeId) {
-  const store = $('#ms-store');
-  store.href = `https://apps.microsoft.com/detail/${encodeURIComponent(storeId)}`;
-  store.removeAttribute('aria-disabled');
-  store.removeAttribute('tabindex');
-  store.rel = 'noopener';
-}
+if (storeId) $('#ms-store').href = `https://apps.microsoft.com/detail/${encodeURIComponent(storeId)}`;
 
 // 讀取 GitHub 最新版本，顯示版本號與檔案大小；還沒有發布時改連到 Releases 頁
 (async () => {
