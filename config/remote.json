@@ -1,0 +1,7 @@
+{
+  "$comment": "遠端資料：修改後推上 GitHub，Actions 會簽章並放到官網（見 config/README.md）。App 會在啟動時與每 6 小時下載一次。",
+  "notices": [],
+  "blacklist": [],
+  "strings": {},
+  "features": { "live": true, "lan": true, "backup": true }
+}

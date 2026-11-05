@@ -1,6 +1,6 @@
 // 通知框前端：接收 hud:show / hud:hover，負責動畫、計時與回報內容區塊位置。
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
-import { applyI18n, setLang } from './shared/i18n.js';
+import { applyI18n, setLang, setOverrides } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -189,40 +189,13 @@ hud.addEventListener('animationend', (e) => {
 // 托盤展開 / 內容變寬時同步回報區塊，讓懸停判斷跟著實際範圍走
 new ResizeObserver(() => shown && reportRect()).observe(hud);
 
-/* ---------- 新版本檢查 ---------- */
-
-// 通知框頁面從啟動起就常駐（隱藏），所以由這裡負責：啟動 3 秒後查一次，之後每天再查一次。
-const UPDATE_DELAY_MS = 3000;
-const UPDATE_EVERY_MS = 24 * 60 * 60 * 1000;
-const LATEST_URL = 'https://api.github.com/repos/Axiang1211/CopyC/releases/latest';
-
-const parseVersion = (v) => v.replace(/^v/, '').split('.').map((n) => Number.parseInt(n, 10) || 0);
-
-function isNewer(latest, current) {
-  const [a, b] = [parseVersion(latest), parseVersion(current)];
-  for (let i = 0; i < 3; i++) {
-    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
-  }
-  return false;
-}
-
-async function checkUpdate() {
-  try {
-    const { enabled, current } = await invoke('update_check');
-    if (!enabled) return;
-    const res = await fetch(LATEST_URL, { headers: { Accept: 'application/vnd.github+json' } });
-    if (!res.ok) return;
-    const { tag_name: tag } = await res.json();
-    if (typeof tag === 'string' && /^v?\d+(\.\d+){0,2}$/.test(tag) && isNewer(tag, current)) {
-      await invoke('update_found', { version: tag.replace(/^v/, '') });
-    }
-  } catch {
-    /* 離線或被限流時略過，下次再查 */
-  }
-}
-
-setTimeout(checkUpdate, UPDATE_DELAY_MS);
-setInterval(checkUpdate, UPDATE_EVERY_MS);
+// 遠端資料的文字修正也套用在通知框
+const loadRemoteStrings = () =>
+  invoke('remote_data')
+    .then((r) => setOverrides(r.strings))
+    .catch(() => {});
+loadRemoteStrings();
+listen('remote:changed', loadRemoteStrings);
 
 listen('hud:show', (e) => show(e.payload));
 listen('hud:hover', (e) => onHover(e.payload));

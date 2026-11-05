@@ -166,11 +166,16 @@ const zh = {
   'general.autostartMac': '登入後自動常駐於頂部選單列',
   'general.autostartBlocked': '已在 Windows「設定 → 應用程式 → 啟動」關閉，請到那裡重新開啟',
   'general.updates': '自動檢查更新',
-  'general.updatesDesc': '開啟 App 時向 GitHub 查詢最新版本號，有新版就提醒你；不會傳送任何個人資料',
+  'general.updatesDesc': '開啟 App 時向 GitHub 查詢新版本，有的話在背景下載並驗證簽章，按一下重新啟動就更新完成；不會傳送任何個人資料',
   'update.title': (v) => `CopyC v${v} 已推出`,
   'update.desc': (v) => `你目前使用的是 v${v}。前往官網下載新版，安裝時會直接覆蓋舊版，設定都會保留。`,
   'update.go': '前往下載',
   'update.later': '稍後',
+  'update.ready': '新版本已經下載好，重新啟動幾秒鐘就完成，設定都會保留。',
+  'update.restart': '重新啟動並更新',
+  'update.installing': '正在更新…',
+  'notice.dismiss': '知道了',
+  'notice.more': '了解更多',
   'general.hover': '懸停展開最近 3 筆紀錄',
   'general.hoverDesc': '滑鼠移到剛彈出的通知框上，就能看到最近的複製紀錄；通知框依然不擋點擊',
   'general.reset': '重設為預設值',
@@ -449,11 +454,16 @@ const en = {
   'general.autostartMac': 'Starts at login and stays in the menu bar',
   'general.autostartBlocked': 'Turned off in Windows Settings → Apps → Startup. Turn it back on there',
   'general.updates': 'Check for updates',
-  'general.updatesDesc': 'Asks GitHub for the latest version number when CopyC starts and lets you know if there is a new one. No personal data is sent',
+  'general.updatesDesc': 'Checks GitHub for a new version when CopyC starts, downloads it in the background and verifies its signature, then one click restarts and updates. No personal data is sent',
   'update.title': (v) => `CopyC v${v} is available`,
   'update.desc': (v) => `You have v${v}. Download the new version from the website — it installs over the old one and keeps your settings.`,
   'update.go': 'Download',
   'update.later': 'Later',
+  'update.ready': 'The new version is downloaded. Restart to finish — it only takes a few seconds and keeps your settings.',
+  'update.restart': 'Restart & update',
+  'update.installing': 'Updating…',
+  'notice.dismiss': 'Got it',
+  'notice.more': 'Learn more',
   'general.hover': 'Show last 3 copies on hover',
   'general.hoverDesc': 'Hover over a notification to see your recent copies. It still never blocks your clicks.',
   'general.reset': 'Reset to defaults',
@@ -597,8 +607,32 @@ export const locale = () => ({ 'zh-Hant': 'zh-TW', 'zh-Hans': 'zh-CN', en: 'en-U
 export const formatNumber = (n, options) => new Intl.NumberFormat(locale(), options).format(n);
 
 /** 取得文案；找不到時退回繁中，再退回 key 本身。 */
+// 遠端資料的文字修正：語言 → 文字鍵 → 新文字（見 setOverrides）
+let overrides = {};
+
+const placeholders = (text) => [...text.matchAll(/\{(\d+)\}/g)].map((m) => m[1]).sort().join(',');
+
+/**
+ * 套用遠端資料的文字修正。只取代現有的純文字項目，而且 {0} 這類位置要和原文一樣；
+ * 文字一律以 textContent 顯示，不會被當成 HTML。
+ */
+export function setOverrides(strings = {}) {
+  const next = {};
+  for (const [lang, map] of Object.entries(strings ?? {})) {
+    const dict = DICTS[lang];
+    if (!dict || !map || typeof map !== 'object') continue;
+    for (const [key, text] of Object.entries(map)) {
+      const base = dict[key];
+      if (typeof base !== 'string' || typeof text !== 'string' || !text.trim()) continue;
+      if (placeholders(base) !== placeholders(text)) continue;
+      (next[lang] ??= {})[key] = text;
+    }
+  }
+  overrides = next;
+}
+
 export function t(key, ...args) {
-  const v = DICTS[current][key] ?? zh[key];
+  const v = overrides[current]?.[key] ?? DICTS[current][key] ?? zh[key];
   if (v === undefined) return key;
   if (typeof v === 'function') return v(...args);
   if (Array.isArray(v)) return v[args[0] ? 1 : 0];

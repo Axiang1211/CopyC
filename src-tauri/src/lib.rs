@@ -9,10 +9,12 @@ mod hud;
 mod i18n;
 mod monitor;
 mod platform;
+mod remote;
 mod settings;
 mod settings_window;
 mod state;
 mod tray;
+mod updater;
 
 use settings::Settings;
 use state::AppState;
@@ -28,6 +30,7 @@ pub fn run() {
             settings_window::open(app);
         }))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![AUTOSTART_FLAG])))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
             commands::update_settings,
@@ -39,8 +42,7 @@ pub fn run() {
             commands::hud_finished,
             commands::hud_rect,
             commands::open_settings,
-            commands::update_check,
-            commands::update_found,
+            commands::update_install,
             commands::open_download,
             commands::open_kopi,
             commands::history_query,
@@ -52,6 +54,8 @@ pub fn run() {
             commands::cloud_sign_out,
             commands::cloud_sync_now,
             commands::cloud_delete_all,
+            commands::remote_data,
+            commands::open_notice,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock
@@ -77,6 +81,12 @@ pub fn run() {
                 }
                 Err(e) => eprintln!("copyc: 無法開啟歷史資料庫：{e}"),
             }
+
+            // 遠端資料（公告、黑名單、同步緊急開關）：先用上次下載的，背景再更新
+            remote::load_cached(app.handle());
+            remote::start(app.handle());
+            // 官網版的自動更新（商店版不使用）
+            updater::start(app.handle());
 
             let config_dir = app.path().app_config_dir()?;
             let cloud = cloud::Cloud::new(app.handle().clone(), config_dir, &app.state::<AppState>().settings.lock());

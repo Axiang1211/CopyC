@@ -1,6 +1,6 @@
 // 偏好設定視窗
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
-import { applyI18n, formatNumber, getLang, locale, setLang, t } from './shared/i18n.js';
+import { applyI18n, formatNumber, getLang, locale, setLang, setOverrides, t } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -879,10 +879,19 @@ function renderUpdate() {
   card.hidden = !version || version === updateDismissed;
   if (card.hidden) return;
   $('#update-title').textContent = t('update.title', version);
-  $('#update-desc').textContent = t('update.desc', overview.version);
+  // 官網版在背景下載好新版後，直接重新啟動就能更新；否則（或下載失敗）引導到官網下載
+  $('#update-desc').textContent = overview.updateReady ? t('update.ready') : t('update.desc', overview.version);
+  const go = $('#update-go');
+  go.textContent = t(overview.updateReady ? 'update.restart' : 'update.go');
+  go.disabled = false;
 }
 
-$('#update-go').addEventListener('click', () => invoke('open_download'));
+$('#update-go').addEventListener('click', async (e) => {
+  if (!overview.updateReady) return invoke('open_download');
+  e.currentTarget.disabled = true;
+  e.currentTarget.textContent = t('update.installing');
+  if (!(await invoke('update_install').catch(() => false))) invoke('open_download');
+});
 $('#kopi').addEventListener('click', () => invoke('open_kopi'));
 $('#update-later').addEventListener('click', () => {
   updateDismissed = overview.update;
@@ -1261,7 +1270,10 @@ $('#ob-copy').addEventListener('click', async () => {
 
 async function refreshOverview() {
   overview = await invoke('get_overview');
-  if (overview.lang !== getLang()) applyLanguage(overview.lang);
+  if (overview.lang !== getLang()) {
+    applyLanguage(overview.lang);
+    refreshRemote(); // 公告依語言選文字
+  }
   setStat($('#stat-copies'), overview.stats.copies);
   setStat($('#stat-confirms'), overview.stats.confirms);
   renderHistory();
@@ -1273,9 +1285,77 @@ async function refreshOverview() {
   }
 }
 
+/* ---------------- 遠端資料：公告與文字修正 ---------------- */
+
+let remote = { notices: [], strings: {} };
+const NOTICE_KEY = 'copyc-dismissed-notices';
+const INFO_ICON = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></svg>';
+const WARN_ICON = '<svg viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>';
+
+function dismissedNotices() {
+  try {
+    return JSON.parse(localStorage.getItem(NOTICE_KEY)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function renderNotices() {
+  const dismissed = dismissedNotices();
+  const cards = remote.notices
+    .filter((n) => !dismissed.includes(n.id))
+    .map((n) => {
+      const card = document.createElement('div');
+      card.className = `update-card notice-card${n.level === 'warn' ? ' is-warn' : ''}`;
+      card.setAttribute('role', 'status');
+      const ico = document.createElement('span');
+      ico.className = 'update-ico';
+      ico.setAttribute('aria-hidden', 'true');
+      ico.innerHTML = n.level === 'warn' ? WARN_ICON : INFO_ICON;
+      const text = document.createElement('div');
+      text.className = 'update-text';
+      const title = document.createElement('b');
+      title.textContent = n.title;
+      const body = document.createElement('span');
+      body.textContent = n.body;
+      text.append(title, body);
+      const close = document.createElement('button');
+      close.className = 'btn';
+      close.type = 'button';
+      close.textContent = t('notice.dismiss');
+      close.addEventListener('click', () => {
+        try {
+          localStorage.setItem(NOTICE_KEY, JSON.stringify([...dismissedNotices(), n.id].slice(-50)));
+        } catch {}
+        card.remove();
+      });
+      card.append(ico, text, close);
+      if (n.hasUrl) {
+        const more = document.createElement('button');
+        more.className = 'btn btn-primary';
+        more.type = 'button';
+        more.textContent = t('notice.more');
+        more.addEventListener('click', () => invoke('open_notice', { id: n.id }));
+        card.append(more);
+      }
+      return card;
+    });
+  $('#notices').replaceChildren(...cards);
+}
+
+async function refreshRemote() {
+  remote = (await invoke('remote_data').catch(() => null)) ?? { notices: [], strings: {} };
+  setOverrides(remote.strings);
+  if (overview) applyLanguage(overview.lang);
+  renderNotices();
+}
+
 async function init() {
   [settings, overview] = await Promise.all([invoke('get_settings'), invoke('get_overview')]);
+  remote = (await invoke('remote_data').catch(() => null)) ?? remote;
+  setOverrides(remote.strings);
   applyLanguage(overview.lang);
+  renderNotices();
   $('#version').textContent = `v${overview.version}`;
   $('#stat-copies').textContent = formatNumber(overview.stats.copies);
   $('#stat-confirms').textContent = formatNumber(overview.stats.confirms);
@@ -1298,6 +1378,7 @@ async function init() {
   listen('history:changed', refreshHistory);
   listen('overview:changed', debounce(refreshOverview, 150));
   listen('cloud:changed', debounce(refreshCloud, 80));
+  listen('remote:changed', refreshRemote);
   setInterval(() => {
     if (!overview) return;
     renderHistory();

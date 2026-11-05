@@ -185,13 +185,13 @@ impl Settings {
         fs::rename(tmp, path)
     }
 
-    /// 來源應用是否命中黑名單（不分大小寫，比對名稱或 Bundle ID / 執行檔名）。
+    /// 來源應用是否命中黑名單（不分大小寫，比對名稱或 Bundle ID / 執行檔名），包含遠端資料新增的密碼管理器。
     pub fn is_blacklisted(&self, app: &crate::platform::AppInfo) -> bool {
         let hay = [app.name.to_lowercase(), app.id.to_lowercase()];
         self.blacklist.iter().any(|entry| {
             let needle = entry.to_lowercase();
             hay.iter().any(|h| !h.is_empty() && (h == &needle || h.contains(&needle)))
-        })
+        }) || crate::remote::blacklisted(&hay)
     }
 }
 

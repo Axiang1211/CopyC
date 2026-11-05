@@ -31,7 +31,7 @@
         <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Privacy Policy</p>
         <h1>Your clipboard goes only where you decide.</h1>
         <p class="legal-lead">By default CopyC works entirely on your computer. Only if you sign in with Google to turn on sync is text content <b>encrypted on your computer first</b> and then sent to your other computers and your own Google Drive. We never sell or share it, and we can't read what you copy.</p>
-        <p class="legal-updated">Policy version 1.3 · Last updated: October 28, 2026 · Applies to all versions of CopyC (Windows, macOS and Microsoft Store versions)</p>
+        <p class="legal-updated">Policy version 1.4 · Last updated: November 5, 2026 · Applies to all versions of CopyC (Windows, macOS and Microsoft Store versions)</p>
       </div>
 
       <ul class="legal-points">
@@ -94,7 +94,11 @@
         </section>
         <section>
           <h2>Update check</h2>
-          <p>The version downloaded from the website asks GitHub for the latest version number when it starts (and once a day while it keeps running), and lets you know if a new version is available on the website. The request contains nothing you copied and no personal data; as with any web request, GitHub sees your IP address. You can turn it off in Preferences → General → Check for updates. The Microsoft Store version is updated by the Store and does not perform this check.</p>
+          <p>The version downloaded from the website asks GitHub for the latest version when it starts (and once a day while it keeps running). From CopyC 1.1.1, when a new version is available it downloads the installer from GitHub in the background and checks our signature with a built-in public key before asking you to click “Restart &amp; update”; a file with a wrong signature is never installed. These requests contain nothing you copied and no personal data; as with any web request, GitHub sees your IP address. You can turn this off in Preferences → General → Check for updates. The Microsoft Store version is updated by the Store and does not perform this check.</p>
+        </section>
+        <section>
+          <h2>Notices and configuration data</h2>
+          <p>From CopyC 1.1.1, every version (including the Microsoft Store version) downloads a data file signed by us from our website (copyc.app.dreamsworld.top) when it starts and every 6 hours after that. It only contains notices, names of password managers to mask, corrections to interface text, and switches to pause sync features if a service has a problem; it contains no code, and a file with a wrong signature is never used. The request contains nothing you copied, no account details and no personal data; as with any web request, Cloudflare sees your IP address.</p>
         </section>
         <section>
           <h2>What CopyC never does</h2>
@@ -121,6 +125,7 @@
           <h2>Changes to this policy</h2>
           <p>Every time this policy changes we update this page, raise the policy version above and describe the change in the version history below. If you don't agree with a revised policy, you can stop using and uninstall CopyC.</p>
           <ul>
+            <li><b>1.4 (November 5, 2026):</b> added automatic updates for CopyC 1.1.1 (the website version downloads updates in the background and checks their signature) and “Notices and configuration data” (every version downloads a signed data file from our website).</li>
             <li><b>1.3 (October 28, 2026):</b> added “Direct transfer on the same network” for CopyC 1.1.1: what is sent on your local network, how it is encrypted and how to turn it off; the relay now receives a random device ID.</li>
             <li><b>1.2 (October 27, 2026):</b> added “Sync across devices” for CopyC 1.1.0: Google sign-in, end-to-end encryption, Google Drive history backup, Cloudflare live sync, and how to turn it off and delete data; added the Google API Limited Use statement.</li>
             <li><b>1.1 (October 26, 2026):</b> added History for CopyC 1.0.8: what is stored locally, passwords not saved by default, how to clear or turn it off; added the “Future features” section.</li>

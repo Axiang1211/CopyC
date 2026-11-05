@@ -7,3 +7,7 @@
 
 /assets/*
   Cache-Control: public, max-age=604800
+
+# App 的遠端資料：每次都向伺服器確認是否有新版本
+/config/*
+  Cache-Control: no-cache

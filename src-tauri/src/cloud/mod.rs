@@ -93,6 +93,19 @@ struct Config {
     lan: bool,
 }
 
+impl From<&Settings> for Config {
+    /// 使用者的開關，加上遠端資料的緊急開關（例如中繼伺服器出問題時先關掉即時同步）。
+    fn from(settings: &Settings) -> Self {
+        let remote = crate::remote::features();
+        Config {
+            signed_in: false,
+            backup: settings.cloud_backup && remote.backup,
+            live: settings.cloud_live && remote.live,
+            lan: settings.cloud_lan && remote.lan,
+        }
+    }
+}
+
 #[derive(Default)]
 struct Runtime {
     busy: bool,
@@ -159,12 +172,7 @@ impl Cloud {
                 let _ = std::fs::write(dir.join(DEVICE_FILE), &id);
                 id
             });
-        let config = Config {
-            signed_in: account.is_some(),
-            backup: settings.cloud_backup,
-            live: settings.cloud_live,
-            lan: settings.cloud_lan,
-        };
+        let config = Config { signed_in: account.is_some(), ..Config::from(settings) };
         Self {
             app,
             http: reqwest::Client::builder()
@@ -218,10 +226,14 @@ impl Cloud {
     /// 設定變了（開關）時呼叫，讓背景工作開始或停止。
     pub fn apply_settings(&self, settings: &Settings) {
         self.config.send_if_modified(|c| {
-            let next =
-                Config { backup: settings.cloud_backup, live: settings.cloud_live, lan: settings.cloud_lan, ..*c };
+            let next = Config { signed_in: c.signed_in, ..Config::from(settings) };
             std::mem::replace(c, next) != next
         });
+    }
+
+    /// 遠端資料的緊急開關變了。
+    pub fn apply_remote(&self, settings: &Settings) {
+        self.apply_settings(settings);
     }
 
     fn set_signed_in(&self, signed_in: bool) {

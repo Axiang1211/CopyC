@@ -1,0 +1,34 @@
+name: Publish remote data
+
+# 修改 config/remote.json 並推上 GitHub 後，用私鑰簽章並更新 website/config/v1.json；
+# 官網重新部署後，App 會在下次啟動（或 6 小時內）下載。不需要發新版本，也不經過 Microsoft Store。
+on:
+  push:
+    paths: [config/remote.json]
+  workflow_dispatch:
+
+concurrency:
+  group: remote-data
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sign
+        env:
+          COPYC_REMOTE_SIGNING_KEY: ${{ secrets.COPYC_REMOTE_SIGNING_KEY }}
+        run: node scripts/sign-remote.mjs
+      - name: Commit signed file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/config/v1.json
+          git commit -m "Publish remote data" || exit 0
+          git push

@@ -955,6 +955,15 @@ body[data-platform="macos"] .island {
   font-size: 13px;
   line-height: 1.5;
 }
+/* 遠端公告：沿用新版本提示卡的樣式，warn 用琥珀色 */
+.notice-card.is-warn {
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--amber) 45%, transparent);
+}
+.notice-card.is-warn .update-ico {
+  background: var(--amber);
+}
+
 @keyframes update-in {
   from {
     opacity: 0;

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DICTS, applyI18n, formatNumber, getLang, locale, normalizeLang, setLang, t } from '../src/shared/i18n.js';
+import { DICTS, applyI18n, formatNumber, getLang, locale, normalizeLang, setLang, setOverrides, t } from '../src/shared/i18n.js';
 import { compose, summary, timeAgo } from '../src/shared/compose.js';
 
 const samples = {
@@ -18,7 +18,7 @@ const samples = {
 
 test('all seven dictionaries have complete, nonempty and renderable keys', () => {
   const keys = Object.keys(DICTS.en).sort();
-  assert.equal(keys.length, 279);
+  assert.equal(keys.length, 284);
   for (const [lang, dict] of Object.entries(DICTS)) {
     setLang(lang);
     assert.deepEqual(Object.keys(dict).sort(), keys, lang);
@@ -144,4 +144,30 @@ test('content synced from another computer says where it came from', () => {
   assert.equal(url.title[1].t, 'example.com');
   // 一般複製不受影響
   assert.equal(compose({ kind: 'private' }).title[0].t, t('hud.copied'));
+});
+
+test('remote text corrections only replace existing plain strings with the same placeholders', () => {
+  setLang('en');
+  const original = t('sync.lanPeers', 2);
+  setOverrides({
+    en: {
+      'notice.more': 'Read more',
+      'sync.lanPeers': 'Nearby: {0}',
+      'sync.device': 'No placeholder here', // 原文有 {0}，不採用
+      'update.title': 'Function entries stay', // 原文是函式，不採用
+      'no.such.key': 'ignored',
+    },
+    xx: { 'notice.more': 'ignored' },
+  });
+  assert.equal(t('notice.more'), 'Read more');
+  assert.equal(t('sync.lanPeers', 2), 'Nearby: 2');
+  assert.equal(t('sync.device', 'PC'), 'This computer: PC');
+  assert.ok(t('update.title', '1.2.3').includes('1.2.3'));
+  assert.equal(t('no.such.key'), 'no.such.key');
+  // 只影響指定的語言
+  setLang('ja');
+  assert.notEqual(t('notice.more'), 'Read more');
+  setOverrides({});
+  setLang('en');
+  assert.equal(t('sync.lanPeers', 2), original);
 });

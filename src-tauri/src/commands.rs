@@ -164,6 +164,8 @@ pub struct Overview {
     packaged: bool,
     /// 有新版本時的版本號（不含 v）
     update: Option<String>,
+    /// 新版本已經在背景下載好，可以直接重新啟動更新
+    update_ready: bool,
 }
 
 #[tauri::command]
@@ -180,39 +182,47 @@ pub fn get_overview(app: AppHandle, state: tauri::State<'_, AppState>) -> Overvi
         recent_apps: state.recent_apps.lock().clone(),
         packaged: platform::is_packaged(),
         update: state.update.lock().clone(),
+        update_ready: app.state::<crate::updater::Updater>().is_ready(),
     }
+}
+
+/// 安裝已經下載好的新版本並重新啟動；回傳 false 表示沒有可安裝的（頁面改為打開官網下載）。
+#[tauri::command]
+pub fn update_install(app: AppHandle) -> bool {
+    crate::updater::install(&app)
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateCheck {
-    enabled: bool,
-    current: String,
+pub struct RemoteData {
+    notices: Vec<crate::remote::NoticeOut>,
+    /// 語言 → 文字鍵 → 取代的文字（頁面會再檢查只取代現有的純文字）
+    strings: std::collections::HashMap<String, std::collections::HashMap<String, String>>,
 }
 
-/// 通知框頁面啟動時呼叫，決定要不要向 GitHub 查詢新版本。
+/// 遠端資料裡給頁面用的部分：目前要顯示的公告與文字修正。
 #[tauri::command]
-pub fn update_check(app: AppHandle, state: tauri::State<'_, AppState>) -> UpdateCheck {
-    let enabled = state.settings.lock().check_updates && !platform::is_packaged();
-    UpdateCheck { enabled, current: app.package_info().version.to_string() }
+pub fn remote_data(app: AppHandle, state: tauri::State<'_, AppState>) -> RemoteData {
+    let lang = i18n::resolve(state.settings.lock().language);
+    let lang = serde_json::to_value(lang).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
+    let version = app.package_info().version.to_string();
+    let strings = ["zh-Hant", "zh-Hans", "en", "ja", "ko", "fr", "ms"]
+        .into_iter()
+        .map(|l| (l.to_string(), crate::remote::strings(l)))
+        .filter(|(_, m)| !m.is_empty())
+        .collect();
+    RemoteData {
+        notices: crate::remote::notices(&lang, platform::PLATFORM, platform::is_packaged(), &version),
+        strings,
+    }
 }
 
-/// 發現新版本：記下來並打開偏好設定，由頁面上的提示卡引導使用者前往下載。
+/// 公告的「了解更多」：網址來自簽章過的遠端資料，頁面只傳公告 id。
 #[tauri::command]
-pub fn update_found(app: AppHandle, state: tauri::State<'_, AppState>, version: String) {
-    let valid = !version.is_empty() && version.len() <= 20 && version.chars().all(|c| c.is_ascii_digit() || c == '.');
-    if !valid {
-        return;
+pub fn open_notice(id: String) {
+    if let Some(url) = crate::remote::notice_url(&id) {
+        platform::open_url(&url);
     }
-    {
-        let mut update = state.update.lock();
-        if update.as_deref() == Some(version.as_str()) {
-            return;
-        }
-        *update = Some(version);
-    }
-    let _ = app.emit("overview:changed", ());
-    crate::settings_window::open(&app);
 }
 
 /// 用瀏覽器打開官網下載區（依介面語言選中文或英文頁）。

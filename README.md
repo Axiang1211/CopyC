@@ -94,7 +94,8 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 - **右鍵點杯子圖示**（Windows 系統匣／macOS 選單列）可以：暫停、切換隱私模式、開關提示音、調整位置與停留時間、切換語言、打開偏好設定。
 - **偏好設定**可以調整更多細節，按「試一下提示」可以直接預覽各種提示的樣子。
 - **開機自動啟動**：預設開啟，可以在「偏好設定 → 一般 → 開機自動啟動」關閉。
-- **自動檢查更新**：官網版開啟時會檢查有沒有新版本，可以在「偏好設定 → 一般」關閉。
+- **自動更新**：官網版開啟時會檢查有沒有新版本，1.1.1 起會在背景下載並驗證簽章，按「重新啟動並更新」幾秒就完成；可以在「偏好設定 → 一般」關閉。Microsoft Store 版由商店更新。
+- **公告**：服務維護等重要消息會顯示在偏好設定最上方，按「知道了」就不再顯示。
 
 ### 開啟跨裝置同步
 
@@ -181,5 +182,9 @@ npm run build:mac   # macOS Universal .dmg
 ```
 
 跨裝置同步需要你自己的 Google OAuth 用戶端（類型「電腦版應用程式」，權限 `openid`、`email`、`drive.appdata`）。建置前設定環境變數 `COPYC_GOOGLE_CLIENT_ID`（以及選用的 `COPYC_GOOGLE_CLIENT_SECRET`）；沒設定時 App 仍可正常使用，同步頁會顯示「這個版本尚未開放同步」。即時同步的中繼伺服器在 `worker/`（Cloudflare Workers + Durable Objects），部署時需要設定 `GOOGLE_CLIENT_ID`。
+
+自動更新（官網版）：GitHub Secrets 設定 `TAURI_SIGNING_PRIVATE_KEY` 後，發佈時會產生簽章過的更新檔與 `latest.json`；公鑰在 `src-tauri/tauri.conf.json`。沒設定時照常建置，App 只會提示到官網下載。
+
+遠端資料（公告、密碼管理器名單、文字修正、同步緊急開關）：修改 `config/remote.json` 推上 GitHub，Actions 用 `COPYC_REMOTE_SIGNING_KEY` 簽章後更新 `website/config/v1.json`，所有版本（含 Microsoft Store 版）下次啟動或 6 小時內就會套用。格式見 [config/README.md](config/README.md)。
 
 </details>
