@@ -74,3 +74,11 @@ test('Google certs are cached per Cache-Control', async () => {
   assert.equal(calls, 2);
   resetKeyCache();
 });
+
+test('accepts any of several client IDs (desktop and Android)', async () => {
+  const { privateKey, jwk } = await keypair('k9');
+  const token = await sign(privateKey, 'k9', { ...base, aud: 'android-client' });
+  assert.equal(await verifyIdToken(token, { audience: [AUD, 'android-client'], keys: [jwk], now }), '1098765');
+  assert.equal(await verifyIdToken(token, { audience: [AUD, undefined], keys: [jwk], now }), null);
+  assert.equal(await verifyIdToken(token, { audience: [undefined, ''], keys: [jwk], now }), null);
+});

@@ -35,11 +35,12 @@ export function resetKeyCache() {
 /**
  * 驗證 token，成功回傳 sub，失敗回傳 null。
  * @param {string} token
- * @param {{ audience: string, keys: object[], now?: number }} opts
+ * @param {{ audience: string | string[], keys: object[], now?: number }} opts 可以有多個用戶端（電腦版、Android 版）
  */
 export async function verifyIdToken(token, { audience, keys, now = Date.now() }) {
   const parts = typeof token === 'string' ? token.split('.') : [];
-  if (parts.length !== 3 || !audience) return null;
+  const audiences = (Array.isArray(audience) ? audience : [audience]).filter(Boolean);
+  if (parts.length !== 3 || !audiences.length) return null;
   let header;
   let claims;
   try {
@@ -70,7 +71,7 @@ export async function verifyIdToken(token, { audience, keys, now = Date.now() })
 
   const t = now / 1000;
   const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  if (!ISSUERS.has(claims.iss) || !aud.includes(audience)) return null;
+  if (!ISSUERS.has(claims.iss) || !aud.some((a) => audiences.includes(a))) return null;
   if (typeof claims.exp !== 'number' || claims.exp + SKEW_S < t) return null;
   if (typeof claims.iat === 'number' && claims.iat - SKEW_S > t) return null;
   return typeof claims.sub === 'string' && claims.sub ? claims.sub : null;

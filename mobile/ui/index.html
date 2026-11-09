@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CopyC</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="top">
+    <img class="logo" src="logo.svg" alt="" width="40" height="40">
+    <div class="brand"><b>Copy<span>C</span></b><small data-i18n="tagline">一台複製，另一台貼上</small></div>
+    <span class="pill" id="pill" hidden><i></i><span id="pill-text"></span></span>
+  </header>
+
+  <main>
+    <!-- 這個版本沒有設定 Google 用戶端 -->
+    <section class="card" id="unavailable" hidden>
+      <h2 data-i18n="unavailable.title">這個版本還不能登入</h2>
+      <p data-i18n="unavailable.body">建置時沒有設定 Android 用的 Google 用戶端。</p>
+    </section>
+
+    <!-- 尚未登入 -->
+    <section class="card" id="signed-out" hidden>
+      <h2 data-i18n="out.title">連接你的電腦</h2>
+      <p data-i18n="out.body">用電腦版 CopyC 登入的同一個 Google 帳號登入。電腦上複製的文字會直接出現在手機的剪貼簿，手機的內容也能傳到電腦。</p>
+      <button class="btn primary" id="sign-in" type="button" data-i18n="out.signIn">用 Google 登入</button>
+      <p class="hint" data-i18n="out.privacy">內容在裝置上加密，伺服器看不到。</p>
+    </section>
+
+    <!-- 登入中：顯示裝置代碼 -->
+    <section class="card" id="code-card" hidden>
+      <h2 data-i18n="code.title">在 Google 輸入這組代碼</h2>
+      <div class="code" id="code"></div>
+      <p class="hint" data-i18n="code.copied">代碼已複製，開啟頁面後貼上即可。</p>
+      <button class="btn primary" id="open-google" type="button" data-i18n="code.open">開啟 google.com/device</button>
+      <p class="wait"><span class="spinner" aria-hidden="true"></span><span data-i18n="code.wait">完成後回到這裡，會自動繼續</span></p>
+      <button class="btn ghost" id="cancel" type="button" data-i18n="code.cancel">取消</button>
+    </section>
+
+    <!-- 已登入 -->
+    <section id="signed-in" hidden>
+      <div class="card">
+        <p class="account" id="account"></p>
+        <button class="btn primary big" id="send" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0-5 5m5-5 5 5"/><path d="M5 20h14"/></svg>
+          <span data-i18n="in.send">把剪貼簿傳到電腦</span>
+        </button>
+        <p class="hint" data-i18n="in.hint">電腦上複製的內容，會在 App 開著時直接放進手機的剪貼簿。在其他 App 也可以用「分享」選 CopyC 傳到電腦。</p>
+      </div>
+      <h3 class="list-title" data-i18n="in.recent">最近</h3>
+      <ol class="list" id="list"></ol>
+      <p class="empty" id="empty" data-i18n="in.empty">還沒有內容。到電腦上複製一段文字試試看。</p>
+      <button class="btn ghost small" id="sign-out" type="button" data-i18n="in.signOut">登出</button>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <footer class="foot"><span data-i18n="foot">CopyC Android 原型 · 免費</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>

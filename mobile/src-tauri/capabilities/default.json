@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "default",
+  "description": "Android 版畫面需要的最小權限（剪貼簿與開網頁都在 Rust 端處理）",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

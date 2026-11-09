@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">"CopyC"</string>
+    <string name="main_activity_title">"CopyC"</string>
+    <string name="share_label">"Send to computer (CopyC)"</string>
+</resources>

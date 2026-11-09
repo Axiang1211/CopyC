@@ -20,7 +20,9 @@ async function sync(request, env) {
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   let sub;
   try {
-    sub = await verifyIdToken(token, { audience: env.GOOGLE_CLIENT_ID, keys: await googleKeys() });
+    // 電腦版的用戶端，以及（選用）Android 版用的「電視和輸入受限裝置」用戶端
+    const audience = [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_ID_ANDROID];
+    sub = await verifyIdToken(token, { audience, keys: await googleKeys() });
   } catch {
     return new Response('Upstream error', { status: 502 });
   }

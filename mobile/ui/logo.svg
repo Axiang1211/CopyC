@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5A3E2E"/>
+      <stop offset="1" stop-color="#22160F"/>
+    </linearGradient>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FBF3E7"/>
+      <stop offset="1" stop-color="#E9D6BC"/>
+    </linearGradient>
+  </defs>
+  <rect x="88" y="88" width="848" height="848" rx="196" fill="url(#bg)"/>
+  <!-- 蒸氣 -->
+  <g fill="none" stroke="#F4E7D4" stroke-width="30" stroke-linecap="round" opacity=".55">
+    <path d="M410 330c-30-40 30-70 0-112"/>
+    <path d="M520 330c-30-40 30-70 0-112"/>
+  </g>
+  <!-- 杯耳 -->
+  <path d="M664 486c96-6 112 150 -10 162" fill="none" stroke="url(#cup)" stroke-width="46" stroke-linecap="round"/>
+  <!-- 杯身 -->
+  <path d="M292 428h384l-30 262c-6 54-46 86-100 86H422c-54 0-94-32-100-86z" fill="url(#cup)"/>
+  <!-- Kopi 液面與 crema -->
+  <ellipse cx="484" cy="428" rx="192" ry="38" fill="#7A5236"/>
+  <ellipse cx="484" cy="422" rx="150" ry="22" fill="#C8894D" opacity=".7"/>
+  <!-- 勾勾：複製成功 -->
+  <path d="M402 590l60 58 110-122" fill="none" stroke="#6F4E37" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 杯碟 -->
+  <ellipse cx="484" cy="800" rx="236" ry="26" fill="#F4E7D4" opacity=".22"/>
+</svg>

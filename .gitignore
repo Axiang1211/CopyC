@@ -12,3 +12,7 @@ store/
 # 介紹影片的製作原始檔只留在本機
 marketing/
 .wrangler/
+
+# Android 原型（mobile/）的建置輸出
+mobile/src-tauri/target/
+mobile/src-tauri/gen/schemas/

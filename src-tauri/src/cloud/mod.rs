@@ -15,6 +15,7 @@ mod drive;
 mod lan;
 mod relay;
 mod sync;
+mod wire;
 
 use crate::{settings::Settings, state::now_ms};
 use crypto::Key;

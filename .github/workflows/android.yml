@@ -1,0 +1,60 @@
+name: Android (prototype)
+
+# 手動執行：建置 CopyC Android 原型的 APK（自己安裝測試用）與 AAB（之後上架 Google Play 用）。
+# 需要的 Secrets（Settings → Secrets and variables → Actions）：
+#   COPYC_ANDROID_CLIENT_ID / COPYC_ANDROID_CLIENT_SECRET：Google「電視和輸入受限裝置」用戶端
+#   COPYC_ANDROID_KEYSTORE（upload.jks 的 base64）/ COPYC_ANDROID_KEYSTORE_PASSWORD：上傳金鑰
+# 沒有金鑰時改用 debug 簽章，照樣能裝在自己的手機上。
+on:
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    env:
+      COPYC_ANDROID_CLIENT_ID: ${{ secrets.COPYC_ANDROID_CLIENT_ID }}
+      COPYC_ANDROID_CLIENT_SECRET: ${{ secrets.COPYC_ANDROID_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: mobile/src-tauri
+      - run: npm ci
+      - name: Decode upload key (optional)
+        env:
+          KEYSTORE: ${{ secrets.COPYC_ANDROID_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.COPYC_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE" ]; then
+            echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "COPYC_ANDROID_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+            echo "COPYC_ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          fi
+      - name: Build APK and AAB (arm64)
+        working-directory: mobile
+        run: |
+          export NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          npx tauri android build --apk --aab --target aarch64
+      - name: Stage files
+        run: |
+          mkdir -p dist/android
+          out=mobile/src-tauri/gen/android/app/build/outputs
+          cp "$(find $out/apk -name '*.apk' | head -1)" dist/android/CopyC-android-arm64.apk
+          cp "$(find $out/bundle -name '*.aab' | head -1)" dist/android/CopyC-android.aab
+          ls -la dist/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: copyc-android
+          path: dist/android/*
+          retention-days: 7
