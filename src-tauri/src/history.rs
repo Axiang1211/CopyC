@@ -25,7 +25,7 @@ const LIST_PATHS: usize = 5;
 pub const DAY_MS: u64 = 86_400_000;
 /// 超過這個大小的文字不同步到雲端（只留在本機）。
 pub const CLOUD_MAX_BYTES: usize = 256 * 1024;
-const SYNCABLE: &str = "('text', 'link', 'email', 'phone', 'color')";
+const SYNCABLE: &str = "('text', 'link', 'email', 'phone', 'code', 'color')";
 
 pub struct History {
     conn: Mutex<Connection>,

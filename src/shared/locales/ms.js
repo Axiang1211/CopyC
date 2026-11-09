@@ -190,6 +190,7 @@ export default {
   "history.cat.link": "Pautan",
   "history.cat.email": "E-mel",
   "history.cat.phone": "Telefon",
+  "history.cat.code": "Kod",
   "history.cat.color": "Warna",
   "history.cat.image": "Imej",
   "history.cat.files": "Fail",

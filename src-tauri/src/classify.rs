@@ -78,6 +78,8 @@ pub enum Category {
     Link,
     Email,
     Phone,
+    /// 驗證碼：4–8 位的純數字（例如簡訊或驗證器 App 的一次性密碼）。
+    Code,
     Color,
     Image,
     Files,
@@ -88,7 +90,7 @@ pub enum Category {
 impl Category {
     /// 可以同步到其他裝置的分類：只有文字類。圖片、檔案與密碼永遠只留在這台電腦。
     pub fn syncable(self) -> bool {
-        matches!(self, Category::Text | Category::Link | Category::Email | Category::Phone | Category::Color)
+        matches!(self, Category::Text | Category::Link | Category::Email | Category::Phone | Category::Code | Category::Color)
     }
 
     pub fn key(self) -> &'static str {
@@ -97,6 +99,7 @@ impl Category {
             Category::Link => "link",
             Category::Email => "email",
             Category::Phone => "phone",
+            Category::Code => "code",
             Category::Color => "color",
             Category::Image => "image",
             Category::Files => "files",
@@ -231,7 +234,9 @@ fn all_smart(settings: &Settings) -> Settings {
 }
 
 fn text_category(s: &str) -> Category {
-    if parse_url(s).is_some() {
+    if is_code(s) {
+        Category::Code
+    } else if parse_url(s).is_some() {
         Category::Link
     } else if parse_color(s).is_some() {
         Category::Color
@@ -248,6 +253,11 @@ fn is_email(s: &str) -> bool {
     static RE: OnceLock<Regex> = OnceLock::new();
     let re = RE.get_or_init(|| Regex::new(r"^(?:mailto:)?[\w.+-]+@[\w-]+(?:\.[\w-]+)+$").unwrap());
     s.len() <= 254 && re.is_match(s)
+}
+
+/// 驗證碼：4 到 8 位的純數字（前後空白已去掉）；中間有空格、符號或字母的都不算。
+fn is_code(s: &str) -> bool {
+    (4..=8).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_digit())
 }
 
 /// 電話號碼：可有 + 與常見分隔符，數字 7–15 位（E.164 上限）。2024-10-18 這類日期不算。
@@ -641,6 +651,15 @@ mod tests {
         assert_eq!(cat("https://example.com/a"), Category::Link);
         assert_eq!(cat("someone@example.com"), Category::Email);
         assert_eq!(cat("+60 12-345 6789"), Category::Phone);
+        // 驗證碼：4–8 位純數字，優先於電話號碼
+        for code in ["0427", "123456", "  987654 ", "12345678"] {
+            assert_eq!(cat(code), Category::Code, "{code}");
+        }
+        for not_code in ["123", "123456789", "123 456", "12-34", "١٢٣٤", "12a456", "#123456"] {
+            assert_ne!(cat(not_code), Category::Code, "{not_code}");
+        }
+        assert_eq!(cat("1234567"), Category::Code);
+        assert_eq!(cat("012-3456789"), Category::Phone);
         assert_eq!(cat("2024-10-18"), Category::Text);
         assert_eq!(cat("#10B981"), Category::Color);
     }

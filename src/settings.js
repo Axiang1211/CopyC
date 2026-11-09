@@ -901,7 +901,7 @@ $('#update-later').addEventListener('click', () => {
 /* ---------------- 歷史紀錄（本機資料庫） ---------------- */
 
 const HISTORY_PAGE = 50;
-const HISTORY_CATS = ['text', 'link', 'email', 'phone', 'color', 'image', 'files', 'secret'];
+const HISTORY_CATS = ['text', 'link', 'email', 'phone', 'code', 'color', 'image', 'files', 'secret'];
 const COPY_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M5 15.5V6.8A1.8 1.8 0 0 1 6.8 5h8.7"/></svg>';
 const DELETE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/></svg>';

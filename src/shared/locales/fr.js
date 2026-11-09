@@ -190,6 +190,7 @@ export default {
   "history.cat.link": "Liens",
   "history.cat.email": "E-mail",
   "history.cat.phone": "Téléphone",
+  "history.cat.code": "Codes",
   "history.cat.color": "Couleurs",
   "history.cat.image": "Images",
   "history.cat.files": "Fichiers",

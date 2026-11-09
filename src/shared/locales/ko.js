@@ -190,6 +190,7 @@ export default {
   "history.cat.link": "링크",
   "history.cat.email": "이메일",
   "history.cat.phone": "전화",
+  "history.cat.code": "인증번호",
   "history.cat.color": "색상",
   "history.cat.image": "이미지",
   "history.cat.files": "파일",

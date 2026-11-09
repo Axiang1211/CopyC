@@ -190,6 +190,7 @@ export default {
   "history.cat.link": "リンク",
   "history.cat.email": "メール",
   "history.cat.phone": "電話",
+  "history.cat.code": "認証コード",
   "history.cat.color": "カラー",
   "history.cat.image": "画像",
   "history.cat.files": "ファイル",

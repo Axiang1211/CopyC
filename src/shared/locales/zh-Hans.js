@@ -190,6 +190,7 @@ export default {
   "history.cat.link": "链接",
   "history.cat.email": "Email",
   "history.cat.phone": "电话",
+  "history.cat.code": "验证码",
   "history.cat.color": "色码",
   "history.cat.image": "图片",
   "history.cat.files": "文件",
