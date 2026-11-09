@@ -8,44 +8,15 @@ use cloud::{ClipEvent, Cloud, CloudError, Status};
 use serde::Serialize;
 use tauri::{Manager, State};
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct SignIn {
-    user_code: String,
-    verification_url: String,
-    expires_in: u64,
-}
-
 #[tauri::command]
 fn status(cloud: State<'_, Cloud>) -> Status {
     cloud.status()
 }
 
-/// 開始登入：回傳要在 google.com/device 輸入的代碼，並把代碼放進剪貼簿方便貼上。
+/// 登入：跳出 Google 的帳號選擇與同意畫面。
 #[tauri::command]
-async fn sign_in_start(app: tauri::AppHandle) -> Result<SignIn, CloudError> {
-    let cloud = app.state::<Cloud>();
-    let code = cloud.sign_in_start().await?;
-    {
-        use tauri_plugin_clipboard_manager::ClipboardExt;
-        let _ = app.clipboard().write_text(code.user_code.clone());
-    }
-    Ok(SignIn { user_code: code.user_code, verification_url: code.verification_url, expires_in: code.expires_in })
-}
-
-#[tauri::command]
-fn sign_in_cancel(cloud: State<'_, Cloud>) {
-    cloud.sign_in_cancel();
-}
-
-/// 用瀏覽器打開 Google 的輸入代碼頁面（只接受 Google 的網址）。
-#[tauri::command]
-fn open_verification(app: tauri::AppHandle, url: String) {
-    let ok = url.starts_with("https://www.google.com/") || url.starts_with("https://google.com/");
-    if ok {
-        use tauri_plugin_opener::OpenerExt;
-        let _ = app.opener().open_url(url, None::<&str>);
-    }
+async fn sign_in(app: tauri::AppHandle) -> Result<(), CloudError> {
+    app.state::<Cloud>().sign_in().await
 }
 
 #[tauri::command]
@@ -96,12 +67,10 @@ fn resume(cloud: State<'_, Cloud>) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(auth::plugin())
         .invoke_handler(tauri::generate_handler![
             status,
-            sign_in_start,
-            sign_in_cancel,
-            open_verification,
+            sign_in,
             sign_out,
             read_clipboard,
             write_clipboard,

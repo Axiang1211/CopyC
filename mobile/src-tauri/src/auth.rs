@@ -1,122 +1,96 @@
-//! Google 登入（Android 原型）：裝置代碼流程。App 顯示一組代碼，使用者在 google.com/device 輸入後同意，
-//! App 輪詢拿到 token。登入途中 App 被系統凍結也沒關係：回到 App 時繼續輪詢即可。
-//!
-//! 用的是 Google Cloud 同一個專案裡「電視和輸入受限裝置」類型的用戶端，所以能讀到電腦版放在
-//! Drive App 專用資料夾裡的金鑰。權限和電腦版一樣只有 openid、email、drive.appdata。
+//! Google 授權（Android 原型）：呼叫 Android 原生的授權畫面（GoogleAuthPlugin.kt）取得 access token，
+//! 權限和電腦版一樣只有 openid、email、drive.appdata。access token 大約一小時到期，到期時在背景
+//! 再要一次（使用者已同意過就不會跳出畫面）。帳號資訊（email、sub）從 Google 的 tokeninfo 取得。
 
 use crate::cloud::CloudError;
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Manager, Runtime};
 
-const DEVICE_URL: &str = "https://oauth2.googleapis.com/device/code";
-const TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
+const TOKENINFO_URL: &str = "https://oauth2.googleapis.com/tokeninfo";
 const REVOKE_URL: &str = "https://oauth2.googleapis.com/revoke";
-const SCOPES: &str = "openid email https://www.googleapis.com/auth/drive.appdata";
 
-/// 建置時由 GitHub Secrets 帶入；這類用戶端的密鑰依 Google 文件不具機密性，但輪詢時必須附上。
-pub const CLIENT_ID: Option<&str> = option_env!("COPYC_ANDROID_CLIENT_ID");
-const CLIENT_SECRET: Option<&str> = option_env!("COPYC_ANDROID_CLIENT_SECRET");
+/// Android 端的授權外掛；桌面上開發時沒有。
+pub struct GoogleAuth<R: Runtime>(#[allow(dead_code)] pub tauri::plugin::PluginHandle<R>);
 
-pub fn available() -> bool {
-    CLIENT_ID.is_some_and(|s| !s.is_empty()) && CLIENT_SECRET.is_some_and(|s| !s.is_empty())
+pub fn plugin<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
+    tauri::plugin::Builder::new("google-auth")
+        .setup(|app, api| {
+            #[cfg(target_os = "android")]
+            {
+                let handle = api.register_android_plugin("top.dreamsworld.copyc", "GoogleAuthPlugin")?;
+                app.manage(GoogleAuth(handle));
+            }
+            #[cfg(not(target_os = "android"))]
+            let _ = (app, api);
+            Ok(())
+        })
+        .build()
 }
 
-fn client() -> Result<(&'static str, &'static str), CloudError> {
-    match (CLIENT_ID, CLIENT_SECRET) {
-        (Some(id), Some(secret)) if !id.is_empty() && !secret.is_empty() => Ok((id, secret)),
-        _ => Err(CloudError::Unavailable),
+pub fn available(app: &AppHandle) -> bool {
+    app.try_state::<GoogleAuth<tauri::Wry>>().is_some()
+}
+
+#[derive(Serialize)]
+#[allow(dead_code)]
+struct AuthorizeArgs {
+    interactive: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
+struct AuthorizeOut {
+    access_token: String,
+}
+
+/// 取得 access token。`interactive` 為 false 時只在背景換新的，需要使用者同意就回傳 SignedOut。
+#[cfg(target_os = "android")]
+pub async fn authorize(app: &AppHandle, interactive: bool) -> Result<String, CloudError> {
+    let auth = app.try_state::<GoogleAuth<tauri::Wry>>().ok_or(CloudError::Unavailable)?;
+    match auth.0.run_mobile_plugin_async::<AuthorizeOut>("authorize", AuthorizeArgs { interactive }).await {
+        Ok(out) => Ok(out.access_token),
+        Err(e) => {
+            let msg = e.to_string();
+            Err(if msg.contains("cancelled") {
+                CloudError::Cancelled
+            } else if msg.contains("consent") {
+                CloudError::SignedOut
+            } else {
+                CloudError::SignInFailed
+            })
+        }
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct DeviceCode {
-    pub device_code: String,
-    pub user_code: String,
-    pub verification_url: String,
-    pub expires_in: u64,
-    #[serde(default = "default_interval")]
-    pub interval: u64,
+/// 桌面上開發時沒有 Google 授權外掛。
+#[cfg(not(target_os = "android"))]
+pub async fn authorize(_app: &AppHandle, _interactive: bool) -> Result<String, CloudError> {
+    let _ = AuthorizeArgs { interactive: false };
+    let _: Option<AuthorizeOut> = None;
+    Err(CloudError::Unavailable)
 }
 
-fn default_interval() -> u64 {
-    5
-}
-
+/// tokeninfo 的回應：數字欄位是字串。
 #[derive(Debug, Deserialize)]
-pub struct Tokens {
-    pub access_token: String,
-    pub expires_in: u64,
-    #[serde(default)]
-    pub refresh_token: Option<String>,
-    #[serde(default)]
-    pub id_token: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Claims {
+pub struct TokenInfo {
     pub sub: String,
     #[serde(default)]
     pub email: String,
-    pub exp: u64,
+    #[serde(default)]
+    pub expires_in: String,
 }
 
-/// id_token 的內容（直接從 Google 經 TLS 拿到的，不在這裡驗簽；中繼伺服器會驗）。
-pub fn claims(id_token: &str) -> Option<Claims> {
-    let payload = id_token.split('.').nth(1)?;
-    serde_json::from_slice(&URL_SAFE_NO_PAD.decode(payload).ok()?).ok()
-}
-
-pub async fn start(http: &reqwest::Client) -> Result<DeviceCode, CloudError> {
-    let (id, _) = client()?;
-    let resp = http.post(DEVICE_URL).form(&[("client_id", id), ("scope", SCOPES)]).send().await?;
-    if !resp.status().is_success() {
-        return Err(CloudError::Network);
-    }
-    Ok(resp.json().await?)
-}
-
-pub enum Poll {
-    Pending,
-    SlowDown,
-    Done(Tokens),
-}
-
-/// 問一次使用者完成了沒。拒絕或代碼過期回傳 Cancelled。
-pub async fn poll(http: &reqwest::Client, device_code: &str) -> Result<Poll, CloudError> {
-    #[derive(Deserialize)]
-    struct Error {
-        error: String,
-    }
-    let (id, secret) = client()?;
-    let form = [
-        ("client_id", id),
-        ("client_secret", secret),
-        ("device_code", device_code),
-        ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
-    ];
-    let resp = http.post(TOKEN_URL).form(&form).send().await?;
-    if resp.status().is_success() {
-        return Ok(Poll::Done(resp.json().await?));
-    }
-    match resp.json::<Error>().await.map(|e| e.error).unwrap_or_default().as_str() {
-        "authorization_pending" => Ok(Poll::Pending),
-        "slow_down" => Ok(Poll::SlowDown),
-        "access_denied" | "expired_token" => Err(CloudError::Cancelled),
-        _ => Err(CloudError::Network),
+impl TokenInfo {
+    pub fn expires_in_secs(&self) -> u64 {
+        self.expires_in.parse().unwrap_or(0)
     }
 }
 
-pub async fn refresh(http: &reqwest::Client, refresh_token: &str) -> Result<Tokens, CloudError> {
-    let (id, secret) = client()?;
-    let form = [
-        ("client_id", id),
-        ("client_secret", secret),
-        ("refresh_token", refresh_token),
-        ("grant_type", "refresh_token"),
-    ];
-    let resp = http.post(TOKEN_URL).form(&form).send().await?;
+pub async fn token_info(http: &reqwest::Client, access_token: &str) -> Result<TokenInfo, CloudError> {
+    let resp = http.get(TOKENINFO_URL).query(&[("access_token", access_token)]).send().await?;
     match resp.status().as_u16() {
-        200..=299 => Ok(resp.json().await?),
+        200..=299 => resp.json().await.map_err(|_| CloudError::Network),
         400 | 401 => Err(CloudError::SignedOut),
         _ => Err(CloudError::Network),
     }
@@ -131,19 +105,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn reads_claims_from_id_token() {
-        let payload = URL_SAFE_NO_PAD.encode(br#"{"sub":"123","email":"a@b.com","exp":99}"#);
-        let c = claims(&format!("x.{payload}.y")).unwrap();
-        assert_eq!((c.sub.as_str(), c.email.as_str(), c.exp), ("123", "a@b.com", 99));
-        assert!(claims("not-a-jwt").is_none());
-    }
-
-    #[test]
-    fn device_code_defaults_interval() {
-        let d: DeviceCode = serde_json::from_str(
-            r#"{"device_code":"d","user_code":"ABC-DEF","verification_url":"https://www.google.com/device","expires_in":1800}"#,
+    fn parses_tokeninfo_strings() {
+        let info: TokenInfo = serde_json::from_str(
+            r#"{"azp":"x.apps.googleusercontent.com","aud":"x.apps.googleusercontent.com","sub":"123","scope":"openid email","exp":"1793900000","expires_in":"3599","email":"a@b.com","email_verified":"true"}"#,
         )
         .unwrap();
-        assert_eq!((d.user_code.as_str(), d.interval), ("ABC-DEF", 5));
+        assert_eq!((info.sub.as_str(), info.email.as_str(), info.expires_in_secs()), ("123", "a@b.com", 3599));
     }
 }

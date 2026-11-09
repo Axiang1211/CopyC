@@ -85,6 +85,8 @@ rust {
 }
 
 dependencies {
+    // Google 授權（帳號選擇與同意畫面，取得 Drive App 專用資料夾的 access token）
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.activity:activity-ktx:1.10.1")

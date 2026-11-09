@@ -17,25 +17,15 @@
     <!-- 這個版本沒有設定 Google 用戶端 -->
     <section class="card" id="unavailable" hidden>
       <h2 data-i18n="unavailable.title">這個版本還不能登入</h2>
-      <p data-i18n="unavailable.body">建置時沒有設定 Android 用的 Google 用戶端。</p>
+      <p data-i18n="unavailable.body">請在裝有 Google Play 服務的 Android 手機上使用。</p>
     </section>
 
     <!-- 尚未登入 -->
     <section class="card" id="signed-out" hidden>
       <h2 data-i18n="out.title">連接你的電腦</h2>
       <p data-i18n="out.body">用電腦版 CopyC 登入的同一個 Google 帳號登入。電腦上複製的文字會直接出現在手機的剪貼簿，手機的內容也能傳到電腦。</p>
-      <button class="btn primary" id="sign-in" type="button" data-i18n="out.signIn">用 Google 登入</button>
+      <button class="btn primary" id="sign-in" type="button"><span class="spinner" id="sign-in-spin" aria-hidden="true" hidden></span><span id="sign-in-text" data-i18n="out.signIn">用 Google 登入</span></button>
       <p class="hint" data-i18n="out.privacy">內容在裝置上加密，伺服器看不到。</p>
-    </section>
-
-    <!-- 登入中：顯示裝置代碼 -->
-    <section class="card" id="code-card" hidden>
-      <h2 data-i18n="code.title">在 Google 輸入這組代碼</h2>
-      <div class="code" id="code"></div>
-      <p class="hint" data-i18n="code.copied">代碼已複製，開啟頁面後貼上即可。</p>
-      <button class="btn primary" id="open-google" type="button" data-i18n="code.open">開啟 google.com/device</button>
-      <p class="wait"><span class="spinner" aria-hidden="true"></span><span data-i18n="code.wait">完成後回到這裡，會自動繼續</span></p>
-      <button class="btn ghost" id="cancel" type="button" data-i18n="code.cancel">取消</button>
     </section>
 
     <!-- 已登入 -->

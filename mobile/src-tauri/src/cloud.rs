@@ -26,7 +26,6 @@ use drive::Drive;
 
 pub const RELAY_URL: &str = "wss://www.copyc.app.dreamsworld.top/sync/ws";
 const KEY_FILE: &str = "copyc-key-v1";
-const TOKEN_FILE: &str = "cloud-token";
 const ACCOUNT_FILE: &str = "cloud.json";
 const DEVICE_FILE: &str = "device-id";
 const PING: Duration = Duration::from_secs(30);
@@ -43,6 +42,9 @@ pub enum CloudError {
     SignedOut,
     RateLimited,
     Offline,
+    /// 授權畫面出錯（例如 Google Cloud 的 Android 用戶端還沒設定好）
+    #[cfg_attr(not(target_os = "android"), allow(dead_code))]
+    SignInFailed,
     TooLong,
 }
 
@@ -70,8 +72,6 @@ struct Account {
 struct Session {
     access: String,
     access_exp: u64,
-    id: Option<String>,
-    id_exp: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -114,8 +114,8 @@ pub struct Cloud {
     relay_tx: Mutex<Option<mpsc::UnboundedSender<String>>>,
     /// 登入狀態變了、或 App 回到前景：叫醒即時同步連線
     wake: Notify,
-    /// 正在進行中的登入（裝置代碼）；新的登入或取消會換掉它
-    sign_in: Mutex<Option<u64>>,
+    /// 正在顯示 Google 的授權畫面
+    signing_in: Mutex<bool>,
     seen: Mutex<VecDeque<u64>>,
     /// 最後一次從其他電腦收到並放進剪貼簿的內容，避免又傳回去
     last_received: Mutex<Option<String>>,
@@ -127,7 +127,7 @@ impl Cloud {
         let account = std::fs::read_to_string(dir.join(ACCOUNT_FILE))
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok())
-            .filter(|_| dir.join(TOKEN_FILE).exists());
+            ;
         let device_id = std::fs::read_to_string(dir.join(DEVICE_FILE))
             .ok()
             .map(|s| s.trim().to_string())
@@ -153,7 +153,7 @@ impl Cloud {
             error: Mutex::new(None),
             relay_tx: Mutex::new(None),
             wake: Notify::new(),
-            sign_in: Mutex::new(None),
+            signing_in: Mutex::new(false),
             seen: Mutex::new(VecDeque::new()),
             last_received: Mutex::new(None),
             dir,
@@ -163,12 +163,12 @@ impl Cloud {
     pub fn status(&self) -> Status {
         let account = self.account.lock().clone();
         Status {
-            available: auth::available(),
+            available: auth::available(&self.app),
             signed_in: account.is_some(),
             email: account.map(|a| a.email),
             device_name: self.device_name.clone(),
             live: *self.live.lock(),
-            signing_in: self.sign_in.lock().is_some(),
+            signing_in: *self.signing_in.lock(),
             error: *self.error.lock(),
         }
     }
@@ -194,86 +194,42 @@ impl Cloud {
 
     /* ---------------- 登入 ---------------- */
 
-    /// 開始登入：取得裝置代碼，背景輪詢直到使用者完成、拒絕或過期。
-    pub async fn sign_in_start(&self) -> Result<auth::DeviceCode, CloudError> {
-        let code = auth::start(&self.http).await?;
-        let ticket = rand::random::<u64>();
-        *self.sign_in.lock() = Some(ticket);
-        self.set_error(None);
-        let app = self.app.clone();
-        let device_code = code.device_code.clone();
-        let (interval, expires) = (code.interval.max(1), code.expires_in);
-        tauri::async_runtime::spawn(async move {
-            let cloud = app.state::<Cloud>();
-            let started = now_ms();
-            let mut wait = Duration::from_secs(interval);
-            loop {
-                tokio::time::sleep(wait).await;
-                if *cloud.sign_in.lock() != Some(ticket) {
-                    return;
-                }
-                if now_ms() - started > expires * 1000 {
-                    cloud.finish_sign_in(ticket, Err(CloudError::Cancelled));
-                    return;
-                }
-                match auth::poll(&cloud.http, &device_code).await {
-                    Ok(auth::Poll::Pending) | Err(CloudError::Network) => {}
-                    Ok(auth::Poll::SlowDown) => wait += Duration::from_secs(5),
-                    Ok(auth::Poll::Done(tokens)) => {
-                        let result = cloud.complete_sign_in(tokens).await;
-                        cloud.finish_sign_in(ticket, result);
-                        return;
-                    }
-                    Err(e) => {
-                        cloud.finish_sign_in(ticket, Err(e));
-                        return;
-                    }
-                }
+    /// 登入：顯示 Google 的帳號選擇與同意畫面，拿到 access token 後讀取帳號資訊。
+    pub async fn sign_in(&self) -> Result<(), CloudError> {
+        {
+            let mut busy = self.signing_in.lock();
+            if *busy {
+                return Ok(());
             }
-        });
-        self.changed();
-        Ok(code)
-    }
-
-    pub fn sign_in_cancel(&self) {
-        *self.sign_in.lock() = None;
-        self.changed();
-    }
-
-    fn finish_sign_in(&self, ticket: u64, result: Result<(), CloudError>) {
-        let mut slot = self.sign_in.lock();
-        if *slot != Some(ticket) {
-            return;
+            *busy = true;
         }
-        *slot = None;
-        drop(slot);
+        self.set_error(None);
+        let result = self.sign_in_inner().await;
+        *self.signing_in.lock() = false;
         self.set_error(result.err().filter(|e| *e != CloudError::Cancelled));
         self.wake.notify_one();
+        result
     }
 
-    async fn complete_sign_in(&self, tokens: auth::Tokens) -> Result<(), CloudError> {
-        let refresh = tokens.refresh_token.clone().ok_or(CloudError::Network)?;
-        let claims = tokens.id_token.as_deref().and_then(auth::claims).ok_or(CloudError::Network)?;
-        if !save_private(&self.dir.join(TOKEN_FILE), &refresh) {
-            return Err(CloudError::Network);
-        }
-        *self.session.lock().await = Some(session_from(tokens, None));
+    async fn sign_in_inner(&self) -> Result<(), CloudError> {
+        let token = auth::authorize(&self.app, true).await?;
+        let info = auth::token_info(&self.http, &token).await?;
+        *self.session.lock().await =
+            Some(Session { access: token, access_exp: now_ms() + info.expires_in_secs() * 1000 });
         *self.key.lock() = None;
-        let account = Account { email: claims.email, sub: claims.sub };
+        let account = Account { email: info.email, sub: info.sub };
         let _ = std::fs::write(self.dir.join(ACCOUNT_FILE), serde_json::to_vec(&account).unwrap_or_default());
         *self.account.lock() = Some(account);
         Ok(())
     }
 
     pub async fn sign_out(&self) {
-        if let Ok(token) = std::fs::read_to_string(self.dir.join(TOKEN_FILE)) {
-            auth::revoke(&self.http, token.trim()).await;
+        if let Some(s) = self.session.lock().await.take() {
+            auth::revoke(&self.http, &s.access).await;
         }
-        let _ = std::fs::remove_file(self.dir.join(TOKEN_FILE));
         let _ = std::fs::remove_file(self.dir.join(ACCOUNT_FILE));
         *self.account.lock() = None;
         *self.key.lock() = None;
-        *self.session.lock().await = None;
         self.set_error(None);
         self.wake.notify_one();
     }
@@ -284,19 +240,16 @@ impl Cloud {
 
     /* ---------------- Token 與金鑰 ---------------- */
 
-    async fn ensure_session(&self, need_id: bool) -> Result<tokio::sync::MutexGuard<'_, Option<Session>>, CloudError> {
+    /// 目前有效的 access token；快到期時在背景向 Google 要一個新的（不會跳出畫面）。
+    async fn access_token(&self) -> Result<String, CloudError> {
         let mut guard = self.session.lock().await;
-        let now = now_ms();
-        let fresh = guard.as_ref().is_some_and(|s| {
-            s.access_exp > now + 60_000 && (!need_id || (s.id.is_some() && s.id_exp > now + 300_000))
-        });
-        if !fresh {
-            let refresh = std::fs::read_to_string(self.dir.join(TOKEN_FILE)).map_err(|_| CloudError::SignedOut)?;
-            let tokens = auth::refresh(&self.http, refresh.trim()).await?;
-            let prev = guard.take().and_then(|s| s.id.map(|id| (id, s.id_exp)));
-            *guard = Some(session_from(tokens, prev));
+        if let Some(s) = guard.as_ref().filter(|s| s.access_exp > now_ms() + 120_000) {
+            return Ok(s.access.clone());
         }
-        Ok(guard)
+        let token = auth::authorize(&self.app, false).await?;
+        let info = auth::token_info(&self.http, &token).await?;
+        *guard = Some(Session { access: token.clone(), access_exp: now_ms() + info.expires_in_secs() * 1000 });
+        Ok(token)
     }
 
     /// 從 Drive 讀取電腦版放的金鑰；這是第一台裝置時產生一把並上傳（和電腦版規則相同：以最早建立的為準）。
@@ -304,7 +257,7 @@ impl Cloud {
         if let Some(k) = self.key.lock().clone() {
             return Ok(k);
         }
-        let token = self.ensure_session(false).await?.as_ref().map(|s| s.access.clone()).unwrap_or_default();
+        let token = self.access_token().await?;
         let drive = Drive { http: &self.http, token: &token };
         let mut files = drive.list().await?;
         if !files.iter().any(|f| f.name == KEY_FILE) {
@@ -377,20 +330,6 @@ impl Cloud {
     }
 }
 
-fn session_from(t: auth::Tokens, prev_id: Option<(String, u64)>) -> Session {
-    let now = now_ms();
-    let (id, id_exp) = match t.id_token.as_deref().and_then(|id| auth::claims(id).map(|c| (id.to_string(), c.exp))) {
-        Some((id, exp)) => (Some(id), exp * 1000),
-        None => prev_id.map_or((None, 0), |(id, exp)| (Some(id), exp)),
-    };
-    Session { access: t.access_token, access_exp: now + t.expires_in * 1000, id, id_exp }
-}
-
-/// 只有這個 App 讀得到的檔案（Android 的 App 資料夾本來就是私有的）。
-fn save_private(path: &std::path::Path, text: &str) -> bool {
-    std::fs::write(path, text).is_ok()
-}
-
 /// 背景工作：登入後保持一條即時同步連線，斷線就重連。
 pub async fn run(app: AppHandle) {
     let cloud = app.state::<Cloud>();
@@ -434,20 +373,18 @@ async fn connect(cloud: &Cloud) -> Result<(), CloudError> {
     use tokio_tungstenite::tungstenite::{self, client::IntoClientRequest, Message};
 
     let key = cloud.key().await?;
-    let id_token = {
-        let guard = cloud.ensure_session(true).await?;
-        guard.as_ref().and_then(|s| s.id.clone()).ok_or(CloudError::Network)?
-    };
+    // 中繼伺服器向 Google 確認這個 access token 屬於哪個帳號（電腦版送的是 id_token）
+    let token = cloud.access_token().await?;
     let mut req = format!("{RELAY_URL}?d={}", cloud.device_id).into_client_request().map_err(|_| CloudError::Network)?;
     req.headers_mut()
-        .insert("Authorization", format!("Bearer {id_token}").parse().map_err(|_| CloudError::Network)?);
+        .insert("Authorization", format!("Bearer {token}").parse().map_err(|_| CloudError::Network)?);
     let (ws, _) = match tokio_tungstenite::connect_async(req).await {
         Ok(ok) => ok,
         Err(tungstenite::Error::Http(resp)) => {
             return Err(match resp.status().as_u16() {
                 401 => {
                     if let Some(s) = cloud.session.lock().await.as_mut() {
-                        s.id_exp = 0;
+                        s.access_exp = 0;
                     }
                     CloudError::Network
                 }

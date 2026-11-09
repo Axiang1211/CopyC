@@ -2,8 +2,8 @@ name: Android (prototype)
 
 # 手動執行：建置 CopyC Android 原型的 APK（自己安裝測試用）與 AAB（之後上架 Google Play 用）。
 # 需要的 Secrets（Settings → Secrets and variables → Actions）：
-#   COPYC_ANDROID_CLIENT_ID / COPYC_ANDROID_CLIENT_SECRET：Google「電視和輸入受限裝置」用戶端
 #   COPYC_ANDROID_KEYSTORE（upload.jks 的 base64）/ COPYC_ANDROID_KEYSTORE_PASSWORD：上傳金鑰
+# Google 登入用的是 Google Cloud 的「Android」用戶端（以套件名稱與簽章指紋辨認），App 裡不用放用戶端 ID。
 # 沒有金鑰時改用 debug 簽章，照樣能裝在自己的手機上。
 on:
   workflow_dispatch:
@@ -11,9 +11,6 @@ on:
 jobs:
   android:
     runs-on: ubuntu-24.04
-    env:
-      COPYC_ANDROID_CLIENT_ID: ${{ secrets.COPYC_ANDROID_CLIENT_ID }}
-      COPYC_ANDROID_CLIENT_SECRET: ${{ secrets.COPYC_ANDROID_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

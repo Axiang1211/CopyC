@@ -8,16 +8,12 @@ const $ = (s) => document.querySelector(s);
 const ZH = {
   tagline: '一台複製，另一台貼上',
   'unavailable.title': '這個版本還不能登入',
-  'unavailable.body': '建置時沒有設定 Android 用的 Google 用戶端。',
+  'unavailable.body': '請在裝有 Google Play 服務的 Android 手機上使用。',
   'out.title': '連接你的電腦',
   'out.body': '用電腦版 CopyC 登入的同一個 Google 帳號登入。電腦上複製的文字會直接出現在手機的剪貼簿，手機的內容也能傳到電腦。',
   'out.signIn': '用 Google 登入',
   'out.privacy': '內容在裝置上加密，伺服器看不到。',
-  'code.title': '在 Google 輸入這組代碼',
-  'code.copied': '代碼已複製，開啟頁面後貼上即可。',
-  'code.open': '開啟 google.com/device',
-  'code.wait': '完成後回到這裡，會自動繼續',
-  'code.cancel': '取消',
+  'out.signingIn': '請在 Google 畫面完成登入…',
   'in.send': '把剪貼簿傳到電腦',
   'in.hint': '電腦上複製的內容，會在 App 開著時直接放進手機的剪貼簿。在其他 App 也可以用「分享」選 CopyC 傳到電腦。',
   'in.recent': '最近',
@@ -42,23 +38,20 @@ const ZH = {
     unavailable: '同步服務暫時無法使用',
     rateLimited: '太頻繁了，請稍後再試',
     cancelled: '登入已取消',
+    signInFailed: '無法登入 Google，請稍後再試',
   },
   signedInAs: (e) => `已登入：${e}`,
 };
 
 const EN = {
   tagline: 'Copy here. Paste there.',
-  'unavailable.title': 'Sign-in isn’t set up in this build',
-  'unavailable.body': 'This build has no Google client for Android.',
+  'unavailable.title': 'Sign-in isn’t available here',
+  'unavailable.body': 'Use CopyC on an Android phone with Google Play services.',
   'out.title': 'Connect your computers',
   'out.body': 'Sign in with the same Google account you use in CopyC on your computer. Text you copy there lands on your phone’s clipboard, and you can send your phone’s clipboard back.',
   'out.signIn': 'Sign in with Google',
   'out.privacy': 'Content is encrypted on your devices; the server can’t read it.',
-  'code.title': 'Enter this code at Google',
-  'code.copied': 'The code is copied — just paste it on the page.',
-  'code.open': 'Open google.com/device',
-  'code.wait': 'Come back here when you’re done',
-  'code.cancel': 'Cancel',
+  'out.signingIn': 'Finish signing in on the Google screen…',
   'in.send': 'Send clipboard to computer',
   'in.hint': 'While the app is open, text you copy on your computer goes straight to your phone’s clipboard. In other apps, use Share → CopyC to send text to your computer.',
   'in.recent': 'Recent',
@@ -83,6 +76,7 @@ const EN = {
     unavailable: 'Sync is unavailable right now',
     rateLimited: 'Too many requests — try again later',
     cancelled: 'Sign-in cancelled',
+    signInFailed: 'Couldn’t sign in to Google — try again later',
   },
   signedInAs: (e) => `Signed in as ${e}`,
 };
@@ -161,8 +155,10 @@ async function refresh() {
   if (!status) return;
   const signingIn = status.signingIn;
   $('#unavailable').hidden = status.available;
-  $('#signed-out').hidden = !status.available || status.signedIn || signingIn;
-  $('#code-card').hidden = !signingIn;
+  $('#signed-out').hidden = !status.available || status.signedIn;
+  $('#sign-in').disabled = signingIn;
+  $('#sign-in-spin').hidden = !signingIn;
+  $('#sign-in-text').textContent = signingIn ? T['out.signingIn'] : T['out.signIn'];
   $('#signed-in').hidden = !status.signedIn;
   const pill = $('#pill');
   pill.hidden = !status.signedIn;
@@ -178,21 +174,12 @@ let lastError = null;
 
 /* ---------------- 登入 ---------------- */
 
-let verificationUrl = 'https://www.google.com/device';
-
 $('#sign-in').addEventListener('click', async () => {
   try {
-    const code = await invoke('sign_in_start');
-    $('#code').textContent = code.userCode;
-    verificationUrl = code.verificationUrl;
-    await refresh();
+    await invoke('sign_in');
   } catch (e) {
-    toast(errText(e));
+    if (e !== 'cancelled') toast(errText(e));
   }
-});
-$('#open-google').addEventListener('click', () => invoke('open_verification', { url: verificationUrl }));
-$('#cancel').addEventListener('click', async () => {
-  await invoke('sign_in_cancel');
   refresh();
 });
 
