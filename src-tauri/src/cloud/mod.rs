@@ -13,8 +13,11 @@ pub mod auth;
 mod crypto;
 mod drive;
 mod lan;
+mod lan_proto;
 mod relay;
 mod sync;
+#[cfg_attr(not(test), allow(dead_code))]
+mod texthash;
 mod wire;
 
 use crate::{settings::Settings, state::now_ms};
@@ -527,4 +530,15 @@ pub fn start(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { relay::run(a).await });
     let a = app.clone();
     tauri::async_runtime::spawn(async move { lan::run(a).await });
+}
+
+#[cfg(test)]
+mod shared_tests {
+    /// Android 版用的 texthash 必須和電腦版剪貼簿管線的雜湊一致，刪除才同步得起來。
+    #[test]
+    fn shared_text_hash_matches_clipboard_pipeline() {
+        for text in ["", "hello", "報價單已更新：$1,280", "482913", "line1\nline2", "  spaced  "] {
+            assert_eq!(super::texthash::text_hash(text), crate::classify::text_hash(text), "{text:?}");
+        }
+    }
 }

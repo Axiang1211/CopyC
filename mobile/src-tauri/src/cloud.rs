@@ -1,12 +1,13 @@
 //! Android 版的同步核心：登入狀態、加密金鑰與即時同步連線。
 //! 加密、線路格式與 Drive 存取直接沿用電腦版的原始碼（#[path]），兩邊才不會不一致。
 
-use crate::auth;
+use crate::{android, auth};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::VecDeque,
     path::PathBuf,
+    sync::atomic::{AtomicBool, Ordering},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
@@ -18,6 +19,10 @@ pub mod crypto;
 #[allow(dead_code)]
 #[path = "../../../src-tauri/src/cloud/drive.rs"]
 pub mod drive;
+#[path = "../../../src-tauri/src/cloud/lan_proto.rs"]
+pub mod lan_proto;
+#[path = "../../../src-tauri/src/cloud/texthash.rs"]
+pub mod texthash;
 #[path = "../../../src-tauri/src/cloud/wire.rs"]
 pub mod wire;
 
@@ -28,6 +33,7 @@ pub const RELAY_URL: &str = "wss://www.copyc.app.dreamsworld.top/sync/ws";
 const KEY_FILE: &str = "copyc-key-v1";
 const ACCOUNT_FILE: &str = "cloud.json";
 const DEVICE_FILE: &str = "device-id";
+const PREFS_FILE: &str = "prefs.json";
 const PING: Duration = Duration::from_secs(30);
 /// 即時同步一次最多傳這麼大的文字（和電腦版相同）。
 pub const LIVE_MAX_BYTES: usize = 64 * 1024;
@@ -74,6 +80,16 @@ struct Session {
     access_exp: u64,
 }
 
+/// 使用者在 App 裡的開關。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Prefs {
+    /// 背景接收：常駐通知讓 App 在背景時也保持連線
+    pub background: bool,
+    /// 同一個網路直接互傳（Android 17 起需要「附近裝置」權限，使用者開啟時才詢問）
+    pub lan: bool,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
@@ -84,6 +100,9 @@ pub struct Status {
     live: Live,
     signing_in: bool,
     error: Option<CloudError>,
+    prefs: Prefs,
+    /// 區域網路裡找到幾台同帳號的電腦
+    lan_peers: usize,
 }
 
 /// 收到或送出的一則內容（給畫面顯示）。
@@ -104,11 +123,11 @@ pub struct Cloud {
     app: AppHandle,
     dir: PathBuf,
     pub http: reqwest::Client,
-    device_id: String,
-    device_name: String,
+    pub(crate) device_id: String,
+    pub(crate) device_name: String,
     account: Mutex<Option<Account>>,
     session: tokio::sync::Mutex<Option<Session>>,
-    key: Mutex<Option<Key>>,
+    pub(crate) key: Mutex<Option<Key>>,
     live: Mutex<Live>,
     error: Mutex<Option<CloudError>>,
     relay_tx: Mutex<Option<mpsc::UnboundedSender<String>>>,
@@ -119,6 +138,12 @@ pub struct Cloud {
     seen: Mutex<VecDeque<u64>>,
     /// 最後一次從其他電腦收到並放進剪貼簿的內容，避免又傳回去
     last_received: Mutex<Option<String>>,
+    prefs: Mutex<Prefs>,
+    /// 畫面在前景（看得到 App）；不在前景時收到內容會跳通知
+    foreground: AtomicBool,
+    pub(crate) lan: lan_proto::Lan,
+    /// 區域網路直傳的開關或登入狀態變了
+    pub(crate) lan_wake: Notify,
 }
 
 impl Cloud {
@@ -137,6 +162,10 @@ impl Cloud {
                 let _ = std::fs::write(dir.join(DEVICE_FILE), &id);
                 id
             });
+        let prefs = std::fs::read_to_string(dir.join(PREFS_FILE))
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default();
         Self {
             app,
             http: reqwest::Client::builder()
@@ -145,7 +174,7 @@ impl Cloud {
                 .build()
                 .unwrap_or_default(),
             device_id,
-            device_name: "Android".into(),
+            device_name: android::device_name().filter(|n| !n.trim().is_empty()).unwrap_or_else(|| "Android".into()),
             account: Mutex::new(account),
             session: tokio::sync::Mutex::new(None),
             key: Mutex::new(None),
@@ -156,6 +185,10 @@ impl Cloud {
             signing_in: Mutex::new(false),
             seen: Mutex::new(VecDeque::new()),
             last_received: Mutex::new(None),
+            prefs: Mutex::new(prefs),
+            foreground: AtomicBool::new(true),
+            lan: lan_proto::Lan::default(),
+            lan_wake: Notify::new(),
             dir,
         }
     }
@@ -170,10 +203,12 @@ impl Cloud {
             live: *self.live.lock(),
             signing_in: *self.signing_in.lock(),
             error: *self.error.lock(),
+            prefs: *self.prefs.lock(),
+            lan_peers: self.lan.count(),
         }
     }
 
-    fn changed(&self) {
+    pub(crate) fn changed(&self) {
         let _ = self.app.emit("status", ());
     }
 
@@ -189,7 +224,35 @@ impl Cloud {
 
     /// App 回到前景：連線可能在背景被系統切斷了，馬上重連。
     pub fn resume(&self) {
+        self.foreground.store(true, Ordering::Relaxed);
         self.wake.notify_one();
+        self.lan_wake.notify_one();
+    }
+
+    /// 畫面離開前景：之後收到的內容改用通知告訴使用者。
+    pub fn pause(&self) {
+        self.foreground.store(false, Ordering::Relaxed);
+    }
+
+    pub fn set_prefs(&self, prefs: Prefs) {
+        *self.prefs.lock() = prefs;
+        let _ = std::fs::write(self.dir.join(PREFS_FILE), serde_json::to_vec(&prefs).unwrap_or_default());
+        self.apply_background();
+        self.lan_wake.notify_one();
+        self.changed();
+    }
+
+    pub(crate) fn dir(&self) -> &std::path::Path {
+        &self.dir
+    }
+
+    pub(crate) fn prefs(&self) -> Prefs {
+        *self.prefs.lock()
+    }
+
+    /// 依設定與登入狀態開關背景服務（App 在前景時呼叫，Android 才允許啟動前景服務）。
+    pub fn apply_background(&self) {
+        android::set_background(self.prefs().background && self.signed_in());
     }
 
     /* ---------------- 登入 ---------------- */
@@ -220,6 +283,8 @@ impl Cloud {
         let account = Account { email: info.email, sub: info.sub };
         let _ = std::fs::write(self.dir.join(ACCOUNT_FILE), serde_json::to_vec(&account).unwrap_or_default());
         *self.account.lock() = Some(account);
+        self.apply_background();
+        self.lan_wake.notify_one();
         Ok(())
     }
 
@@ -230,18 +295,21 @@ impl Cloud {
         let _ = std::fs::remove_file(self.dir.join(ACCOUNT_FILE));
         *self.account.lock() = None;
         *self.key.lock() = None;
+        let _ = std::fs::remove_file(self.dir.join(crate::history::CACHE_FILE));
+        android::set_background(false);
         self.set_error(None);
         self.wake.notify_one();
+        self.lan_wake.notify_one();
     }
 
-    fn signed_in(&self) -> bool {
+    pub(crate) fn signed_in(&self) -> bool {
         self.account.lock().is_some()
     }
 
     /* ---------------- Token 與金鑰 ---------------- */
 
     /// 目前有效的 access token；快到期時在背景向 Google 要一個新的（不會跳出畫面）。
-    async fn access_token(&self) -> Result<String, CloudError> {
+    pub(crate) async fn access_token(&self) -> Result<String, CloudError> {
         let mut guard = self.session.lock().await;
         if let Some(s) = guard.as_ref().filter(|s| s.access_exp > now_ms() + 120_000) {
             return Ok(s.access.clone());
@@ -253,7 +321,7 @@ impl Cloud {
     }
 
     /// 從 Drive 讀取電腦版放的金鑰；這是第一台裝置時產生一把並上傳（和電腦版規則相同：以最早建立的為準）。
-    async fn key(&self) -> Result<Key, CloudError> {
+    pub(crate) async fn key(&self) -> Result<Key, CloudError> {
         if let Some(k) = self.key.lock().clone() {
             return Ok(k);
         }
@@ -282,16 +350,25 @@ impl Cloud {
 
     /* ---------------- 即時同步 ---------------- */
 
-    /// 把文字傳到其他電腦。
-    pub fn send(&self, text: &str) -> Result<ClipEvent, CloudError> {
+    /// 把文字傳到其他電腦：先直接傳給同一個網路裡的電腦，其餘的再交給中繼轉送。
+    pub async fn send(&self, text: &str) -> Result<ClipEvent, CloudError> {
         if text.len() > LIVE_MAX_BYTES {
             return Err(CloudError::TooLong);
         }
         let key = self.key.lock().clone().ok_or(CloudError::Offline)?;
-        let tx = self.relay_tx.lock().clone().ok_or(CloudError::Offline)?;
         let (id, data) = wire::seal(&key, text, &self.device_name);
         self.first_time(id);
-        tx.send(wire::wire(&data, &[])).map_err(|_| CloudError::Offline)?;
+        let targets = if self.prefs().lan { self.lan.targets() } else { Vec::new() };
+        let delivered = if targets.is_empty() {
+            Vec::new()
+        } else {
+            lan_proto::deliver(&self.lan, targets, wire::wire(&data, &[])).await
+        };
+        let tx = self.relay_tx.lock().clone();
+        let relayed = tx.is_some_and(|tx| tx.send(wire::wire(&data, &delivered)).is_ok());
+        if !relayed && delivered.is_empty() {
+            return Err(CloudError::Offline);
+        }
         Ok(ClipEvent { text: text.to_string(), device: self.device_name.clone(), at: now_ms(), incoming: false })
     }
 
@@ -315,24 +392,44 @@ impl Cloud {
         true
     }
 
-    fn receive(&self, key: &Key, msg: &str) -> bool {
+    /// 收到其他電腦的內容（經中繼或區域網路）：放進剪貼簿，App 不在前景時跳通知。回傳 false 表示解不開。
+    /// `max_age`：區域網路收到的內容太舊就不採用，避免有人錄下封包之後重播。
+    pub(crate) fn receive(&self, key: &Key, msg: &str, max_age: Option<Duration>) -> bool {
         let Some(clip) = wire::decode(key, msg) else { return false };
+        if max_age.is_some_and(|age| now_ms().abs_diff(clip.at) > age.as_millis() as u64) {
+            return true;
+        }
         if !self.first_time(clip.id) || clip.text.trim().is_empty() {
             return true;
         }
         *self.last_received.lock() = Some(clip.text.clone());
-        {
+        if !android::set_clipboard(&clip.text) {
             use tauri_plugin_clipboard_manager::ClipboardExt;
             let _ = self.app.clipboard().write_text(clip.text.clone());
+        }
+        if !self.foreground.load(Ordering::Relaxed) {
+            android::notify_received(&clip.device, &preview(&clip.text));
         }
         let _ = self.app.emit("clip", ClipEvent { text: clip.text, device: clip.device, at: clip.at, incoming: true });
         true
     }
 }
 
+/// 通知裡顯示的開頭（換行換成空白，最多 80 個字）。
+fn preview(text: &str) -> String {
+    let flat: String = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut out: String = flat.chars().take(80).collect();
+    if flat.chars().count() > 80 {
+        out.push('…');
+    }
+    out
+}
+
 /// 背景工作：登入後保持一條即時同步連線，斷線就重連。
 pub async fn run(app: AppHandle) {
     let cloud = app.state::<Cloud>();
+    // 已經開啟背景接收的話，App 一打開就啟動背景服務
+    cloud.apply_background();
     let mut backoff = Duration::from_secs(2);
     loop {
         if !cloud.signed_in() {
@@ -405,7 +502,7 @@ async fn connect(cloud: &Cloud) -> Result<(), CloudError> {
         tokio::select! {
             msg = stream.next() => match msg {
                 Some(Ok(Message::Text(text))) if text != "pong" => {
-                    if !cloud.receive(&key, &text) {
+                    if !cloud.receive(&key, &text, None) {
                         // 解不開：金鑰可能換了，重新讀取後再連
                         *cloud.key.lock() = None;
                         return Ok(());
@@ -428,5 +525,25 @@ async fn connect(cloud: &Cloud) -> Result<(), CloudError> {
                 if sink.send(Message::Text("ping".into())).await.is_err() { return Ok(()) }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn notification_preview_is_short_and_single_line() {
+        assert_eq!(preview("a\n b\tc"), "a b c");
+        let long = "字".repeat(100);
+        assert_eq!(preview(&long).chars().count(), 81);
+    }
+
+    #[test]
+    fn prefs_default_off_and_tolerate_missing_fields() {
+        let p: Prefs = serde_json::from_str("{}").unwrap();
+        assert_eq!(p, Prefs { background: false, lan: false });
+        let p: Prefs = serde_json::from_str(r#"{"lan":true}"#).unwrap();
+        assert!(p.lan && !p.background);
     }
 }

@@ -9,23 +9,23 @@
 <body>
   <header class="top">
     <img class="logo" src="logo.svg" alt="" width="40" height="40">
-    <div class="brand"><b>Copy<span>C</span></b><small data-i18n="tagline">一台複製，另一台貼上</small></div>
+    <div class="brand"><b>Copy<span>C</span></b><small data-i18n="tagline"></small></div>
     <span class="pill" id="pill" hidden><i></i><span id="pill-text"></span></span>
   </header>
 
   <main>
-    <!-- 這個版本沒有設定 Google 用戶端 -->
+    <!-- 沒有 Google 授權外掛（例如在電腦上開發） -->
     <section class="card" id="unavailable" hidden>
-      <h2 data-i18n="unavailable.title">這個版本還不能登入</h2>
-      <p data-i18n="unavailable.body">請在裝有 Google Play 服務的 Android 手機上使用。</p>
+      <h2 data-i18n="unavailable.title"></h2>
+      <p data-i18n="unavailable.body"></p>
     </section>
 
     <!-- 尚未登入 -->
     <section class="card" id="signed-out" hidden>
-      <h2 data-i18n="out.title">連接你的電腦</h2>
-      <p data-i18n="out.body">用電腦版 CopyC 登入的同一個 Google 帳號登入。電腦上複製的文字會直接出現在手機的剪貼簿，手機的內容也能傳到電腦。</p>
-      <button class="btn primary" id="sign-in" type="button"><span class="spinner" id="sign-in-spin" aria-hidden="true" hidden></span><span id="sign-in-text" data-i18n="out.signIn">用 Google 登入</span></button>
-      <p class="hint" data-i18n="out.privacy">內容在裝置上加密，伺服器看不到。</p>
+      <h2 data-i18n="out.title"></h2>
+      <p data-i18n="out.body"></p>
+      <button class="btn primary" id="sign-in" type="button"><span class="spinner" id="sign-in-spin" aria-hidden="true" hidden></span><span id="sign-in-text"></span></button>
+      <p class="hint" data-i18n="out.privacy"></p>
     </section>
 
     <!-- 已登入 -->
@@ -34,19 +34,57 @@
         <p class="account" id="account"></p>
         <button class="btn primary big" id="send" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0-5 5m5-5 5 5"/><path d="M5 20h14"/></svg>
-          <span data-i18n="in.send">把剪貼簿傳到電腦</span>
+          <span data-i18n="in.send"></span>
         </button>
-        <p class="hint" data-i18n="in.hint">電腦上複製的內容，會在 App 開著時直接放進手機的剪貼簿。在其他 App 也可以用「分享」選 CopyC 傳到電腦。</p>
+        <p class="hint" data-i18n="in.hint"></p>
       </div>
-      <h3 class="list-title" data-i18n="in.recent">最近</h3>
-      <ol class="list" id="list"></ol>
-      <p class="empty" id="empty" data-i18n="in.empty">還沒有內容。到電腦上複製一段文字試試看。</p>
-      <button class="btn ghost small" id="sign-out" type="button" data-i18n="in.signOut">登出</button>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-recent" aria-selected="true" type="button" data-i18n="tab.recent"></button>
+        <button role="tab" id="tab-history" aria-selected="false" type="button" data-i18n="tab.history"></button>
+        <button role="tab" id="tab-settings" aria-selected="false" type="button" data-i18n="tab.settings"></button>
+      </div>
+
+      <!-- 最近：這支手機收到與送出的 -->
+      <div id="panel-recent" role="tabpanel">
+        <ol class="list" id="list"></ol>
+        <p class="empty" id="empty" data-i18n="in.empty"></p>
+      </div>
+
+      <!-- 歷史紀錄：各電腦備份到 Google Drive 的 -->
+      <div id="panel-history" role="tabpanel" hidden>
+        <div class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+          <input id="search" type="search" autocomplete="off" data-i18n-placeholder="hist.search">
+        </div>
+        <div class="chips" id="chips"></div>
+        <p class="hist-state" id="hist-state"></p>
+        <ol class="list" id="hist-list"></ol>
+        <button class="btn ghost small" id="hist-more" type="button" data-i18n="hist.more" hidden></button>
+      </div>
+
+      <!-- 設定 -->
+      <div id="panel-settings" role="tabpanel" hidden>
+        <div class="card setting">
+          <div><h3 data-i18n="set.bg"></h3><p data-i18n="set.bgDesc"></p></div>
+          <input type="checkbox" class="switch" id="pref-bg">
+        </div>
+        <div class="card setting">
+          <div><h3 data-i18n="set.lan"></h3><p data-i18n="set.lanDesc"></p><p class="note" id="lan-note" hidden></p></div>
+          <input type="checkbox" class="switch" id="pref-lan">
+        </div>
+        <div class="card">
+          <h3 data-i18n="set.tile"></h3>
+          <p data-i18n="set.tileDesc"></p>
+        </div>
+        <button class="btn ghost small" id="sign-out" type="button" data-i18n="in.signOut"></button>
+      </div>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <footer class="foot"><span data-i18n="foot">CopyC Android 原型 · 免費</span></footer>
+  <footer class="foot"><span data-i18n="foot"></span></footer>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

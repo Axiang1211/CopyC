@@ -1,0 +1,9 @@
+<resources>
+    <string name="share_label">"Envoyer à l’ordinateur (CopyC)"</string>
+    <string name="tile_label">"Envoyer à l’ordinateur"</string>
+    <string name="sync_channel">"Réception en arrière-plan"</string>
+    <string name="sync_title">"CopyC reçoit"</string>
+    <string name="sync_text">"Le texte copié sur vos ordinateurs arrive directement dans le presse-papiers de ce téléphone"</string>
+    <string name="received_channel">"Reçu de vos ordinateurs"</string>
+    <string name="received_title">"Reçu de %1$s — dans le presse-papiers"</string>
+</resources>

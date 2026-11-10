@@ -1,6 +1,6 @@
 [package]
 name = "copyc-mobile"
-version = "0.1.0"
+version = "1.0.0"
 description = "CopyC for Android (prototype)"
 edition = "2021"
 rust-version = "1.77"
@@ -23,9 +23,15 @@ chacha20poly1305 = "0.10"
 parking_lot = "0.12"
 # Android 上沒有系統 OpenSSL：一律用 rustls 與內建的根憑證
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-tokio = { version = "1", features = ["sync", "time", "macros"] }
+tokio = { version = "1", features = ["sync", "time", "macros", "net", "io-util"] }
 tokio-tungstenite = { version = "0.24", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+if-addrs = "0.15"
+
+# 呼叫 Android（剪貼簿、通知、背景服務、區域網路權限），見 src/android.rs
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+ndk-context = "0.1"
 
 [profile.release]
 codegen-units = 1

@@ -2,4 +2,10 @@
     <string name="app_name">"CopyC"</string>
     <string name="main_activity_title">"CopyC"</string>
     <string name="share_label">"Send to computer (CopyC)"</string>
+    <string name="tile_label">"Send to computer"</string>
+    <string name="sync_channel">"Background receiving"</string>
+    <string name="sync_title">"CopyC is receiving"</string>
+    <string name="sync_text">"Text you copy on your computers goes straight to this phone’s clipboard"</string>
+    <string name="received_channel">"Received from computers"</string>
+    <string name="received_title">"Received from %1$s — on your clipboard"</string>
 </resources>

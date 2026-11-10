@@ -1,0 +1,9 @@
+<resources>
+    <string name="share_label">"パソコンに送る（CopyC）"</string>
+    <string name="tile_label">"パソコンに送る"</string>
+    <string name="sync_channel">"バックグラウンド受信"</string>
+    <string name="sync_title">"CopyC が受信中"</string>
+    <string name="sync_text">"パソコンでコピーしたテキストがこのスマホのクリップボードに届きます"</string>
+    <string name="received_channel">"パソコンから届いた内容"</string>
+    <string name="received_title">"%1$s から届きました（クリップボードに入れました）"</string>
+</resources>

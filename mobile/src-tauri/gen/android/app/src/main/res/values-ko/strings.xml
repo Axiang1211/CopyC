@@ -1,0 +1,9 @@
+<resources>
+    <string name="share_label">"컴퓨터로 보내기(CopyC)"</string>
+    <string name="tile_label">"컴퓨터로 보내기"</string>
+    <string name="sync_channel">"백그라운드 수신"</string>
+    <string name="sync_title">"CopyC 수신 중"</string>
+    <string name="sync_text">"컴퓨터에서 복사한 텍스트가 이 휴대폰의 클립보드로 바로 들어옵니다"</string>
+    <string name="received_channel">"컴퓨터에서 받은 내용"</string>
+    <string name="received_title">"%1$s에서 받은 내용을 클립보드에 넣었습니다"</string>
+</resources>
