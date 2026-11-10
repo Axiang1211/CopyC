@@ -31,7 +31,7 @@
         <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>隱私權政策</p>
         <h1>你的剪貼簿，由你決定去哪裡。</h1>
         <p class="legal-lead">CopyC 預設完全在本機運作。只有你自己登入 Google 開啟同步時，文字類內容才會<b>先在你的電腦上加密</b>，再傳到你的其他電腦與你自己的 Google Drive。我們不販售、不分享，也看不到你複製的內容。</p>
-        <p class="legal-updated">政策版本 1.4・最後更新：2026 年 11 月 5 日・適用 CopyC 所有版本（Windows、macOS、Microsoft Store 版）</p>
+        <p class="legal-updated">政策版本 1.5・最後更新：2026 年 11 月 10 日・適用 CopyC 所有版本（Windows、macOS、Microsoft Store 版、Android 版）</p>
       </div>
 
       <ul class="legal-points">
@@ -89,6 +89,18 @@
           <p>CopyC 使用及傳輸從 Google API 取得的資訊時，會遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API 服務使用者資料政策</a>，包括其中的「有限使用」規定：這些資料只用來提供你看得到的同步功能，不會用於廣告、不會販售，也不會交給任何第三方，我們也不會由人工讀取。</p>
         </section>
         <section>
+          <h2>Android 版</h2>
+          <p>Android 版是電腦版的同步夥伴：只有在你用 Google 登入後才會連網，用的是和電腦版相同的端對端加密、Google Drive App 專用資料夾與 Cloudflare 中繼（見上方「跨裝置同步」）。</p>
+          <ul>
+            <li><b>剪貼簿：</b>電腦傳來的文字會放進手機的剪貼簿。手機的剪貼簿只在你按「把剪貼簿傳到電腦」、使用分享選單或快速設定按鈕時才會讀取並加密傳送；CopyC 不會在背景讀取手機剪貼簿（Android 也不允許）。</li>
+            <li><b>Google 登入：</b>透過手機的 Google Play 服務授權，權限和電腦版一樣只有 openid、email 與 drive.appdata。中繼伺服器會向 Google 確認登入憑證屬於哪個帳號，不保存憑證。</li>
+            <li><b>歷史紀錄：</b>手機會下載你各電腦備份在 Google Drive 的加密紀錄，在手機上解密後存在 App 裡；登出時刪除。手機目前不上傳自己的紀錄。</li>
+            <li><b>背景接收（選用）：</b>開啟後，CopyC 以常駐通知保持與你自己電腦的連線，收到內容時用通知告訴你（鎖定畫面上不顯示內容）。</li>
+            <li><b>同一個網路直接互傳（選用）：</b>需要 Android 的「附近的裝置」權限，用途和電腦版相同（見上方說明）。</li>
+            <li><b>不收集：</b>Android 版沒有廣告、分析或追蹤程式，不讀取聯絡人、位置、相片或其他 App 的資料。</li>
+          </ul>
+        </section>
+        <section>
           <h2>遮蔽與隱私模式</h2>
           <p>密碼管理器標記為機密的內容、疑似密碼或金鑰的內容，CopyC 會在提示中自動遮蔽。開啟「隱私模式」後，所有提示、最近紀錄與歷史紀錄列表都只顯示類型、不顯示內容，適合開會分享螢幕時使用。</p>
         </section>
@@ -125,6 +137,7 @@
           <h2>政策更新</h2>
           <p>每次修改，我們都會更新本頁、提高上方的政策版本號，並在下面的版本紀錄寫明改了什麼。如果你不同意修改後的內容，可以停止使用並解除安裝 CopyC。</p>
           <ul>
+            <li><b>1.5（2026 年 11 月 10 日）：</b>新增「Android 版」：剪貼簿的使用方式、Google 登入、歷史紀錄、背景接收與區域網路權限。</li>
             <li><b>1.4（2026 年 11 月 5 日）：</b>配合 CopyC 1.1.1 新增「自動更新」（官網版在背景下載並驗證簽章）與「公告與設定資料」（所有版本向官網下載經過簽章的資料檔）。</li>
             <li><b>1.3（2026 年 10 月 28 日）：</b>配合 CopyC 1.1.1 新增「同一個網路直接互傳」：說明區域網路裡傳送什麼、如何加密、如何關閉；中繼伺服器會收到隨機的裝置編號。</li>
             <li><b>1.2（2026 年 10 月 27 日）：</b>配合 CopyC 1.1.0 新增「跨裝置同步」：Google 登入、端對端加密、Google Drive 歷史備份、Cloudflare 即時同步，以及如何關閉與刪除資料；新增 Google API 有限使用聲明。</li>
