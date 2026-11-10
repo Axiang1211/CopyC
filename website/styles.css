@@ -1592,6 +1592,97 @@ kbd.is-pressed {
   color: var(--text-2);
   font-size: 13.5px;
 }
+/* Windows：.exe 安裝程式收在摺疊區塊裡，預設推薦 Microsoft Store */
+.exe-more {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.exe-more summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  list-style: none;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.exe-more summary::-webkit-details-marker {
+  display: none;
+}
+.exe-more summary svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 260ms var(--ease-out);
+}
+.exe-more[open] summary svg {
+  transform: rotate(180deg);
+}
+.exe-more summary:hover {
+  color: var(--text);
+}
+.exe-more-body {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  animation: exe-in 260ms var(--ease-out);
+}
+@keyframes exe-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+/* Android 卡片：整張可點，前往封閉測試申請表 */
+a.android-soon {
+  color: inherit;
+  text-decoration: none;
+  transition: transform 260ms var(--spring), box-shadow 260ms ease;
+}
+a.android-soon:hover {
+  transform: translateY(-3px);
+  box-shadow: inset 0 0 0 1px var(--caramel), var(--shadow-lg);
+}
+a.android-soon:active {
+  transform: scale(0.98);
+}
+a.android-soon:focus-visible {
+  outline: 3px solid var(--caramel);
+  outline-offset: 3px;
+}
+.android-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--espresso);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 700;
+}
+.android-cta svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (prefers-color-scheme: dark) {
+  .android-cta {
+    background: var(--caramel);
+    color: var(--espresso);
+  }
+}
 .all-releases {
   margin-top: 40px;
   text-align: center;
@@ -1865,6 +1956,50 @@ html[lang="en"] .menu-row {
 }
 .trailer-frame.is-playing .trailer-play {
   display: none;
+}
+
+/* 影片分頁 */
+.video-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--milk);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.video-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font: 700 14px/1 var(--sans);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, transform 260ms var(--spring);
+}
+.video-tabs button:active {
+  transform: scale(0.96);
+}
+.video-tabs button[aria-selected="true"] {
+  background: var(--paper);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.video-tabs button:focus-visible {
+  outline: 2px solid var(--caramel);
+  outline-offset: 2px;
+}
+.video-tab-new {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
 }
 
 /* ---------- Give me a Kopi：自願贊助 ---------- */

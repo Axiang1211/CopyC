@@ -401,6 +401,34 @@ if (trailerFrame) {
     video.controls = true;
     video.play().catch(() => {});
   });
+
+  // 影片分頁：1.1.2 更新影片／30 秒介紹。切換時換片源並回到封面
+  const tabs = $$('.video-tabs [role="tab"]');
+  const select = (tab, focus) => {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    if (focus) tab.focus();
+    if (video.getAttribute('src') === tab.dataset.src) return;
+    video.pause();
+    video.src = tab.dataset.src;
+    video.poster = tab.dataset.poster;
+    video.setAttribute('aria-label', tab.dataset.label);
+    $('#trailer-play').setAttribute('aria-label', tab.dataset.play);
+    video.controls = false;
+    trailerFrame.classList.remove('is-playing');
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', (e) => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      select(tabs[(i + d + tabs.length) % tabs.length], true);
+    });
+  });
 }
 
 const revealTargets = $$('.section-head, .story-text, .menu-board, .accordion, .trailer-frame, .platform-wrap, .faq-list');

@@ -138,11 +138,15 @@
         <div class="section-head">
           <p class="eyebrow">Video</p>
           <h2>CopyC in 30 seconds.</h2>
-          <p class="section-sub">From “did that actually copy?” to download, install and everyday use — all in one go.</p>
+          <p class="section-sub">See what’s new, or meet CopyC from the start — 30 seconds each.</p>
+        </div>
+        <div class="video-tabs" role="tablist" aria-label="Choose a video">
+          <button type="button" role="tab" aria-selected="true" data-src="../assets/video/copyc-update-112-en.mp4" data-poster="../assets/video/copyc-update-112-en.jpg" data-label="CopyC 1.1.2 update video" data-play="Play the 30-second 1.1.2 update video"><span class="video-tab-new">NEW</span>What’s new in 1.1.2</button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-src="../assets/video/copyc-trailer-en.mp4" data-poster="../assets/video/copyc-trailer-en.jpg" data-label="CopyC 30-second intro video" data-play="Play the 30-second intro video">Meet CopyC</button>
         </div>
         <div class="trailer-frame" id="trailer-frame">
-          <video id="trailer-video" src="../assets/video/copyc-trailer-en.mp4" poster="../assets/video/copyc-trailer-en.jpg" preload="none" playsinline controls width="1920" height="1080" aria-label="CopyC 30-second intro video"></video>
-          <button class="trailer-play" id="trailer-play" type="button" aria-label="Play the 30-second intro video">
+          <video id="trailer-video" src="../assets/video/copyc-update-112-en.mp4" poster="../assets/video/copyc-update-112-en.jpg" preload="none" playsinline controls width="1920" height="1080" aria-label="CopyC 1.1.2 update video"></video>
+          <button class="trailer-play" id="trailer-play" type="button" aria-label="Play the 30-second 1.1.2 update video">
             <span class="trailer-play-btn"><span class="trailer-play-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.6v12.8a.9.9 0 0 0 1.4.75l10-6.4a.9.9 0 0 0 0-1.5l-10-6.4A.9.9 0 0 0 8 5.6z"/></svg></span>Play · <span class="num">0:30</span></span>
           </button>
         </div>
@@ -309,12 +313,16 @@
               <p class="arch-note store-note">Updates automatically and picks x64 or ARM64 for you</p>
 
               <!-- Installer: main.js switches to ARM64 on ARM PCs (Chromium browsers) -->
-              <p class="or-line">Or download the installer</p>
+              <details class="exe-more">
+                <summary>Or download the .exe installer<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+                <div class="exe-more-body">
               <a class="btn btn-ghost btn-block" id="win-download" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
                 <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
                 <span>Download .exe installer</span>
               </a>
               <p class="arch-note" id="arch-note">On an ARM PC (e.g. Snapdragon)? <a id="arch-alt" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe" download data-arch="arm64">Get the ARM64 version</a></p>
+                </div>
+              </details>
             </article>
             <div class="tray">
               <button class="tray-toggle" type="button" aria-expanded="false">Install tips <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
@@ -359,13 +367,14 @@
         </div>
 
         <div class="extras">
-          <article class="android-soon">
+          <a class="android-soon" href="https://forms.gle/ARTb5h1wf6FfARb48" target="_blank" rel="noopener">
             <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.5 18.5h3"/></svg></span>
             <div>
               <h3>Android <span class="android-soon-tag">In closed testing</span></h3>
-              <p>Text you copy on your computer lands on your phone’s clipboard, and your phone can send it back in one tap. Coming soon to Google Play.</p>
+              <p>Text you copy on your computer lands on your phone’s clipboard, and your phone can send it back in one tap. Coming soon to Google Play — apply now to try it early.</p>
+              <span class="android-cta">Join the closed test <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
             </div>
-          </article>
+          </a>
           <article class="whats-new">
             <h3>What’s new in 1.1.2</h3>
             <ul>
@@ -406,7 +415,7 @@
           </details>
           <details>
             <summary>Is there a phone app?</summary>
-            <p>The Android app is in closed testing on Google Play: text you copy on your computer goes straight to your phone’s clipboard, and your phone can send text back, with the same end-to-end encryption. We’ll announce it here when it launches.</p>
+            <p>The Android app is in closed testing on Google Play: text you copy on your computer goes straight to your phone’s clipboard, and your phone can send text back, with the same end-to-end encryption. Want to try it early? <a href="https://forms.gle/ARTb5h1wf6FfARb48" target="_blank" rel="noopener">Apply to join the closed test</a>. We’ll announce it here when it launches.</p>
           </details>
           <details>
             <summary>Why “CopyC”?</summary>
