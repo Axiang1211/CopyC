@@ -38,11 +38,14 @@ const DICTS = {
     'set.lanPerm': '需要「附近的裝置」權限，請在詢問時按「允許」。',
     'set.tile': '快速設定按鈕',
     'set.tileDesc': '從螢幕頂端往下滑兩次 → 編輯（鉛筆）→ 把「傳到電腦」拖進來。按一下就會把剪貼簿傳到電腦。',
+    'set.lang': '語言',
+    'set.langSystem': '跟隨系統',
     foot: 'CopyC for Android · 免費',
     live: { on: '已連線', connecting: '連線中…', off: '未連線' },
     from: (d) => `來自 ${d}`,
     sent: '已傳到電腦',
     copy: '複製',
+    copiedShort: '已複製',
     copied: '已放進剪貼簿',
     sentToast: '已傳到電腦',
     received: (d) => `收到來自 ${d} 的內容，已放進剪貼簿`,
@@ -98,11 +101,14 @@ const DICTS = {
     'set.lanPerm': '需要“附近的设备”权限，请在询问时点“允许”。',
     'set.tile': '快捷设置按钮',
     'set.tileDesc': '从屏幕顶端下滑两次 → 编辑（铅笔）→ 把“传到电脑”拖进来。点一下就会把剪贴板传到电脑。',
+    'set.lang': '语言',
+    'set.langSystem': '跟随系统',
     foot: 'CopyC for Android · 免费',
     live: { on: '已连接', connecting: '连接中…', off: '未连接' },
     from: (d) => `来自 ${d}`,
     sent: '已传到电脑',
     copy: '复制',
+    copiedShort: '已复制',
     copied: '已放进剪贴板',
     sentToast: '已传到电脑',
     received: (d) => `收到来自 ${d} 的内容，已放进剪贴板`,
@@ -158,11 +164,14 @@ const DICTS = {
     'set.lanPerm': 'Needs the “Nearby devices” permission — tap Allow when asked.',
     'set.tile': 'Quick Settings tile',
     'set.tileDesc': 'Swipe down twice from the top → Edit (pencil) → drag “Send to computer” in. One tap sends your clipboard to your computers.',
+    'set.lang': 'Language',
+    'set.langSystem': 'System default',
     foot: 'CopyC for Android · free',
     live: { on: 'Connected', connecting: 'Connecting…', off: 'Offline' },
     from: (d) => `From ${d}`,
     sent: 'Sent to computer',
     copy: 'Copy',
+    copiedShort: 'Copied',
     copied: 'On your clipboard',
     sentToast: 'Sent to your computer',
     received: (d) => `Received from ${d} — on your clipboard`,
@@ -218,11 +227,14 @@ const DICTS = {
     'set.lanPerm': '「付近のデバイス」の権限が必要です。確認が出たら「許可」を押してください。',
     'set.tile': 'クイック設定ボタン',
     'set.tileDesc': '画面上部から 2 回下にスワイプ → 編集（鉛筆）→「パソコンに送る」を追加。タップするとクリップボードをパソコンへ送ります。',
+    'set.lang': '言語',
+    'set.langSystem': 'システムの設定',
     foot: 'CopyC for Android · 無料',
     live: { on: '接続中', connecting: '接続しています…', off: 'オフライン' },
     from: (d) => `${d} から`,
     sent: 'パソコンへ送信済み',
     copy: 'コピー',
+    copiedShort: 'コピー済み',
     copied: 'クリップボードに入れました',
     sentToast: 'パソコンへ送りました',
     received: (d) => `${d} から届きました（クリップボードに入れました）`,
@@ -278,11 +290,14 @@ const DICTS = {
     'set.lanPerm': '"근처 기기" 권한이 필요합니다. 물어보면 "허용"을 누르세요.',
     'set.tile': '빠른 설정 버튼',
     'set.tileDesc': '화면 위에서 두 번 아래로 스와이프 → 편집(연필) → "컴퓨터로 보내기"를 추가하세요. 한 번 누르면 클립보드를 컴퓨터로 보냅니다.',
+    'set.lang': '언어',
+    'set.langSystem': '시스템 설정',
     foot: 'CopyC for Android · 무료',
     live: { on: '연결됨', connecting: '연결 중…', off: '오프라인' },
     from: (d) => `${d}에서`,
     sent: '컴퓨터로 보냄',
     copy: '복사',
+    copiedShort: '복사됨',
     copied: '클립보드에 넣었습니다',
     sentToast: '컴퓨터로 보냈습니다',
     received: (d) => `${d}에서 받은 내용을 클립보드에 넣었습니다`,
@@ -338,11 +353,14 @@ const DICTS = {
     'set.lanPerm': 'Nécessite l’autorisation « Appareils à proximité » : touchez Autoriser quand elle est demandée.',
     'set.tile': 'Tuile des réglages rapides',
     'set.tileDesc': 'Balayez deux fois vers le bas depuis le haut → Modifier (crayon) → ajoutez « Envoyer à l’ordinateur ». Une touche envoie le presse-papiers à vos ordinateurs.',
+    'set.lang': 'Langue',
+    'set.langSystem': 'Langue du système',
     foot: 'CopyC pour Android · gratuit',
     live: { on: 'Connecté', connecting: 'Connexion…', off: 'Hors ligne' },
     from: (d) => `De ${d}`,
     sent: 'Envoyé à l’ordinateur',
     copy: 'Copier',
+    copiedShort: 'Copié',
     copied: 'Dans le presse-papiers',
     sentToast: 'Envoyé à votre ordinateur',
     received: (d) => `Reçu de ${d} — dans le presse-papiers`,
@@ -398,11 +416,14 @@ const DICTS = {
     'set.lanPerm': 'Memerlukan kebenaran "Peranti berdekatan" — tekan Benarkan apabila ditanya.',
     'set.tile': 'Jubin Tetapan Pantas',
     'set.tileDesc': 'Leret ke bawah dua kali dari atas → Edit (pensel) → tambah "Hantar ke komputer". Satu ketikan menghantar papan keratan ke komputer anda.',
+    'set.lang': 'Bahasa',
+    'set.langSystem': 'Ikut sistem',
     foot: 'CopyC untuk Android · percuma',
     live: { on: 'Disambungkan', connecting: 'Menyambung…', off: 'Luar talian' },
     from: (d) => `Daripada ${d}`,
     sent: 'Dihantar ke komputer',
     copy: 'Salin',
+    copiedShort: 'Disalin',
     copied: 'Dalam papan keratan',
     sentToast: 'Dihantar ke komputer anda',
     received: (d) => `Diterima daripada ${d} — dalam papan keratan`,
@@ -430,6 +451,25 @@ function pickLang(tag = navigator.language || 'en') {
   return base in DICTS ? base : 'en';
 }
 
-const LANG = pickLang();
+/** 介面可選的語言（用各自的語言顯示），值是 Android 的語言標籤。 */
+const LANG_NAMES = {
+  'zh-TW': '繁體中文',
+  'zh-CN': '简体中文',
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+  fr: 'Français',
+  ms: 'Bahasa Melayu',
+};
+
+/** App 裡選的語言（空字串＝跟隨系統）。也可以在系統設定 → App → CopyC → 語言更改（Android 13 起）。 */
+const APP_LANG = (() => {
+  try {
+    return window.CopyCAndroid?.appLanguage?.() ?? '';
+  } catch {
+    return '';
+  }
+})();
+const LANG = pickLang(APP_LANG.split(',')[0] || navigator.language || 'en');
 const T = DICTS[LANG];
 const LOCALE = { 'zh-Hant': 'zh-TW', 'zh-Hans': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', ms: 'ms-MY' }[LANG];

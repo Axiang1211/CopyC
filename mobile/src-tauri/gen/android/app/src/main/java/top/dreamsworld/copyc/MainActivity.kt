@@ -8,8 +8,10 @@ import android.os.Bundle
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 
 class MainActivity : TauriActivity() {
   companion object {
@@ -71,6 +73,16 @@ class MainActivity : TauriActivity() {
         if (Build.VERSION.SDK_INT >= 33 && !granted(Manifest.permission.POST_NOTIFICATIONS)) {
           runOnUiThread { ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1) }
         }
+      }
+
+      /** App 的語言（BCP 47，例如 zh-TW）；空字串表示跟隨系統。也可以在系統設定 → App → CopyC → 語言更改（Android 13 起）。 */
+      @JavascriptInterface
+      fun appLanguage(): String = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+
+      /** 改 App 的語言（空字串＝跟隨系統）。通知與快速設定按鈕的文字也會跟著換；畫面由 app.js 重新載入。 */
+      @JavascriptInterface
+      fun setLanguage(tag: String) {
+        runOnUiThread { AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag)) }
       }
 
       @JavascriptInterface

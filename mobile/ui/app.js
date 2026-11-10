@@ -11,6 +11,7 @@ document.querySelectorAll('[data-i18n]').forEach((el) => {
   if (typeof v === 'string') el.textContent = v;
 });
 document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => (el.placeholder = T[el.dataset.i18nPlaceholder]));
+document.querySelectorAll('[data-i18n-label]').forEach((el) => el.setAttribute('aria-label', T[el.dataset.i18nLabel]));
 
 /* ---------------- 小工具 ---------------- */
 
@@ -47,6 +48,18 @@ function category(text) {
   return 'text';
 }
 
+const CHECK = 'M5 12.5 10 17 19 7';
+function svgIcon(d) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', d);
+  svg.append(path);
+  return svg;
+}
+
 /** 一則內容的列表項目。 */
 function row(clip, meta) {
   const li = document.createElement('li');
@@ -58,9 +71,19 @@ function row(clip, meta) {
   info.textContent = meta;
   const btn = document.createElement('button');
   btn.type = 'button';
+  btn.className = 'copy press';
   btn.textContent = T.copy;
+  let undo = 0;
   btn.addEventListener('click', async () => {
-    if (await invoke('write_clipboard', { text: clip.text }).catch(() => false)) toast(T.copied);
+    if (!(await invoke('write_clipboard', { text: clip.text }).catch(() => false))) return;
+    // 回應落在手指底下：按鈕自己變成「已複製」
+    btn.classList.add('done');
+    btn.replaceChildren(svgIcon(CHECK), T.copiedShort);
+    clearTimeout(undo);
+    undo = setTimeout(() => {
+      btn.classList.remove('done');
+      btn.textContent = T.copy;
+    }, 1400);
   });
   li.append(text, btn, info);
   return li;
@@ -70,6 +93,7 @@ function row(clip, meta) {
 
 const TABS = ['recent', 'history', 'settings'];
 function selectTab(name) {
+  $('.tabs').style.setProperty('--tab', TABS.indexOf(name));
   for (const t of TABS) {
     $(`#tab-${t}`).setAttribute('aria-selected', String(t === name));
     $(`#panel-${t}`).hidden = t !== name;
@@ -121,12 +145,25 @@ function renderChips() {
     ...CATS.filter((c) => c === 'all' || counts[c] || c === histCat).map((c) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = `chip${c === histCat ? ' on' : ''}`;
-      b.textContent = `${T[`cat.${c}`]} ${counts[c] ?? 0}`;
+      b.className = `chip press${c === histCat ? ' on' : ''}`;
+      b.setAttribute('aria-pressed', String(c === histCat));
+      const tick = document.createElement('span');
+      tick.className = 'tick';
+      tick.append(svgIcon(CHECK));
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = counts[c] ?? 0;
+      b.append(tick, T[`cat.${c}`], n);
       b.addEventListener('click', () => {
+        if (histCat === c) return;
         histCat = c;
         histShown = PAGE;
-        renderHistory();
+        // 先讓標籤自己長出對勾，再更新列表
+        document.querySelectorAll('#chips .chip').forEach((x) => {
+          x.classList.toggle('on', x === b);
+          x.setAttribute('aria-pressed', String(x === b));
+        });
+        setTimeout(renderHistory, 240);
       });
       return b;
     }),
@@ -220,6 +257,53 @@ $('#pref-lan').addEventListener('change', (e) => {
   savePrefs();
 });
 
+/* ---------------- 語言（Select：8 個固定選項選一個，選了馬上套用） ---------------- */
+
+const langSheet = $('#lang-sheet');
+function closeLangSheet() {
+  document.body.classList.remove('sheet-open');
+  setTimeout(() => (langSheet.hidden = true), 380);
+}
+function openLangSheet() {
+  langSheet.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('sheet-open')));
+  $('#lang-options [aria-selected="true"]')?.focus();
+}
+
+// 只有 Android 上才能換（電腦上開發時沒有 bridge）
+if (bridge?.setLanguage) {
+  const current = APP_LANG.split(',')[0];
+  const options = [['', T['set.langSystem']], ...Object.entries(LANG_NAMES)];
+  const currentName = options.find(([tag]) => tag === current)?.[1] ?? T['set.langSystem'];
+  document.querySelectorAll('.lang-name').forEach((el) => (el.textContent = currentName));
+  $('#lang-options').replaceChildren(
+    ...options.map(([tag, name]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'option press';
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', String(tag === current));
+      if (tag) b.lang = tag;
+      const label = document.createElement('span');
+      label.textContent = name;
+      b.append(label, svgIcon(CHECK));
+      b.addEventListener('click', () => {
+        if (tag === current) return closeLangSheet();
+        $('#lang-options [aria-selected="true"]')?.setAttribute('aria-selected', 'false');
+        b.setAttribute('aria-selected', 'true');
+        bridge.setLanguage(tag);
+        closeLangSheet();
+        // 選單收好、系統記住新語言之後，用新語言重新載入畫面
+        setTimeout(() => location.reload(), 420);
+      });
+      return b;
+    }),
+  );
+  document.querySelectorAll('.lang-open').forEach((el) => el.addEventListener('click', openLangSheet));
+  $('.sheet-scrim').addEventListener('click', closeLangSheet);
+  document.querySelectorAll('.lang-setting, .lang-foot').forEach((el) => (el.hidden = false));
+}
+
 /* ---------------- 登入／登出 ---------------- */
 
 $('#sign-in').addEventListener('click', async () => {
@@ -259,6 +343,9 @@ async function send(text) {
     if (sent.echo) return toast(T.echo);
     if (!sent.clip) return toast(T.emptyClip);
     addRecent(sent.clip);
+    const btn = $('#send');
+    btn.classList.add('sent');
+    setTimeout(() => btn.classList.remove('sent'), 420);
     toast(T.sentToast);
   } catch (e) {
     toast(errText(e));

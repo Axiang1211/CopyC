@@ -24,7 +24,7 @@
     <section class="card" id="signed-out" hidden>
       <h2 data-i18n="out.title"></h2>
       <p data-i18n="out.body"></p>
-      <button class="btn primary" id="sign-in" type="button"><span class="spinner" id="sign-in-spin" aria-hidden="true" hidden></span><span id="sign-in-text"></span></button>
+      <button class="press btn primary" id="sign-in" type="button"><span class="spinner" id="sign-in-spin" aria-hidden="true" hidden></span><span id="sign-in-text"></span></button>
       <p class="hint" data-i18n="out.privacy"></p>
     </section>
 
@@ -32,17 +32,18 @@
     <section id="signed-in" hidden>
       <div class="card">
         <p class="account" id="account"></p>
-        <button class="btn primary big" id="send" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0-5 5m5-5 5 5"/><path d="M5 20h14"/></svg>
+        <button class="press btn primary big" id="send" type="button">
+          <svg class="icon-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17V5m0 0-5 5m5-5 5 5"/><path d="M5 20h14"/></svg>
           <span data-i18n="in.send"></span>
         </button>
         <p class="hint" data-i18n="in.hint"></p>
       </div>
 
       <div class="tabs" role="tablist">
-        <button role="tab" id="tab-recent" aria-selected="true" type="button" data-i18n="tab.recent"></button>
-        <button role="tab" id="tab-history" aria-selected="false" type="button" data-i18n="tab.history"></button>
-        <button role="tab" id="tab-settings" aria-selected="false" type="button" data-i18n="tab.settings"></button>
+        <span class="tab-ind" aria-hidden="true"></span>
+        <button class="press" role="tab" id="tab-recent" aria-selected="true" type="button" data-i18n="tab.recent"></button>
+        <button class="press" role="tab" id="tab-history" aria-selected="false" type="button" data-i18n="tab.history"></button>
+        <button class="press" role="tab" id="tab-settings" aria-selected="false" type="button" data-i18n="tab.settings"></button>
       </div>
 
       <!-- 最近：這支手機收到與送出的 -->
@@ -60,7 +61,7 @@
         <div class="chips" id="chips"></div>
         <p class="hist-state" id="hist-state"></p>
         <ol class="list" id="hist-list"></ol>
-        <button class="btn ghost small" id="hist-more" type="button" data-i18n="hist.more" hidden></button>
+        <button class="press btn ghost small" id="hist-more" type="button" data-i18n="hist.more" hidden></button>
       </div>
 
       <!-- 設定 -->
@@ -73,17 +74,40 @@
           <div><h3 data-i18n="set.lan"></h3><p data-i18n="set.lanDesc"></p><p class="note" id="lan-note" hidden></p></div>
           <input type="checkbox" class="switch" id="pref-lan">
         </div>
+        <div class="card lang-setting" hidden>
+          <button class="row-btn lang-open press" type="button">
+            <h3 data-i18n="set.lang"></h3>
+            <span class="value lang-name"></span>
+            <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        </div>
         <div class="card">
           <h3 data-i18n="set.tile"></h3>
           <p data-i18n="set.tileDesc"></p>
         </div>
-        <button class="btn ghost small" id="sign-out" type="button" data-i18n="in.signOut"></button>
+        <button class="press btn ghost small" id="sign-out" type="button" data-i18n="in.signOut"></button>
       </div>
     </section>
   </main>
 
+  <!-- 語言選單：從下方滑出，目前的語言有對勾 -->
+  <div id="lang-sheet" hidden>
+    <div class="sheet-scrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lang-title">
+      <div class="grab"></div>
+      <h3 id="lang-title" data-i18n="set.lang"></h3>
+      <div role="listbox" id="lang-options" aria-labelledby="lang-title"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <footer class="foot"><span data-i18n="foot"></span></footer>
+  <footer class="foot">
+    <button class="lang-foot lang-open press" type="button" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+      <span class="lang-name"></span>
+    </button>
+    <span data-i18n="foot"></span>
+  </footer>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>

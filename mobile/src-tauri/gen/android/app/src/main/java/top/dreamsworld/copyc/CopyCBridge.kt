@@ -9,10 +9,13 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
+import android.os.LocaleList
 import android.os.Looper
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
@@ -39,7 +42,7 @@ object CopyCBridge {
   fun notifyReceived(context: Context, device: String, preview: String) {
     if (!canNotify(context)) return
     ensureChannels(context)
-    val title = context.getString(R.string.received_title, device)
+    val title = text(context).getString(R.string.received_title, device)
     val public = NotificationCompat.Builder(context, CHANNEL_RECEIVED)
       .setSmallIcon(R.drawable.ic_notification)
       .setContentTitle(title)
@@ -89,8 +92,8 @@ object CopyCBridge {
 
   fun syncNotification(context: Context) = NotificationCompat.Builder(context, CHANNEL_SYNC)
     .setSmallIcon(R.drawable.ic_notification)
-    .setContentTitle(context.getString(R.string.sync_title))
-    .setContentText(context.getString(R.string.sync_text))
+    .setContentTitle(text(context).getString(R.string.sync_title))
+    .setContentText(text(context).getString(R.string.sync_text))
     .setContentIntent(openApp(context))
     .setOngoing(true)
     .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -100,11 +103,23 @@ object CopyCBridge {
   fun ensureChannels(context: Context) {
     val nm = context.getSystemService(NotificationManager::class.java) ?: return
     nm.createNotificationChannel(
-      NotificationChannel(CHANNEL_SYNC, context.getString(R.string.sync_channel), NotificationManager.IMPORTANCE_LOW)
+      NotificationChannel(CHANNEL_SYNC, text(context).getString(R.string.sync_channel), NotificationManager.IMPORTANCE_LOW)
     )
     nm.createNotificationChannel(
-      NotificationChannel(CHANNEL_RECEIVED, context.getString(R.string.received_channel), NotificationManager.IMPORTANCE_DEFAULT)
+      NotificationChannel(CHANNEL_RECEIVED, text(context).getString(R.string.received_channel), NotificationManager.IMPORTANCE_DEFAULT)
     )
+  }
+
+  /**
+   * 通知文字用 App 裡選的語言。Android 13 起系統會自己套用；較舊的系統只套用在畫面上，
+   * 所以通知要自己換成那個語言。
+   */
+  private fun text(context: Context): Context {
+    val locales = AppCompatDelegate.getApplicationLocales()
+    if (Build.VERSION.SDK_INT >= 33 || locales.isEmpty) return context
+    val config = Configuration(context.resources.configuration)
+    config.setLocales(LocaleList.forLanguageTags(locales.toLanguageTags()))
+    return context.createConfigurationContext(config)
   }
 
   private fun canNotify(context: Context) =
