@@ -331,6 +331,12 @@ $('#sign-out').addEventListener('click', async (e) => {
   btn.textContent = T['in.signOut'];
   await invoke('sign_out');
   history = [];
+  // 「最近」也是這個帳號的內容，登出時一起刪除
+  recent = [];
+  try {
+    localStorage.removeItem(RECENT_KEY);
+  } catch {}
+  renderRecent();
   selectTab('recent');
   refresh();
 });
