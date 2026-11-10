@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isJwt, verifyAccessToken } from '../worker/google-access.js';
+import { clientIds, isJwt, verifyAccessToken } from '../worker/google-access.js';
 
 const ANDROID = 'android-123.apps.googleusercontent.com';
 const reply = (status, body) => async () => new Response(JSON.stringify(body), { status });
@@ -24,4 +24,12 @@ test('rejects tokens for other apps, expired or invalid tokens', async () => {
   // 沒設定 Android 用戶端：一律拒絕
   assert.equal(await verifyAccessToken('ya29.x', { audience: undefined, fetchImpl: reply(200, other) }), null);
   await assert.rejects(verifyAccessToken('ya29.x', { audience: ANDROID, fetchImpl: reply(503, {}) }));
+});
+
+test('accepts several Android client IDs separated by commas', async () => {
+  assert.deepEqual(clientIds(' a.apps , b.apps ,'), ['a.apps', 'b.apps']);
+  assert.deepEqual(clientIds(undefined), []);
+  const info = { aud: 'play-signed', azp: 'play-signed', sub: '42', expires_in: '100' };
+  const fetchImpl = async () => new Response(JSON.stringify(info), { status: 200 });
+  assert.equal(await verifyAccessToken('ya29.x', { audience: `${ANDROID}, play-signed`, fetchImpl }), '42');
 });

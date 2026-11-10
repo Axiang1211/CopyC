@@ -3,6 +3,15 @@
 
 const TOKENINFO = 'https://oauth2.googleapis.com/tokeninfo';
 
+/**
+ * 用戶端 ID 清單：可以是陣列，或用逗號分隔的字串（Cloudflare 祕密只能存字串）。
+ * Android 版有兩個用戶端：自己簽章的測試版，以及 Google Play 重新簽章的正式版。
+ */
+export const clientIds = (value) =>
+  (Array.isArray(value) ? value : String(value ?? '').split(','))
+    .map((s) => String(s ?? '').trim())
+    .filter(Boolean);
+
 /** 看起來像 JWT（id_token）就交給 verifyIdToken。 */
 export const isJwt = (token) => /^eyJ[\w-]*\.[\w-]+\.[\w-]+$/.test(token);
 
@@ -12,7 +21,7 @@ export const isJwt = (token) => /^eyJ[\w-]*\.[\w-]+\.[\w-]+$/.test(token);
  * @param {{ audience: string | string[], fetchImpl?: typeof fetch }} opts
  */
 export async function verifyAccessToken(token, { audience, fetchImpl = fetch }) {
-  const audiences = (Array.isArray(audience) ? audience : [audience]).filter(Boolean);
+  const audiences = clientIds(audience);
   if (!token || !audiences.length || token.length > 4096) return null;
   const res = await fetchImpl(`${TOKENINFO}?access_token=${encodeURIComponent(token)}`);
   if (res.status >= 500) throw new Error(`tokeninfo ${res.status}`);
