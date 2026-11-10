@@ -68,6 +68,9 @@ body {
 .brand small {
   color: var(--muted);
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pill {
   display: inline-flex;

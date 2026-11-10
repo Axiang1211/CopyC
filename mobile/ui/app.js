@@ -193,7 +193,7 @@ async function refresh() {
   pill.hidden = !status.signedIn;
   pill.classList.toggle('on', status.live === 'on');
   const live = T.live[status.live] ?? T.live.off;
-  $('#pill-text').textContent = status.lanPeers ? `${live} · ${T['set.lanPeers'](status.lanPeers)}` : live;
+  $('#pill-text').textContent = live;
   if (status.signedIn) $('#account').textContent = T.signedInAs(status.email ?? '');
   $('#send').disabled = status.live !== 'on' && !status.lanPeers;
   $('#pref-bg').checked = status.prefs.background;
