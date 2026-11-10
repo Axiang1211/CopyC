@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>CopyC — Every copy comes with a cup of Kopi</title>
-    <meta name="description" content="CopyC shows a tiny “Copied!” pill the moment you press Ctrl+C / ⌘C. Free for Windows and macOS. Copy sounds like Kopi — Malay for coffee." />
+    <meta name="description" content="CopyC shows a tiny “Copied!” pill the moment you press Ctrl+C / ⌘C. Free for Windows and macOS, with encrypted sync between your own computers. Copy sounds like Kopi — Malay for coffee." />
     <link rel="canonical" href="https://www.copyc.app.dreamsworld.top/en/" />
     <link rel="alternate" hreflang="zh-Hant" href="https://www.copyc.app.dreamsworld.top/" />
     <link rel="alternate" hreflang="en" href="https://www.copyc.app.dreamsworld.top/en/" />
@@ -84,7 +84,7 @@
           <h1>Every copy<br />comes with a cup of <em>Kopi</em>.</h1>
           <p class="lede">
             The moment you press <kbd class="kbd-inline" data-mod>Ctrl</kbd> + <kbd class="kbd-inline">C</kbd>, CopyC serves a tiny pill at the top of your screen: “Copied!”
-            No more pressing it five times, no more wondering whether anything reached your clipboard.
+            No more pressing it five times, no more wondering whether anything reached your clipboard. Sign in with Google and it even sends what you copy between your own computers, encrypted.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary btn-lg" href="#download" id="hero-download">
@@ -257,13 +257,35 @@
               <div class="mini-hud"><span class="mini-lead lead-check"></span><span><b>Copied: “Project report v2…”</b><small>142 characters · 3 lines</small></span></div>
             </div>
           </article>
+          <article class="strip" style="--tone: var(--leaf)">
+            <button class="strip-head" type="button" aria-expanded="false">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="9" height="7" rx="1.6"/><rect x="12.5" y="12" width="9" height="7" rx="1.6"/><path d="M7 15.5c0 1.8 1.2 2.5 3 2.5M17 8.5c0-1.8-1.2-2.5-3-2.5"/></svg></span>
+              <span class="strip-name">Sync</span>
+            </button>
+            <div class="strip-body">
+              <h3>Copy here, paste there</h3>
+              <p>Sign in with Google and text you copy on one computer is ready to paste on your others — just press Ctrl+V. It’s encrypted on your computer first, so our server can’t read it, and computers on the same Wi-Fi send to each other directly, without the internet. Off by default; images, files and passwords never sync.</p>
+              <div class="mini-hud"><span class="mini-lead lead-check"></span><span><b>Received from “Office PC”</b><small>On your clipboard · end-to-end encrypted</small></span></div>
+            </div>
+          </article>
+          <article class="strip" style="--tone: var(--plum)">
+            <button class="strip-head" type="button" aria-expanded="false">
+              <span class="strip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v3.8h3.8M12 8v4.3l2.8 1.7"/></svg></span>
+              <span class="strip-name">History</span>
+            </button>
+            <div class="strip-body">
+              <h3>Find last week’s copy in seconds</h3>
+              <p>Everything is sorted into text, links, emails, phone numbers, verification codes, colors, images and files — search it, filter it, and copy it again with one click. Text that is only 4 to 8 digits is filed as a verification code. With sync on, history is backed up, encrypted, to your own Google Drive.</p>
+              <div class="mini-hud"><span class="mini-lead lead-check"></span><span><b>Copied verification code: 482913</b><small>Verification code · 6 digits</small></span></div>
+            </div>
+          </article>
         </div>
       </section>
       <section class="download gutter" id="download" data-repo="Axiang1211/CopyC" data-ms-store-id="9PGS1H8Z2N1P">
         <div class="section-head">
           <p class="eyebrow">Download</p>
           <h2>Fancy a cup? Pick your platform.</h2>
-          <p class="section-sub" id="release-line">Latest v1.1.1 · released 11/05/2026 · Free, no ads — click to download.</p>
+          <p class="section-sub" id="release-line">Latest v1.1.2 · released 11/10/2026 · Free, no ads — click to download.</p>
         </div>
 
         <div class="platforms">
@@ -336,6 +358,24 @@
           </div>
         </div>
 
+        <div class="extras">
+          <article class="android-soon">
+            <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.5 18.5h3"/></svg></span>
+            <div>
+              <h3>Android <span class="android-soon-tag">In closed testing</span></h3>
+              <p>Text you copy on your computer lands on your phone’s clipboard, and your phone can send it back in one tap. Coming soon to Google Play.</p>
+            </div>
+          </article>
+          <article class="whats-new">
+            <h3>What’s new in 1.1.2</h3>
+            <ul>
+              <li><b>Verification codes:</b> text that is only 4 to 8 digits (like one-time codes from SMS or authenticator apps) is filed as a verification code, with its own filter in History.</li>
+              <li><b>Getting ready for Android:</b> the desktop and Android apps now share the same sync and encryption code.</li>
+            </ul>
+            <p class="whats-new-note">The website version 1.1.1 and later updates itself in the background; the Microsoft Store version is updated by the Store.</p>
+          </article>
+        </div>
+
         <p class="all-releases">
           Looking for release notes or older versions? Visit
           <a href="https://github.com/Axiang1211/CopyC/releases" rel="noopener">GitHub Releases</a>
@@ -359,6 +399,14 @@
           <details>
             <summary>Why do I see a security warning when installing?</summary>
             <p>The installers aren’t signed with a paid code-signing certificate yet, so Windows SmartScreen and macOS Gatekeeper warn you. Follow the “Install tips” under each download card. On Windows you can also install from the Microsoft Store instead: no warning, and updates arrive automatically.</p>
+          </details>
+          <details>
+            <summary>How do I update to a new version?</summary>
+            <p>The Microsoft Store version updates through the Store. From 1.1.1, the website version downloads new versions in the background, checks their signature, and finishes in seconds when you click “Restart &amp; update” — your settings are kept. For older versions, download and install once more over the old one.</p>
+          </details>
+          <details>
+            <summary>Is there a phone app?</summary>
+            <p>The Android app is in closed testing on Google Play: text you copy on your computer goes straight to your phone’s clipboard, and your phone can send text back, with the same end-to-end encryption. We’ll announce it here when it launches.</p>
           </details>
           <details>
             <summary>Why “CopyC”?</summary>
