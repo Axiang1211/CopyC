@@ -343,12 +343,13 @@ $('#sign-out').addEventListener('click', async (e) => {
 
 /* ---------------- 傳到電腦 ---------------- */
 
-async function send(text) {
+async function send(text, auto = false) {
   try {
     const sent = await invoke('send_text', { text });
-    if (sent.echo) return toast(T.echo);
-    if (!sent.clip) return toast(T.emptyClip);
+    if (sent.echo) return auto || toast(T.echo);
+    if (!sent.clip) return auto || toast(T.emptyClip);
     addRecent(sent.clip);
+    if (auto) return toast(T.autoSent);
     const btn = $('#send');
     btn.classList.add('sent');
     setTimeout(() => btn.classList.remove('sent'), 420);
@@ -358,10 +359,22 @@ async function send(text) {
   }
 }
 
+/** 讀一次剪貼簿：優先用 Android 原生的讀法（帶格式的文字也讀得到），電腦上開發時改用外掛。 */
+async function readOnce() {
+  if (bridge?.readClipboard) {
+    try {
+      return bridge.readClipboard() || null;
+    } catch {
+      return null;
+    }
+  }
+  return invoke('read_clipboard').catch(() => null);
+}
+
 /** Android 只讓前景、而且有焦點的 App 讀剪貼簿：剛打開時多試幾次。 */
 async function readClipboard() {
   for (let i = 0; i < 4; i++) {
-    const text = await invoke('read_clipboard').catch(() => null);
+    const text = await readOnce();
     if (text) return text;
     await new Promise((r) => setTimeout(r, 250));
   }
@@ -395,7 +408,59 @@ async function runPending() {
     else toast(T.emptyClip);
   }
 }
-window.addEventListener('focus', () => status && (status.live === 'on' || status.lanPeers) && runPending());
+window.addEventListener('focus', () => {
+  if (status && (status.live === 'on' || status.lanPeers)) runPending();
+  autoSend();
+});
+
+/* ---------------- 回到 CopyC 時自動傳送剪貼簿 ---------------- */
+
+// Android 不讓 App 在背景讀剪貼簿，所以在使用者回到 CopyC 的那一刻讀一次：
+// 內容是新的（不是剛傳過、也不是剛從電腦收到的），就自動傳到電腦。
+const AUTO_KEY = 'copyc-autosend';
+const AUTO_LAST = 'copyc-autosend-last';
+let autoOn = true;
+try {
+  autoOn = localStorage.getItem(AUTO_KEY) !== '0';
+} catch {}
+$('#pref-auto').checked = autoOn;
+$('#pref-auto').addEventListener('change', (e) => {
+  autoOn = e.target.checked;
+  try {
+    localStorage.setItem(AUTO_KEY, autoOn ? '1' : '0');
+  } catch {}
+  if (autoOn) autoSend();
+});
+
+/** 只存雜湊，不把剪貼簿內容留在手機上。 */
+function hashText(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return (h >>> 0).toString(36) + ':' + text.length;
+}
+
+let autoBusy = false;
+async function autoSend() {
+  if (!autoOn || autoBusy || !status?.signedIn || document.visibilityState !== 'visible') return;
+  if (sharedText || sendClipboardPending) return; // 分享或快速設定按鈕的內容會另外處理
+  autoBusy = true;
+  try {
+    const text = await readClipboard();
+    if (!text || bridge?.clipboardSensitive?.()) return;
+    const h = hashText(text);
+    let last = null;
+    try {
+      last = localStorage.getItem(AUTO_LAST);
+    } catch {}
+    if (h === last || recent.some((r) => r.text === text)) return;
+    try {
+      localStorage.setItem(AUTO_LAST, h);
+    } catch {}
+    await send(text, true);
+  } finally {
+    autoBusy = false;
+  }
+}
 
 /* ---------------- 事件 ---------------- */
 
@@ -412,10 +477,10 @@ document.addEventListener('visibilitychange', () => {
   }
   takePending();
   invoke('resume').catch(() => {});
-  refresh();
+  refresh().then(autoSend);
 });
 
 renderRecent();
 takePending();
 invoke('resume').catch(() => {});
-refresh();
+refresh().then(autoSend);

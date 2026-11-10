@@ -1,6 +1,8 @@
 package top.dreamsworld.copyc
 
 import android.Manifest
+import android.content.ClipDescription
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -53,6 +55,30 @@ class MainActivity : TauriActivity() {
   // 畫面（app.js）透過 window.CopyCAndroid 呼叫；網頁載入前就加好
   override fun onWebViewCreate(webView: WebView) {
     webView.addJavascriptInterface(object {
+      /**
+       * 讀剪貼簿的文字。從瀏覽器、Email 等 App 複製的通常是帶格式的文字（HTML），
+       * 不是純文字，所以用 coerceToText 轉成文字（Android 只讓前景、有焦點的 App 讀）。
+       */
+      @JavascriptInterface
+      fun readClipboard(): String? = try {
+        val cm = getSystemService(ClipboardManager::class.java)
+        val clip = cm?.primaryClip
+        if (clip == null || clip.itemCount == 0) null
+        else clip.getItemAt(0).coerceToText(this@MainActivity)?.toString()?.takeIf { it.isNotBlank() }
+      } catch (e: Exception) {
+        null
+      }
+
+      /** 剪貼簿內容被來源 App 標成敏感（例如密碼管理器，Android 13 起）。 */
+      @JavascriptInterface
+      fun clipboardSensitive(): Boolean = try {
+        Build.VERSION.SDK_INT >= 33 &&
+          getSystemService(ClipboardManager::class.java)?.primaryClipDescription?.extras
+            ?.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE) == true
+      } catch (e: Exception) {
+        false
+      }
+
       @JavascriptInterface
       fun takeShared(): String? {
         val text = sharedText

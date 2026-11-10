@@ -8,7 +8,7 @@ use std::{
     collections::VecDeque,
     path::PathBuf,
     sync::atomic::{AtomicBool, Ordering},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{mpsc, Notify};
@@ -35,6 +35,12 @@ const ACCOUNT_FILE: &str = "cloud.json";
 const DEVICE_FILE: &str = "device-id";
 const PREFS_FILE: &str = "prefs.json";
 const PING: Duration = Duration::from_secs(30);
+/// 送出前，連線至少要在這段時間內收過伺服器的回應，才算確定還活著
+const FRESH: Duration = Duration::from_secs(20);
+/// 送出 ping 後這麼久沒有回應，就當作連線已經斷了（手機在背景時連線常被系統悄悄切斷）
+const PONG_WAIT: Duration = Duration::from_secs(4);
+/// 等連線確認或重新連上的上限
+const SEND_WAIT: Duration = Duration::from_secs(12);
 /// 即時同步一次最多傳這麼大的文字（和電腦版相同）。
 pub const LIVE_MAX_BYTES: usize = 64 * 1024;
 const SEEN_MAX: usize = 64;
@@ -133,6 +139,10 @@ pub struct Cloud {
     relay_tx: Mutex<Option<mpsc::UnboundedSender<String>>>,
     /// 登入狀態變了、或 App 回到前景：叫醒即時同步連線
     wake: Notify,
+    /// 最後一次收到中繼伺服器任何回應（訊息或 pong）的時間
+    last_seen: Mutex<Instant>,
+    /// 連線確認還活著（收到 pong）或剛重新連上
+    alive: Notify,
     /// 正在顯示 Google 的授權畫面
     signing_in: Mutex<bool>,
     seen: Mutex<VecDeque<u64>>,
@@ -182,6 +192,8 @@ impl Cloud {
             error: Mutex::new(None),
             relay_tx: Mutex::new(None),
             wake: Notify::new(),
+            last_seen: Mutex::new(Instant::now().checked_sub(FRESH * 2).unwrap_or_else(Instant::now)),
+            alive: Notify::new(),
             signing_in: Mutex::new(false),
             seen: Mutex::new(VecDeque::new()),
             last_received: Mutex::new(None),
@@ -355,6 +367,8 @@ impl Cloud {
         if text.len() > LIVE_MAX_BYTES {
             return Err(CloudError::TooLong);
         }
+        // 還沒拿到金鑰（剛打開 App）：先等即時同步連上，金鑰會在連線時讀取
+        let early = if self.key.lock().is_none() { Some(self.ensure_fresh().await) } else { None };
         let key = self.key.lock().clone().ok_or(CloudError::Offline)?;
         let (id, data) = wire::seal(&key, text, &self.device_name);
         self.first_time(id);
@@ -364,12 +378,35 @@ impl Cloud {
         } else {
             lan_proto::deliver(&self.lan, targets, wire::wire(&data, &[])).await
         };
-        let tx = self.relay_tx.lock().clone();
+        // 手機在背景時連線可能已經被切斷，但看起來還是「已連線」：先確認還活著，不然就等它重新連上
+        let relay_ok = match early {
+            Some(ok) => ok,
+            None => self.ensure_fresh().await,
+        };
+        let tx = if relay_ok { self.relay_tx.lock().clone() } else { None };
         let relayed = tx.is_some_and(|tx| tx.send(wire::wire(&data, &delivered)).is_ok());
         if !relayed && delivered.is_empty() {
             return Err(CloudError::Offline);
         }
         Ok(ClipEvent { text: text.to_string(), device: self.device_name.clone(), at: now_ms(), incoming: false })
+    }
+
+    /// 確認即時同步連線還活著：最近剛收過回應就直接用；否則送 ping 等回應，
+    /// 沒有回應就讓連線重連，等新的連線建立。回傳 false 表示等不到可用的連線。
+    async fn ensure_fresh(&self) -> bool {
+        if *self.live.lock() == Live::On && self.last_seen.lock().elapsed() < FRESH {
+            return true;
+        }
+        let alive = self.alive.notified();
+        tokio::pin!(alive);
+        alive.as_mut().enable();
+        self.wake.notify_one();
+        tokio::time::timeout(SEND_WAIT, alive).await.is_ok() && self.relay_tx.lock().is_some()
+    }
+
+    fn mark_alive(&self) {
+        *self.last_seen.lock() = Instant::now();
+        self.alive.notify_waiters();
     }
 
     /// 這段文字是不是剛從其他電腦收到的（傳回去沒有意義）。
@@ -497,12 +534,18 @@ async fn connect(cloud: &Cloud) -> Result<(), CloudError> {
     *cloud.relay_tx.lock() = Some(tx);
     cloud.set_error(None);
     cloud.set_live(Live::On);
+    cloud.mark_alive();
     let mut ping = tokio::time::interval(PING);
+    // 送出 ping 之後等回應的期限；過了還沒回應就重連
+    let mut pong_deadline: Option<tokio::time::Instant> = None;
     loop {
+        let deadline = pong_deadline;
         tokio::select! {
             msg = stream.next() => match msg {
-                Some(Ok(Message::Text(text))) if text != "pong" => {
-                    if !cloud.receive(&key, &text, None) {
+                Some(Ok(Message::Text(text))) => {
+                    pong_deadline = None;
+                    cloud.mark_alive();
+                    if text != "pong" && !cloud.receive(&key, &text, None) {
                         // 解不開：金鑰可能換了，重新讀取後再連
                         *cloud.key.lock() = None;
                         return Ok(());
@@ -515,14 +558,23 @@ async fn connect(cloud: &Cloud) -> Result<(), CloudError> {
                 Some(out) => if sink.send(Message::Text(out)).await.is_err() { return Ok(()) },
                 None => return Ok(()),
             },
-            _ = ping.tick() => if sink.send(Message::Text("ping".into())).await.is_err() { return Ok(()) },
+            _ = ping.tick() => {
+                if sink.send(Message::Text("ping".into())).await.is_err() { return Ok(()) }
+                pong_deadline.get_or_insert(tokio::time::Instant::now() + PONG_WAIT);
+            }
+            _ = async { tokio::time::sleep_until(deadline.unwrap()).await }, if deadline.is_some() => {
+                // ping 沒有回應：連線其實已經斷了，重新連線
+                let _ = sink.send(Message::Close(None)).await;
+                return Ok(());
+            }
             _ = cloud.wake.notified() => {
-                // 登出，或 App 回到前景時確認連線還活著
+                // 登出，或 App 回到前景／要送出內容時確認連線還活著
                 if !cloud.signed_in() {
                     let _ = sink.send(Message::Close(None)).await;
                     return Ok(());
                 }
                 if sink.send(Message::Text("ping".into())).await.is_err() { return Ok(()) }
+                pong_deadline.get_or_insert(tokio::time::Instant::now() + PONG_WAIT);
             }
         }
     }
