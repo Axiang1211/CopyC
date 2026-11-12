@@ -1,4 +1,4 @@
-//! 七種介面語言。設定為「跟隨系統」時依作業系統語系決定。
+//! 八種介面語言（繁體中文分台灣與香港）。設定為「跟隨系統」時依作業系統語系決定。
 //! Rust 端只負責系統匣選單、視窗標題與預覽範例；其餘文案在前端 shared/i18n.js。
 
 use crate::settings::Language;
@@ -8,6 +8,8 @@ use serde::Serialize;
 pub enum Lang {
     #[serde(rename = "zh-Hant")]
     Zh,
+    #[serde(rename = "zh-HK")]
+    ZhHk,
     #[serde(rename = "en")]
     En,
     #[serde(rename = "zh-Hans")]
@@ -28,8 +30,9 @@ pub fn from_locale(locale: &str) -> Lang {
     let base = normalized.split(['.', '@']).next().unwrap_or("");
     let parts: Vec<_> = base.split('-').collect();
     match parts[0] {
-        "zh" if parts.contains(&"hant") => Lang::Zh,
         "zh" if parts.contains(&"hans") => Lang::ZhHans,
+        "zh" if parts.iter().any(|p| ["hk", "mo"].contains(p)) => Lang::ZhHk,
+        "zh" if parts.contains(&"hant") => Lang::Zh,
         "zh" if parts.iter().any(|p| ["cn", "sg", "my"].contains(p)) => Lang::ZhHans,
         "zh" => Lang::Zh,
         "ja" => Lang::Ja,
@@ -43,6 +46,7 @@ pub fn from_locale(locale: &str) -> Lang {
 pub fn resolve(pref: Language) -> Lang {
     match pref {
         Language::ZhHant => Lang::Zh,
+        Language::ZhHk => Lang::ZhHk,
         Language::En => Lang::En,
         Language::ZhHans => Lang::ZhHans,
         Language::Ja => Lang::Ja,
@@ -98,6 +102,29 @@ const ZH: Strings = Strings {
     sample_file: "要求.pdf",
 };
 
+/// 香港繁體：和台灣繁體只差在用語（私隱等）。
+const ZH_HK: Strings = Strings {
+    watching: "正在守護你的剪貼簿",
+    pause: "暫停提示",
+    position: "顯示位置",
+    positions: ["螢幕正上方膠囊", "游標旁微氣泡", "左上角", "右上角", "左下角", "右下角"],
+    duration: "停留秒數",
+    seconds: "秒",
+    opacity: "透明度",
+    sound: "提示音效",
+    privacy: "私隱打碼模式（分享螢幕用）",
+    language: "語言 Language",
+    lang_auto: "跟隨系統",
+    try_it: "試一下提示",
+    settings: "偏好設定…",
+    quit: "結束",
+    tooltip: "複製即時回應",
+    settings_title: "CopyC 偏好設定",
+    sample_text: "這是一段測試文字內容，讓你確認 CopyC 正常",
+    sample_files: "專案進度報告_v2.docx",
+    sample_file: "要求.pdf",
+};
+
 const EN: Strings = Strings {
     watching: "is looking after your clipboard",
     pause: "Pause notifications",
@@ -125,6 +152,7 @@ include!("i18n_extra.rs");
 pub fn strings(lang: Lang) -> &'static Strings {
     match lang {
         Lang::Zh => &ZH,
+        Lang::ZhHk => &ZH_HK,
         Lang::En => &EN,
         Lang::ZhHans => &ZH_HANS,
         Lang::Ja => &JA,
@@ -140,8 +168,11 @@ mod tests {
 
     #[test]
     fn chinese_locales_map_to_traditional_chinese() {
-        for l in ["zh-TW", "zh-Hant-HK", "zh_HK", "zh-Hant-CN"] {
+        for l in ["zh-TW", "zh-Hant", "zh-Hant-CN", "zh"] {
             assert_eq!(from_locale(l), Lang::Zh, "{l}");
+        }
+        for l in ["zh-HK", "zh-Hant-HK", "zh_HK.UTF-8", "zh-MO"] {
+            assert_eq!(from_locale(l), Lang::ZhHk, "{l}");
         }
     }
 
@@ -167,6 +198,7 @@ mod tests {
     #[test]
     fn added_locales_resolve_serialize_and_preserve_settings() {
         for (pref, lang, tag, system) in [
+            (Language::ZhHk, Lang::ZhHk, "zh-HK", "zh_HK"),
             (Language::ZhHans, Lang::ZhHans, "zh-Hans", "ZH_CN.UTF-8"),
             (Language::Ja, Lang::Ja, "ja", "ja_JP"),
             (Language::Ko, Lang::Ko, "ko", "ko-KR"),
@@ -185,6 +217,6 @@ mod tests {
         }
         assert_eq!(from_locale("zh-Hans-TW"), Lang::ZhHans);
         assert_eq!(from_locale("zh-SG"), Lang::ZhHans);
-        assert_eq!(from_locale("zh-MO"), Lang::Zh);
+        assert_eq!(from_locale("zh-Hans-HK"), Lang::ZhHans);
     }
 }

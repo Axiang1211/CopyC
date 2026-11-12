@@ -39,6 +39,7 @@ pub enum BlacklistAction {
 #[serde(rename_all = "kebab-case")]
 pub enum Language {
     ZhHant,
+    ZhHk,
     ZhHans,
     En,
     Ja,

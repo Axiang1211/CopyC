@@ -67,7 +67,7 @@ pub struct Notice {
     pub id: String,
     /// "info" 或 "warn"
     pub level: String,
-    /// 語言（zh-Hant、zh-Hans、en、ja、ko、fr、ms）→ 文字；沒有目前語言時用 "en"
+    /// 語言（zh-Hant、zh-HK、zh-Hans、en、ja、ko、fr、ms）→ 文字；沒有目前語言時用 "en"（zh-HK 先用 zh-Hant）
     pub title: HashMap<String, String>,
     pub body: HashMap<String, String>,
     /// 「了解更多」連結（只接受 https）
@@ -233,7 +233,9 @@ fn is_https(url: &str) -> bool {
 }
 
 fn pick(map: &HashMap<String, String>, lang: &str) -> Option<String> {
-    map.get(lang).or_else(|| map.get("en")).or_else(|| map.values().next()).filter(|s| !s.trim().is_empty()).cloned()
+    // 香港繁體沒有自己的版本時先用台灣繁體，再退回英文
+    let fallback = (lang == "zh-HK").then(|| map.get("zh-Hant")).flatten();
+    map.get(lang).or(fallback).or_else(|| map.get("en")).or_else(|| map.values().next()).filter(|s| !s.trim().is_empty()).cloned()
 }
 
 /* ---------------- 小工具 ---------------- */

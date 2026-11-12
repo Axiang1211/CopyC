@@ -2,6 +2,7 @@
 <!-- 系統設定 → App → CopyC → 語言 裡可以選的語言（和 ui/i18n.js 一致） -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="zh-TW" />
+    <locale android:name="zh-HK" />
     <locale android:name="zh-CN" />
     <locale android:name="en" />
     <locale android:name="ja" />

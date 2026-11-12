@@ -1151,7 +1151,8 @@ confirmClick($('#sync-delete'), 'sync.deleteBtn', () => invoke('cloud_delete_all
 const ob = $('#ob');
 const OB_STEPS = ['welcome', 'try', 'position', 'privacy', 'sync', 'done'];
 const OB_LANGS = [
-  ['zh-hant', '繁體中文', 'zh-Hant'],
+  ['zh-hant', '繁體中文（台灣）', 'zh-Hant'],
+  ['zh-hk', '繁體中文（香港）', 'zh-HK'],
   ['zh-hans', '简体中文', 'zh-Hans'],
   ['en', 'English', 'en'],
   ['ja', '日本語', 'ja'],

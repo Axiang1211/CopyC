@@ -1,4 +1,5 @@
 import hans from './locales/zh-Hans.js';
+import hk from './locales/zh-HK.js';
 import ja from './locales/ja.js';
 import ko from './locales/ko.js';
 import fr from './locales/fr.js';
@@ -586,14 +587,15 @@ const en = {
   'platform.linux': 'Linux (dev mode)',
 };
 
-export const DICTS = { 'zh-Hant': zh, 'zh-Hans': hans, en, ja, ko, fr, ms };
+export const DICTS = { 'zh-Hant': zh, 'zh-HK': hk, 'zh-Hans': hans, en, ja, ko, fr, ms };
 let current = 'zh-Hant';
 
 export function normalizeLang(lang) {
   const parts = String(lang ?? '').toLowerCase().replaceAll('_', '-').split(/[.@]/)[0].split('-');
   if (parts[0] === 'zh') {
-    if (parts.includes('hant')) return 'zh-Hant';
     if (parts.includes('hans')) return 'zh-Hans';
+    if (parts.some((p) => ['hk', 'mo'].includes(p))) return 'zh-HK';
+    if (parts.includes('hant')) return 'zh-Hant';
     return parts.some((p) => ['cn', 'sg', 'my'].includes(p)) ? 'zh-Hans' : 'zh-Hant';
   }
   return ['en', 'ja', 'ko', 'fr', 'ms'].includes(parts[0]) ? parts[0] : 'en';
@@ -605,7 +607,7 @@ export function setLang(lang) {
 }
 
 export const getLang = () => current;
-export const locale = () => ({ 'zh-Hant': 'zh-TW', 'zh-Hans': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', ms: 'ms-MY' })[current];
+export const locale = () => ({ 'zh-Hant': 'zh-TW', 'zh-HK': 'zh-HK', 'zh-Hans': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', ms: 'ms-MY' })[current];
 export const formatNumber = (n, options) => new Intl.NumberFormat(locale(), options).format(n);
 
 /** 取得文案；找不到時退回繁中，再退回 key 本身。 */

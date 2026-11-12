@@ -206,7 +206,7 @@ pub fn remote_data(app: AppHandle, state: tauri::State<'_, AppState>) -> RemoteD
     let lang = i18n::resolve(state.settings.lock().language);
     let lang = serde_json::to_value(lang).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
     let version = app.package_info().version.to_string();
-    let strings = ["zh-Hant", "zh-Hans", "en", "ja", "ko", "fr", "ms"]
+    let strings = ["zh-Hant", "zh-HK", "zh-Hans", "en", "ja", "ko", "fr", "ms"]
         .into_iter()
         .map(|l| (l.to_string(), crate::remote::strings(l)))
         .filter(|(_, m)| !m.is_empty())
@@ -241,7 +241,7 @@ pub fn open_kopi(state: tauri::State<'_, AppState>) {
 fn open_site(state: &AppState, anchor: &str) {
     let lang = i18n::resolve(state.settings.lock().language);
     let base = match lang {
-        i18n::Lang::Zh | i18n::Lang::ZhHans => "https://www.copyc.app.dreamsworld.top/",
+        i18n::Lang::Zh | i18n::Lang::ZhHk | i18n::Lang::ZhHans => "https://www.copyc.app.dreamsworld.top/",
         _ => "https://www.copyc.app.dreamsworld.top/en/",
     };
     platform::open_url(&format!("{base}#{anchor}"));

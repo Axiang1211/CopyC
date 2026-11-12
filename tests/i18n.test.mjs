@@ -16,7 +16,7 @@ const samples = {
   'sync.lastSync': ['2 min ago'], 'sync.lanPeers': [2], 'hud.via': ['MY-PC'], 'history.from': ['MY-PC'],
 };
 
-test('all seven dictionaries have complete, nonempty and renderable keys', () => {
+test('all eight dictionaries have complete, nonempty and renderable keys', () => {
   const keys = Object.keys(DICTS.en).sort();
   assert.equal(keys.length, 285);
   for (const [lang, dict] of Object.entries(DICTS)) {
@@ -43,7 +43,8 @@ test('all seven dictionaries have complete, nonempty and renderable keys', () =>
 
 test('system locales, scripts, regions, POSIX and fallback', () => {
   for (const [input, expected] of Object.entries({
-    'zh-TW': 'zh-Hant', zh_HK: 'zh-Hant', 'zh-MO': 'zh-Hant', 'zh-Hant-CN': 'zh-Hant',
+    'zh-TW': 'zh-Hant', 'zh-Hant-CN': 'zh-Hant', zh: 'zh-Hant',
+    zh_HK: 'zh-HK', 'zh-MO': 'zh-HK', 'zh-Hant-HK': 'zh-HK', 'zh-Hans-HK': 'zh-Hans',
     'ZH_CN.UTF-8': 'zh-Hans', 'zh-SG': 'zh-Hans', 'zh-Hans-TW': 'zh-Hans',
     ja_JP: 'ja', 'ko-KR': 'ko', 'fr-CA': 'fr', 'ms-MY': 'ms', 'en-GB': 'en',
     'de-DE': 'en', zhx: 'en', '': 'en',
@@ -106,7 +107,7 @@ test('HTML keys/options exist and all locale options match persistence and tray'
     assert.ok(key in DICTS.en, key);
   }
   const options = JSON.parse(html.match(/data-setting="language" data-options='([^']+)'/)[1]);
-  assert.equal(options.length, 8);
+  assert.equal(options.length, 9);
   const tray = readFileSync(new URL('../src-tauri/src/tray.rs', import.meta.url), 'utf8');
   for (const [value] of options) assert.ok(tray.includes(`("${value}", Language::`), value);
 });

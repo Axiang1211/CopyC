@@ -20,6 +20,10 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 > **CopyC 完全免費**，沒有廣告、付費版、會員或「啟用碼」。如果有人向你收費，或要你付款才能下載、啟用，那都不是我們，請不要付款。請只從[官網](https://www.copyc.app.dreamsworld.top/)、本頁的 [Releases](https://github.com/Axiang1211/CopyC/releases/latest) 或 [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P) 下載。
 
+## 1.1.3 新功能
+
+- **繁體中文（香港）**：新增港式用語的介面（網絡、帳戶、私隱、記錄、電郵等），香港、澳門的系統語言會自動選用；原本的繁體中文改名為「繁體中文（台灣）」。
+
 ## 1.1.2 新功能
 
 - **驗證碼分類**：4～8 位的純數字（例如簡訊或驗證器 App 的一次性密碼）會自動歸類為「驗證碼」，歷史紀錄可以用標籤篩選。

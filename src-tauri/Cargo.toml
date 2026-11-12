@@ -1,6 +1,6 @@
 [package]
 name = "copyc"
-version = "1.1.2"
+version = "1.1.3"
 description = "CopyC — 桌面複製即時回饋工具"
 authors = ["CopyC"]
 edition = "2021"

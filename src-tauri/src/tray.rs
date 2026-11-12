@@ -26,9 +26,10 @@ pub const POSITIONS: [(Position, &str); 6] = [
     (Position::BottomRight, "bottom-right"),
 ];
 /// 語言選項：選單 id、設定值、固定顯示名稱（語言名稱本身不翻譯）。
-const LANGUAGES: [(&str, Language, Option<&str>); 8] = [
+const LANGUAGES: [(&str, Language, Option<&str>); 9] = [
     ("auto", Language::Auto, None),
-    ("zh-hant", Language::ZhHant, Some("繁體中文")),
+    ("zh-hant", Language::ZhHant, Some("繁體中文（台灣）")),
+    ("zh-hk", Language::ZhHk, Some("繁體中文（香港）")),
     ("en", Language::En, Some("English")),
     ("zh-hans", Language::ZhHans, Some("简体中文")),
     ("ja", Language::Ja, Some("日本語")),

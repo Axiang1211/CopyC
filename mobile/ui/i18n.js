@@ -66,6 +66,73 @@ const DICTS = {
       signInFailed: '無法登入 Google，請稍後再試',
     },
   },
+  // 繁體中文（香港）：台灣繁體轉換香港常用的用語
+  'zh-HK': {
+    tagline: '一部複製，另一部貼上',
+    'unavailable.title': '這裡還不能登入',
+    'unavailable.body': '請在裝有 Google Play 服務的 Android 手機上使用。',
+    'out.title': '連接你的電腦',
+    'out.body': '用電腦版 CopyC 登入的同一個 Google 帳戶登入。電腦上複製的文字會直接出現在手機的剪貼簿，手機的內容也能傳到電腦。',
+    'out.signIn': '用 Google 登入',
+    'out.signingIn': '請在 Google 畫面完成登入…',
+    'out.privacy': '內容在裝置上加密，伺服器看不到。',
+    'in.send': '把剪貼簿傳到電腦',
+    'in.hint': '電腦上複製的內容會直接放進手機的剪貼簿。在其他 App 也可以用「分享」選 CopyC，或從快速設定按「傳到電腦」。',
+    'in.empty': '還沒有內容。到電腦上複製一段文字試試看。',
+    'in.signOut': '登出',
+    'in.signOutConfirm': '再按一次登出',
+    'tab.recent': '最近',
+    'tab.history': '歷史記錄',
+    'tab.settings': '設定',
+    'hist.search': '搜尋複製過的內容',
+    'hist.more': '顯示更多',
+    'hist.loading': '正在從 Google Drive 更新…',
+    'hist.empty': '還沒有歷史記錄。電腦版開啟「備份歷史記錄到 Google Drive」後，這裡會出現各電腦複製過的內容。',
+    'hist.none': '找不到符合的內容',
+    'hist.count': (n) => `共 ${n} 筆`,
+    'cat.all': '全部',
+    'cat.text': '文字',
+    'cat.link': '連結',
+    'cat.email': '電郵',
+    'cat.phone': '電話',
+    'cat.code': '驗證碼',
+    'cat.color': '色碼',
+    'set.bg': '背景接收',
+    'set.bgDesc': 'App 不在前景時也收得到電腦傳來的內容，並用通知告訴你。會顯示一個常駐通知，耗電很少。',
+    'set.lan': '同一個網絡直接互傳',
+    'set.lanDesc': '和同一個 Wi-Fi 裡的電腦直接傳送，更快，也不經過互聯網。',
+    'set.lanPeers': (n) => `找到 ${n} 部電腦`,
+    'set.lanPerm': '需要「附近的裝置」權限，請在詢問時按「允許」。',
+    'set.tile': '快速設定按鈕',
+    'set.tileDesc': '從螢幕頂端往下滑兩次 → 編輯（鉛筆）→ 把「傳到電腦」拖進來。按一下就會把剪貼簿傳到電腦。',
+    'set.auto': '回到 CopyC 時自動傳送',
+    'set.autoDesc': '在其他 App 複製後，打開 CopyC 就會自動把剪貼簿傳到電腦。密碼管理器等標示為敏感的內容不會自動傳送。',
+    autoSent: '已自動傳到電腦',
+    'set.lang': '語言',
+    'set.langSystem': '跟隨系統',
+    foot: 'CopyC for Android · 免費',
+    live: { on: '已連線', connecting: '連線中…', off: '未連線' },
+    from: (d) => `來自 ${d}`,
+    sent: '已傳到電腦',
+    copy: '複製',
+    copiedShort: '已複製',
+    copied: '已放進剪貼簿',
+    sentToast: '已傳到電腦',
+    received: (d) => `收到來自 ${d} 的內容，已放進剪貼簿`,
+    emptyClip: '剪貼簿是空的，先複製一段文字',
+    echo: '這是剛從電腦收到的內容',
+    signedInAs: (e) => `已登入：${e}`,
+    err: {
+      offline: '還沒連上，請稍候再試',
+      tooLong: '內容太長（上限 64 KB）',
+      network: '網絡有問題，請稍後再試',
+      signedOut: '登入已失效，請重新登入',
+      unavailable: '同步服務暫時無法使用',
+      rateLimited: '太頻繁了，請稍後再試',
+      cancelled: '登入已取消',
+      signInFailed: '無法登入 Google，請稍後再試',
+    },
+  },
   'zh-Hans': {
     tagline: '一台复制，另一台粘贴',
     'unavailable.title': '这里还不能登录',
@@ -467,14 +534,19 @@ const DICTS = {
 /** 手機語言 → 介面語言：繁中（台灣、香港、澳門）、簡中（中國、新加坡、馬來西亞），其他沒有的用英文。 */
 function pickLang(tag = navigator.language || 'en') {
   const t = tag.toLowerCase();
-  if (t.startsWith('zh')) return /hant|tw|hk|mo/.test(t) ? 'zh-Hant' : 'zh-Hans';
+  if (t.startsWith('zh')) {
+    if (/hans/.test(t)) return 'zh-Hans';
+    if (/hk|mo/.test(t)) return 'zh-HK';
+    return /hant|tw/.test(t) ? 'zh-Hant' : 'zh-Hans';
+  }
   const base = t.split('-')[0];
   return base in DICTS ? base : 'en';
 }
 
 /** 介面可選的語言（用各自的語言顯示），值是 Android 的語言標籤。 */
 const LANG_NAMES = {
-  'zh-TW': '繁體中文',
+  'zh-TW': '繁體中文（台灣）',
+  'zh-HK': '繁體中文（香港）',
   'zh-CN': '简体中文',
   en: 'English',
   ja: '日本語',
@@ -493,4 +565,4 @@ const APP_LANG = (() => {
 })();
 const LANG = pickLang(APP_LANG.split(',')[0] || navigator.language || 'en');
 const T = DICTS[LANG];
-const LOCALE = { 'zh-Hant': 'zh-TW', 'zh-Hans': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', ms: 'ms-MY' }[LANG];
+const LOCALE = { 'zh-Hant': 'zh-TW', 'zh-HK': 'zh-HK', 'zh-Hans': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', ms: 'ms-MY' }[LANG];
