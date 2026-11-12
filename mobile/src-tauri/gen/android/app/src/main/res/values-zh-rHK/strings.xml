@@ -1,9 +1,9 @@
 <resources>
-    <string name="share_label">"傳到電腦（CopyC）"</string>
-    <string name="tile_label">"傳到電腦"</string>
+    <string name="share_label">"傳去電腦（CopyC）"</string>
+    <string name="tile_label">"傳去電腦"</string>
     <string name="sync_channel">"背景接收"</string>
-    <string name="sync_title">"CopyC 正在接收"</string>
-    <string name="sync_text">"電腦上複製的文字會直接放進這部手機的剪貼簿"</string>
-    <string name="received_channel">"從電腦收到的內容"</string>
-    <string name="received_title">"收到來自 %1$s 的內容，已放進剪貼簿"</string>
+    <string name="sync_title">"CopyC 接收緊"</string>
+    <string name="sync_text">"喺電腦複製嘅文字會直接放入呢部手機嘅剪貼簿"</string>
+    <string name="received_channel">"由電腦收到嘅內容"</string>
+    <string name="received_title">"收到 %1$s 傳嚟嘅內容，放咗入剪貼簿"</string>
 </resources>

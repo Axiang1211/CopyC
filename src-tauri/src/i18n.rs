@@ -102,25 +102,25 @@ const ZH: Strings = Strings {
     sample_file: "要求.pdf",
 };
 
-/// 香港繁體：和台灣繁體只差在用語（私隱等）。
+/// 香港繁體：用粵語書寫（咗、喺、嘅、唔……）。
 const ZH_HK: Strings = Strings {
-    watching: "正在守護你的剪貼簿",
+    watching: "幫緊你睇住個剪貼簿",
     pause: "暫停提示",
     position: "顯示位置",
-    positions: ["螢幕正上方膠囊", "游標旁微氣泡", "左上角", "右上角", "左下角", "右下角"],
+    positions: ["螢幕正上方膠囊", "游標隔籬小氣泡", "左上角", "右上角", "左下角", "右下角"],
     duration: "停留秒數",
     seconds: "秒",
     opacity: "透明度",
     sound: "提示音效",
     privacy: "私隱打碼模式（分享螢幕用）",
     language: "語言 Language",
-    lang_auto: "跟隨系統",
-    try_it: "試一下提示",
+    lang_auto: "跟系統",
+    try_it: "試吓個提示",
     settings: "偏好設定…",
-    quit: "結束",
-    tooltip: "複製即時回應",
+    quit: "離開",
+    tooltip: "一複製就有回應",
     settings_title: "CopyC 偏好設定",
-    sample_text: "這是一段測試文字內容，讓你確認 CopyC 正常",
+    sample_text: "呢段係測試用嘅文字，等你確認 CopyC 正常",
     sample_files: "專案進度報告_v2.docx",
     sample_file: "要求.pdf",
 };
