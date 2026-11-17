@@ -37,6 +37,10 @@
             <svg viewBox="0 0 24 24"><path d="M7 18.5h10.2a4 4 0 0 0 .6-8 5.8 5.8 0 0 0-11.2 1.3A3.4 3.4 0 0 0 7 18.5z"/><path d="M10 13.2l2-2 2 2M12 11.2v4.6"/></svg>
             <span data-i18n="nav.sync">同步</span>
           </a>
+          <a class="nav-item" href="#transfer" data-target="transfer">
+            <svg viewBox="0 0 24 24"><path d="M4.5 8.5h13M14 5l3.5 3.5L14 12"/><path d="M19.5 15.5h-13M10 12l-3.5 3.5L10 19"/></svg>
+            <span data-i18n="nav.transfer">互傳檔案</span>
+          </a>
           <a class="nav-item" href="#display" data-target="display">
             <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"/><path d="M9 20h6M12 16.5V20"/><rect x="9" y="6.8" width="6" height="2.4" rx="1.2"/></svg>
             <span data-i18n="nav.display">顯示與動畫</span>
@@ -71,7 +75,9 @@
 
       <main class="content" id="content-scroll">
         <!-- 滾動收縮導航：頂部透明，下滾後變矮並轉為毛玻璃底 -->
-        <header class="topbar" id="topbar" data-tauri-drag-region>
+        <header class="topbar" id="topbar">
+          <!-- 頂欄本身高度固定（不影響下面的版面）；收縮只改這層背景與內容的位置，捲動時不會來回跳動 -->
+          <div class="topbar-bg" data-tauri-drag-region aria-hidden="true"></div>
           <div class="topbar-title" data-tauri-drag-region>
             <p class="eyebrow" data-tauri-drag-region data-i18n="top.eyebrow">偏好設定</p>
             <h1 id="page-title" data-tauri-drag-region data-i18n="nav.overview">總覽</h1>
@@ -290,6 +296,61 @@
             </div>
           </div>
           <p class="sync-fine" data-i18n="sync.fine">只同步文字、連結、Email、電話與色碼，而且在你的電腦上就先加密。</p>
+        </section>
+
+        <!-- 互傳檔案（M1） -->
+        <section class="section" id="transfer" data-title="互傳檔案" data-i18n-title="nav.transfer">
+          <h2 class="section-title" data-i18n="transfer.title">互傳檔案與圖片</h2>
+          <div class="panel tx-card">
+            <div class="tx-drop" id="tx-drop">
+              <span class="tx-drop-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 14.5v3.2a1.8 1.8 0 0 0 1.8 1.8h11.4a1.8 1.8 0 0 0 1.8-1.8v-3.2"/></svg>
+              </span>
+              <h3 data-i18n="transfer.dropTitle">把檔案或資料夾拖到這裡</h3>
+              <p data-i18n="transfer.dropDesc">直接傳給同一個 Wi-Fi 裡的電腦：不限大小，中斷了會自動接著傳</p>
+              <div class="tx-actions">
+                <button class="btn btn-primary" id="tx-pick" type="button" data-i18n="transfer.pick">選擇檔案</button>
+                <button class="btn" id="tx-clip" type="button" data-i18n="transfer.clip">傳送剪貼簿</button>
+              </div>
+              <p class="tx-flash" id="tx-flash" role="status" hidden></p>
+            </div>
+            <div class="tx-peers" id="tx-peers-row">
+              <span class="tx-peers-label" data-i18n="transfer.to">傳送到</span>
+              <div class="tx-peer-list" id="tx-peers" role="radiogroup" aria-label="傳送到" data-i18n-aria="transfer.to"></div>
+            </div>
+            <div class="tx-empty" id="tx-empty" hidden>
+              <p id="tx-empty-text"></p>
+              <button class="btn" id="tx-go-sync" type="button" data-i18n="transfer.goSync">前往同步設定</button>
+            </div>
+          </div>
+          <div class="panel tx-list-panel">
+            <div class="tx-list-head">
+              <h3 data-i18n="transfer.list">傳送紀錄</h3>
+              <button class="btn btn-ghost" id="tx-clear" type="button" data-i18n="transfer.clear">清除已完成</button>
+            </div>
+            <ul class="tx-list" id="tx-list"></ul>
+            <p class="tx-none" id="tx-none" data-i18n="transfer.none">還沒有傳送紀錄</p>
+          </div>
+          <div class="panel">
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="transfer.dir">收到的檔案存放在</h3>
+                <p class="tx-dir" id="tx-dir"></p>
+              </div>
+              <div class="tx-dir-actions">
+                <button class="btn" id="tx-dir-open" type="button" data-i18n="transfer.openDir">打開資料夾</button>
+                <button class="btn" id="tx-dir-change" type="button" data-i18n="transfer.change">變更</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="transfer.clipboard">收到後放進剪貼簿</h3>
+                <p data-i18n="transfer.clipboardDesc">收到的圖片可以直接貼上；其他檔案可以在檔案總管或 Finder 直接貼上</p>
+              </div>
+              <input type="checkbox" class="switch" data-setting="transferClipboard" aria-label="收到後放進剪貼簿" data-i18n-aria="transfer.clipboard" />
+            </div>
+          </div>
+          <p class="sync-fine" data-i18n="transfer.fine">只在登入同一個 Google 帳號的電腦之間傳送，全程端對端加密，不經過任何伺服器。</p>
         </section>
 
         <!-- 顯示與動畫 -->

@@ -8,14 +8,17 @@
 //!
 //! 協定本身（信標、裝置清單、傳送格式）在 [`super::lan_proto`]，和 Android 版共用。
 
-use super::{lan_proto::*, relay, Cloud};
+use super::{file_proto, lan_proto::*, relay, transfer, Cloud};
 use std::{
     io,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     time::Duration,
 };
-use tauri::{AppHandle, Manager};
-use tokio::net::{TcpListener, TcpStream, UdpSocket};
+use tauri::{AppHandle, Emitter, Manager};
+use tokio::{
+    io::AsyncReadExt,
+    net::{TcpListener, TcpStream, UdpSocket},
+};
 
 pub use super::lan_proto::{Lan, MAX_AGE};
 
@@ -78,6 +81,7 @@ async fn serve(
                 broadcast(&udp, cloud, &me, false).await;
                 if cloud.lan.prune() {
                     cloud.changed();
+                    let _ = app.emit("transfer:changed", ());
                 }
             }
             got = udp.recv_from(&mut buf) => {
@@ -88,11 +92,12 @@ async fn serve(
                     if beacon.d == me.id {
                         continue;
                     }
-                    if cloud.lan.saw(beacon.d, SocketAddr::new(from.ip(), beacon.p)) {
+                    if cloud.lan.saw_beacon(beacon.d, beacon.n, beacon.c, SocketAddr::new(from.ip(), beacon.p)) {
                         cloud.changed();
+                        let _ = app.emit("transfer:changed", ());
                     }
                     if beacon.r {
-                        let _ = udp.send_to(&seal_beacon(&key, &me, false), from).await;
+                        let _ = udp.send_to(&seal_beacon_with(&key, &me, false, CAPS), from).await;
                     }
                 }
             }
@@ -103,7 +108,7 @@ async fn serve(
                 };
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    let _ = tokio::time::timeout(IO_TIMEOUT, accept(&app, stream)).await;
+                    let _ = accept(&app, stream).await;
                 });
             }
             r = config.changed() => {
@@ -119,16 +124,29 @@ async fn serve(
 /// 往每張網卡的廣播位址送信標。
 async fn broadcast(udp: &UdpSocket, cloud: &Cloud, me: &Me, reply: bool) {
     let Some(key) = cloud.key.lock().clone() else { return };
-    let packet = seal_beacon(&key, me, reply);
+    let packet = seal_beacon_with(&key, me, reply, CAPS);
     for target in broadcast_targets() {
         let _ = udp.send_to(&packet, SocketAddrV4::new(target, PORT)).await;
     }
 }
 
-/// 收一則直傳，解得開就回 1。
+/// 這台電腦在信標裡宣告支援的功能。
+const CAPS: u32 = CAP_FILES;
+
+/// 收一個連線：`CPF1` 開頭是檔案互傳，其他是一則即時同步（解得開就回 1）。
 async fn accept(app: &AppHandle, mut stream: TcpStream) -> io::Result<()> {
-    let msg = read_frame(&mut stream).await?;
-    let cloud = app.state::<Cloud>();
-    let ok = cloud.key.lock().clone().is_some_and(|key| relay::receive(app, &cloud, &key, &msg, Some(MAX_AGE)));
-    write_ack(&mut stream, ok).await
+    let mut head = [0u8; 4];
+    tokio::time::timeout(IO_TIMEOUT, stream.read_exact(&mut head)).await.map_err(|_| io::ErrorKind::TimedOut)??;
+    if &head == file_proto::MAGIC {
+        // 檔案可能很大：沒有總時間上限，只在對方太久沒動靜時斷線
+        return transfer::receive(app, stream).await;
+    }
+    tokio::time::timeout(IO_TIMEOUT, async {
+        let msg = read_frame_body(&mut stream, head).await?;
+        let cloud = app.state::<Cloud>();
+        let ok = cloud.key.lock().clone().is_some_and(|key| relay::receive(app, &cloud, &key, &msg, Some(MAX_AGE)));
+        write_ack(&mut stream, ok).await
+    })
+    .await
+    .map_err(|_| io::ErrorKind::TimedOut)?
 }

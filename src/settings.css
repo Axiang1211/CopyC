@@ -295,6 +295,8 @@ body[data-platform="macos"] .island {
 .content {
   height: 100vh;
   overflow-y: auto;
+  /* 不讓瀏覽器為了「保持畫面不動」自動調整捲動位置 */
+  overflow-anchor: none;
   padding: 0 var(--page-gutter) 56px;
   scroll-behavior: smooth;
   scroll-padding-top: 76px;
@@ -318,16 +320,39 @@ body[data-platform="macos"] .island {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  /* 高度固定：收縮時只改背景與內容位置，不改版面高度。
+     以前是改 padding，頂欄變矮會把內容往上拉、捲動位置被校正後又展開，特定位置會一直來回跳。 */
+  height: 104px;
   margin: 0 calc(-1 * var(--page-gutter));
   padding: 30px var(--page-gutter) 20px;
-  transition: padding 300ms var(--ease-out), background 300ms ease, box-shadow 300ms ease;
+  pointer-events: none;
 }
-.topbar.is-compact {
-  padding-block: 12px;
+.topbar-bg {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 104px;
+  pointer-events: auto;
+  transition: height 300ms var(--ease-out), background 300ms ease, box-shadow 300ms ease;
+}
+.topbar.is-compact .topbar-bg {
+  height: 60px;
   background: color-mix(in srgb, var(--canvas) 78%, transparent);
   backdrop-filter: blur(18px) saturate(1.5);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
   box-shadow: 0 1px 0 var(--line);
+}
+.topbar-title,
+.topbar .split {
+  pointer-events: auto;
+  transition: transform 300ms var(--ease-out);
+}
+.topbar-title {
+  position: relative;
+}
+/* 收縮後內容置中在 60px 高的背景裡（原本的中心在 57px） */
+.topbar.is-compact .topbar-title,
+.topbar.is-compact .split {
+  transform: translateY(-27px);
 }
 .eyebrow {
   font-size: 12px;
@@ -2351,5 +2376,271 @@ body[data-platform="macos"] .spot-br {
 }
 .ob-try-row .btn {
   flex: none;
+  white-space: nowrap;
+}
+
+/* ---------- 互傳檔案（M1） ---------- */
+
+#transfer .panel + .panel {
+  margin-top: 14px;
+}
+.tx-card {
+  overflow: hidden;
+}
+.tx-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 14px;
+  padding: 28px 22px 24px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--line-strong);
+  background: var(--surface-2);
+  text-align: center;
+  transition: border-color 160ms ease, background 160ms ease, transform 260ms var(--spring);
+}
+.tx-drop.is-over {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  transform: scale(1.01);
+}
+.tx-drop.is-off {
+  opacity: 0.6;
+}
+.tx-drop-ico {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+.tx-drop-ico svg,
+.tx-dir-ico svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tx-drop h3 {
+  font-size: 15px;
+  font-weight: 650;
+}
+.tx-drop p {
+  max-width: 52ch;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.tx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tx-actions .btn {
+  white-space: nowrap;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+.tx-flash {
+  margin-top: 6px;
+  color: var(--coral) !important;
+}
+.tx-peers {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 22px 18px;
+}
+.tx-peers[hidden],
+.tx-empty[hidden],
+.tx-none[hidden],
+.btn[hidden] {
+  display: none;
+}
+.tx-peers-label {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.tx-peer-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tx-peer {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  font-size: 13px;
+  font-weight: 550;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+.tx-peer[aria-checked='true'] {
+  background: var(--brand-soft);
+  box-shadow: 0 0 0 1.5px var(--brand);
+  color: var(--brand-strong);
+}
+.tx-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 22px 18px;
+}
+.tx-empty p {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.tx-empty .btn {
+  flex: none;
+  white-space: nowrap;
+}
+.tx-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px 6px;
+}
+.tx-list-head h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.btn-ghost {
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-2);
+}
+.btn-small {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.tx-list {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 0 10px 10px;
+  list-style: none;
+}
+.tx-none {
+  padding: 8px 22px 22px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.tx-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+.tx-item + .tx-item {
+  border-top: 1px solid var(--line);
+}
+.tx-dir-ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.tx-dir-ico svg {
+  width: 18px;
+  height: 18px;
+}
+.tx-item.is-in .tx-dir-ico {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+.tx-item.is-failed .tx-dir-ico {
+  background: color-mix(in srgb, var(--coral) 14%, transparent);
+  color: var(--coral);
+}
+.tx-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.tx-name {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tx-meta {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.tx-item.is-failed .tx-meta {
+  color: var(--coral);
+}
+.tx-bar {
+  display: block;
+  height: 5px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+.tx-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+  transform: scaleX(var(--p, 0));
+  transform-origin: 0 50%;
+  transition: transform 240ms linear;
+}
+.tx-item.is-retrying .tx-bar i {
+  background: var(--amber);
+}
+.tx-row-actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+.tx-dir {
+  overflow: hidden;
+  max-width: 46ch;
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+.tx-dir-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+.tx-dir-actions .btn {
   white-space: nowrap;
 }

@@ -54,12 +54,32 @@ pub struct Beacon {
     /// 請對方馬上回一個信標（剛啟動時）
     #[serde(default)]
     pub r: bool,
+    /// 支援的功能（位元旗標，見 [`CAP_FILES`]）。舊版沒有這個欄位（0）。
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub c: u32,
+}
+
+/// 支援檔案互傳（file_proto 第 1 版）。
+pub const CAP_FILES: u32 = 1;
+
+fn is_zero(v: &u32) -> bool {
+    *v == 0
 }
 
 struct Peer {
     addr: SocketAddr,
     seen: Instant,
     failed: Option<Instant>,
+    name: String,
+    caps: u32,
+}
+
+/// 同一個網路裡、支援某項功能的裝置（檔案互傳的對象清單）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Nearby {
+    pub id: String,
+    pub name: String,
+    pub addr: SocketAddr,
 }
 
 /// 目前在同一個網路裡、同一個帳號的其他電腦。
@@ -85,24 +105,45 @@ impl Lan {
     }
 
     /// 記下一個信標；回傳是不是新出現的裝置。
+    #[allow(dead_code)] // Android 版使用
     pub fn saw(&self, id: String, addr: SocketAddr) -> bool {
+        self.saw_beacon(id, String::new(), 0, addr)
+    }
+
+    /// 記下一個信標（含名稱與支援的功能）；回傳是不是新出現的裝置，或名稱、功能有變。
+    pub fn saw_beacon(&self, id: String, name: String, caps: u32, addr: SocketAddr) -> bool {
         let mut peers = self.peers.lock();
         match peers.get_mut(&id) {
             Some(p) => {
-                let back = p.seen.elapsed() >= PEER_TTL;
+                let changed = p.seen.elapsed() >= PEER_TTL || p.caps != caps || p.name != name;
                 if p.addr != addr {
                     // 換了 IP（重新連上 Wi-Fi）：之前的失敗紀錄不算數
                     p.addr = addr;
                     p.failed = None;
                 }
                 p.seen = Instant::now();
-                back
+                p.name = name;
+                p.caps = caps;
+                changed
             }
             None => {
-                peers.insert(id, Peer { addr, seen: Instant::now(), failed: None });
+                peers.insert(id, Peer { addr, seen: Instant::now(), failed: None, name, caps });
                 true
             }
         }
+    }
+
+    /// 支援某項功能、而且最近聽得到的裝置，依名稱排序。
+    pub fn nearby(&self, cap: u32) -> Vec<Nearby> {
+        let mut out: Vec<Nearby> = self
+            .peers
+            .lock()
+            .iter()
+            .filter(|(_, p)| p.seen.elapsed() < PEER_TTL && p.caps & cap == cap)
+            .map(|(id, p)| Nearby { id: id.clone(), name: p.name.clone(), addr: p.addr })
+            .collect();
+        out.sort_by(|a, b| a.name.cmp(&b.name).then(a.id.cmp(&b.id)));
+        out
     }
 
     pub fn failed(&self, id: &str) {
@@ -164,9 +205,15 @@ async fn send(addr: SocketAddr, msg: &[u8]) -> io::Result<()> {
 }
 
 /// 讀一則直傳：長度（4 位元組）+ 線路訊息。
+#[allow(dead_code)] // Android 版使用
 pub async fn read_frame(stream: &mut TcpStream) -> io::Result<String> {
     let mut len = [0u8; 4];
     stream.read_exact(&mut len).await?;
+    read_frame_body(stream, len).await
+}
+
+/// 已經讀到開頭 4 個位元組（長度）之後，讀剩下的線路訊息。
+pub async fn read_frame_body(stream: &mut TcpStream, len: [u8; 4]) -> io::Result<String> {
     let len = u32::from_be_bytes(len) as usize;
     if len > MAX_FRAME {
         return Err(io::ErrorKind::InvalidData.into());
@@ -188,8 +235,14 @@ pub struct Me {
     pub port: u16,
 }
 
+#[allow(dead_code)] // Android 版使用
 pub fn seal_beacon(key: &Key, me: &Me, reply: bool) -> Vec<u8> {
-    let beacon = Beacon { d: me.id.clone(), n: me.name.clone(), p: me.port, t: now_ms(), r: reply };
+    seal_beacon_with(key, me, reply, 0)
+}
+
+/// 同 [`seal_beacon`]，另外宣告這台裝置支援的功能。
+pub fn seal_beacon_with(key: &Key, me: &Me, reply: bool, caps: u32) -> Vec<u8> {
+    let beacon = Beacon { d: me.id.clone(), n: me.name.clone(), p: me.port, t: now_ms(), r: reply, c: caps };
     let mut out = MAGIC.to_vec();
     out.extend(key.seal(&serde_json::to_vec(&beacon).unwrap_or_default()));
     out
@@ -248,6 +301,22 @@ mod tests {
         let beacon = open_beacon(&key, &packet).unwrap();
         assert_eq!((beacon.d.as_str(), beacon.p, beacon.r), ("0123456789abcdef", 50123, true));
         assert!(open_beacon(&Key::generate(), &packet).is_none());
+        assert_eq!(beacon.c, 0, "舊格式沒有功能旗標");
+        let with_files = open_beacon(&key, &seal_beacon_with(&key, &me, false, CAP_FILES)).unwrap();
+        assert_eq!(with_files.c, CAP_FILES);
+    }
+
+    #[test]
+    fn nearby_lists_only_devices_with_the_capability() {
+        let lan = Lan::default();
+        lan.saw("old".into(), "192.168.1.5:5000".parse().unwrap());
+        assert!(lan.saw_beacon("mac".into(), "Mac".into(), CAP_FILES, "192.168.1.6:5000".parse().unwrap()));
+        assert!(!lan.saw_beacon("mac".into(), "Mac".into(), CAP_FILES, "192.168.1.6:5000".parse().unwrap()));
+        assert!(lan.saw_beacon("mac".into(), "MacBook".into(), CAP_FILES, "192.168.1.6:5000".parse().unwrap()));
+        let near = lan.nearby(CAP_FILES);
+        assert_eq!(near.len(), 1);
+        assert_eq!((near[0].id.as_str(), near[0].name.as_str()), ("mac", "MacBook"));
+        assert_eq!(lan.targets().len(), 2);
     }
 
     #[test]

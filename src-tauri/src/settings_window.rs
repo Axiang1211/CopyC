@@ -1,19 +1,35 @@
 //! 偏好設定視窗：按需建立、關閉即銷毀，平時不佔用 WebView 記憶體。
 
 use crate::{i18n, state::AppState};
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub const LABEL: &str = "settings";
 
 pub fn open(app: &AppHandle) {
+    open_page(app, None);
+}
+
+/// 打開偏好設定並捲到某一段（例如系統匣的「傳送檔案…」→ `transfer`）。
+pub fn open_at(app: &AppHandle, section: &str) {
+    open_page(app, Some(section));
+}
+
+fn open_page(app: &AppHandle, section: Option<&str>) {
     if let Some(win) = app.get_webview_window(LABEL) {
         let _ = win.unminimize();
         let _ = win.show();
         let _ = win.set_focus();
+        if let Some(section) = section {
+            let _ = win.emit("settings:goto", section);
+        }
         return;
     }
 
-    let builder = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("settings.html".into()))
+    let url = match section {
+        Some(section) => format!("settings.html#{section}"),
+        None => "settings.html".into(),
+    };
+    let builder = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App(url.into()))
         .title(title(app))
         .inner_size(940.0, 660.0)
         .min_inner_size(820.0, 580.0)

@@ -31,7 +31,7 @@
         <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Privacy Policy</p>
         <h1>Your clipboard goes only where you decide.</h1>
         <p class="legal-lead">By default CopyC works entirely on your computer. Only if you sign in with Google to turn on sync is text content <b>encrypted on your computer first</b> and then sent to your other computers and your own Google Drive. We never sell or share it, and we can't read what you copy.</p>
-        <p class="legal-updated">Policy version 1.5 · Last updated: November 10, 2026 · Applies to all versions of CopyC (Windows, macOS, Microsoft Store and Android versions)</p>
+        <p class="legal-updated">Policy version 1.6 · Last updated: November 17, 2026 · Applies to all versions of CopyC (Windows, macOS, Microsoft Store and Android versions)</p>
       </div>
 
       <ul class="legal-points">
@@ -78,7 +78,7 @@
           <p>Sync is <b>off by default</b> and only starts when you click “Sign in with Google” in Preferences → Sync or in the welcome guide. Once on:</p>
           <ul>
             <li><b>What is synced:</b> text content only — text, links, email addresses, phone numbers and color codes — together with when it was copied and this computer's name.</li>
-            <li><b>Never synced:</b> images, files and file paths, passwords and sensitive content (whether or not you save passwords), and anything copied from a blocklisted app. Single entries larger than 256 KB are not synced either.</li>
+            <li><b>Never synced automatically:</b> images, files and file paths on the clipboard, passwords and sensitive content (whether or not you save passwords), and anything copied from a blocklisted app. Single entries larger than 256 KB are not synced either.</li>
             <li><b>End-to-end encryption:</b> content is encrypted on your computer with XChaCha20-Poly1305. The encryption key is created on the first device you sign in on and stored in CopyC's private folder in your Google Drive, so your other computers on the same Google account can decrypt it. Neither Cloudflare nor our server ever has the key or can read the content.</li>
             <li><b>History backup (Google Drive):</b> encrypted entries are stored in the application data folder (appDataFolder) of your own Google Drive. This folder is hidden from your files, and CopyC can only access this folder — never your other files. Backups are kept for 90 days and then deleted by CopyC. Entries you delete on one computer are deleted on the others too.</li>
             <li><b>Live sync (Cloudflare):</b> when you copy text, the encrypted content passes through our relay server on Cloudflare (copyc.app.dreamsworld.top) to your other computers that are signed in to the same Google account and online, which put it on their clipboard (you can turn this off). The relay only uses your Google sign-in token to tell which account you belong to, and receives a random ID for each computer (to avoid delivering the same copy twice); it <b>stores no content</b> and does not store your email. As with any network connection, Cloudflare processes connection details such as your IP address.</li>
@@ -87,6 +87,17 @@
           </ul>
           <p>You can turn off live sync or history backup at any time. Sign out revokes CopyC's access, deletes the token on this computer and removes entries synced from your other computers; Delete cloud data removes all of CopyC's backups and keys from your Google Drive. You can also remove CopyC under <a href="https://myaccount.google.com/permissions" rel="noopener">third-party access in your Google Account</a>.</p>
           <p>CopyC's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements: this data is only used to provide the sync features you can see, is never used for advertising, never sold and never given to third parties, and is not read by humans.</p>
+        </section>
+        <section>
+          <h2>Send files (optional, from CopyC 1.2.0)</h2>
+          <p>You can send files, folders and images to your other computers on the same network that are signed in to the same Google account. Something is only sent when <b>you</b> drop files in, click “Choose files” or “Send clipboard” — clipboard content is never sent automatically.</p>
+          <ul>
+            <li><b>Where it goes:</b> straight to a computer found through “Direct transfer on the same network” above, over your local network only — <b>never through the internet, Cloudflare or any server of ours</b>. If the other computer can’t be reached, nothing is sent another way.</li>
+            <li><b>What is sent:</b> the file content, its name (including the path inside a folder you send), its size, and this computer’s name and device ID.</li>
+            <li><b>End-to-end encryption:</b> every piece is encrypted and authenticated with your account key (the same key as sync above) using XChaCha20-Poly1305, and the whole file is checked with SHA-256 when it arrives. Only computers signed in to the same Google account can decrypt it; others on the network can’t see file names or content.</li>
+            <li><b>Storage on the receiving computer:</b> received files are saved in Downloads/CopyC on that computer (you can change this in Preferences). Partly received files wait in a hidden folder there and are deleted if not resumed within 7 days. By default, received files or images are also put on that computer’s clipboard; you can turn this off. The transfer list is kept in memory only and is gone when you quit the app.</li>
+            <li><b>How to turn it off:</b> nothing is transferred unless you send something. With Preferences → Sync → “Send directly on the same network” off, this computer can’t be found by your other computers and won’t receive files.</li>
+          </ul>
         </section>
         <section>
           <h2>Android version</h2>
@@ -131,12 +142,13 @@
         </section>
         <section>
           <h2>Future features</h2>
-          <p>CopyC keeps growing. If a future version adds any new feature that lets data leave this computer (for example sending files directly over your local network), we will <b>update this policy before it ships</b>, explaining what is sent, where it goes, how long it is kept and how to turn it off. You will decide whether to turn such features on.</p>
+          <p>CopyC keeps growing. If a future version adds any new feature that lets data leave this computer (for example sending files over the internet), we will <b>update this policy before it ships</b>, explaining what is sent, where it goes, how long it is kept and how to turn it off. You will decide whether to turn such features on.</p>
         </section>
         <section>
           <h2>Changes to this policy</h2>
           <p>Every time this policy changes we update this page, raise the policy version above and describe the change in the version history below. If you don't agree with a revised policy, you can stop using and uninstall CopyC.</p>
           <ul>
+            <li><b>1.6 (November 17, 2026):</b> added “Send files” for CopyC 1.2.0: files are only sent when you choose to, encrypted and sent directly to your own computers on the same network, never through a server; where they are saved on the receiving computer and how to turn it off.</li>
             <li><b>1.5 (November 10, 2026):</b> added “Android version”: how the clipboard is used, Google sign-in, history, background receiving and the local network permission.</li>
             <li><b>1.4 (November 5, 2026):</b> added automatic updates for CopyC 1.1.1 (the website version downloads updates in the background and checks their signature) and “Notices and configuration data” (every version downloads a signed data file from our website).</li>
             <li><b>1.3 (October 28, 2026):</b> added “Direct transfer on the same network” for CopyC 1.1.1: what is sent on your local network, how it is encrypted and how to turn it off; the relay now receives a random device ID.</li>

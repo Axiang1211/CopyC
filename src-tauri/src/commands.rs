@@ -3,7 +3,7 @@
 use crate::{
     autostart::{self, Autostart},
     classify::{Category, Clip, Payload, SensitiveReason},
-    cloud::{self, Cloud, CloudError},
+    cloud::{self, transfer, Cloud, CloudError},
     history::{Content, Page},
     hud, i18n, monitor, platform,
     settings::Settings,
@@ -11,8 +11,9 @@ use crate::{
     tray,
 };
 use serde::Serialize;
-use std::{thread, time::Duration};
+use std::{path::PathBuf, thread, time::Duration};
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_dialog::DialogExt;
 
 /// 儲存並套用設定，同步系統匣選單與所有視窗。
 pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
@@ -44,6 +45,83 @@ pub fn commit_settings(app: &AppHandle, next: Settings) -> Settings {
     crate::settings_window::retitle(app);
     let _ = app.emit("settings:changed", &next);
     next
+}
+
+/* ---------------- 檔案互傳 ---------------- */
+
+#[tauri::command]
+pub fn transfer_status(app: AppHandle) -> transfer::Status {
+    transfer::status(&app)
+}
+
+/// 傳送拖進偏好設定的檔案或資料夾，回傳排進去的檔案數。
+#[tauri::command]
+pub fn transfer_send(app: AppHandle, paths: Vec<String>, peer: String) -> usize {
+    transfer::send_paths(&app, paths.into_iter().map(PathBuf::from).collect(), peer)
+}
+
+/// 開檔案選擇視窗，選好就傳。
+#[tauri::command]
+pub fn transfer_pick(app: AppHandle, peer: String) {
+    let handle = app.clone();
+    app.dialog().file().set_title(i18n::strings(lang(&app)).send_files).pick_files(move |picked| {
+        let paths: Vec<PathBuf> = picked.unwrap_or_default().into_iter().filter_map(|p| p.into_path().ok()).collect();
+        if !paths.is_empty() {
+            transfer::send_paths(&handle, paths, peer);
+        }
+    });
+}
+
+/// 傳送剪貼簿裡的檔案或圖片；回傳 0 表示剪貼簿裡沒有可以傳的東西。
+#[tauri::command]
+pub async fn transfer_clipboard(app: AppHandle, peer: String) -> usize {
+    tauri::async_runtime::spawn_blocking(move || transfer::send_clipboard(&app, peer)).await.unwrap_or(0)
+}
+
+#[tauri::command]
+pub fn transfer_cancel(app: AppHandle, id: u64) {
+    app.state::<Cloud>().transfers.cancel(&app, id);
+}
+
+#[tauri::command]
+pub fn transfer_clear(app: AppHandle) {
+    app.state::<Cloud>().transfers.clear_finished(&app);
+}
+
+/// 打開收到的檔案（`reveal` 為 true 時改成在檔案總管 / Finder 裡顯示）。
+#[tauri::command]
+pub fn transfer_open(app: AppHandle, id: u64, reveal: bool) -> bool {
+    let Some(path) = transfer::item(&app, id).and_then(|it| it.local_path()) else { return false };
+    if reveal {
+        transfer::reveal(&path);
+    } else {
+        transfer::open_path(&path);
+    }
+    true
+}
+
+#[tauri::command]
+pub fn transfer_open_dir(app: AppHandle) {
+    let dir = transfer::dest_dir(&app);
+    let _ = std::fs::create_dir_all(&dir);
+    transfer::open_path(&dir);
+}
+
+/// 選擇收到的檔案要存在哪裡。
+#[tauri::command]
+pub fn transfer_pick_dir(app: AppHandle) {
+    let handle = app.clone();
+    app.dialog().file().set_directory(transfer::dest_dir(&app)).pick_folder(move |picked| {
+        let Some(dir) = picked.and_then(|p| p.into_path().ok()) else { return };
+        let mut next = handle.state::<AppState>().settings.lock().clone();
+        next.transfer_dir = dir.to_string_lossy().into_owned();
+        commit_settings(&handle, next);
+        let _ = handle.emit("transfer:changed", ());
+    });
+}
+
+fn lang(app: &AppHandle) -> i18n::Lang {
+    i18n::resolve(app.state::<AppState>().settings.lock().language)
 }
 
 /* ---------------- 雲端同步 ---------------- */

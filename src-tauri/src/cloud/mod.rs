@@ -7,17 +7,21 @@
 //! - **區域網路直傳**（[`lan`]）：同一個帳號的電腦在同一個網路裡時直接互傳，
 //!   沒有直接收到的裝置才經由上面的中繼轉送。
 //!
-//! 圖片、檔案與密碼類內容永遠不會離開這台電腦。
+//! - **檔案互傳**（[`transfer`]）：同一個網路裡的電腦之間，由使用者主動傳送檔案、資料夾與圖片。
+//!
+//! 剪貼簿裡的圖片、檔案與密碼類內容不會自動同步；只有使用者主動傳送的檔案才會傳到自己的其他電腦。
 
 pub mod auth;
 mod crypto;
 mod drive;
+mod file_proto;
 mod lan;
 mod lan_proto;
 mod relay;
 mod sync;
 #[cfg_attr(not(test), allow(dead_code))]
 mod texthash;
+pub mod transfer;
 mod wire;
 
 use crate::{settings::Settings, state::now_ms};
@@ -136,7 +140,8 @@ pub struct Status {
 }
 
 struct Incoming {
-    hash: u64,
+    /// None：不論是什麼內容（收到的檔案、圖片寫進剪貼簿後，讀回來的雜湊無法事先算出）
+    hash: Option<u64>,
     device: String,
     at: Instant,
 }
@@ -158,6 +163,7 @@ pub struct Cloud {
     incoming: Mutex<Option<Incoming>>,
     lan: lan::Lan,
     seen: Mutex<VecDeque<u64>>,
+    pub transfers: transfer::Transfers,
 }
 
 impl Cloud {
@@ -198,6 +204,7 @@ impl Cloud {
             incoming: Mutex::new(None),
             lan: lan::Lan::default(),
             seen: Mutex::new(VecDeque::new()),
+            transfers: transfer::Transfers::default(),
         }
     }
 
@@ -482,7 +489,7 @@ impl Cloud {
     pub fn take_incoming(&self, hash: u64) -> Option<String> {
         let mut slot = self.incoming.lock();
         match slot.take() {
-            Some(i) if i.hash == hash && i.at.elapsed() < ECHO_WINDOW => Some(i.device),
+            Some(i) if i.hash.is_none_or(|h| h == hash) && i.at.elapsed() < ECHO_WINDOW => Some(i.device),
             Some(i) if i.at.elapsed() < ECHO_WINDOW => {
                 *slot = Some(i);
                 None
@@ -492,7 +499,12 @@ impl Cloud {
     }
 
     fn expect_incoming(&self, hash: u64, device: String) {
-        *self.incoming.lock() = Some(Incoming { hash, device, at: Instant::now() });
+        *self.incoming.lock() = Some(Incoming { hash: Some(hash), device, at: Instant::now() });
+    }
+
+    /// 接下來剪貼簿的變化（不論內容）都標成從 `device` 傳來的。
+    fn expect_incoming_any(&self, device: String) {
+        *self.incoming.lock() = Some(Incoming { hash: None, device, at: Instant::now() });
     }
 }
 
@@ -530,6 +542,8 @@ pub fn start(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { relay::run(a).await });
     let a = app.clone();
     tauri::async_runtime::spawn(async move { lan::run(a).await });
+    let a = app.clone();
+    std::thread::spawn(move || transfer::cleanup(&a));
 }
 
 #[cfg(test)]

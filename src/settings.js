@@ -66,6 +66,7 @@ function applyLanguage(lang) {
   syncAll();
   renderHistoryPage();
   renderCloud();
+  renderTransfer();
   renderOnboarding();
 }
 
@@ -112,10 +113,22 @@ const spy = new IntersectionObserver(
 );
 sections.forEach((s) => spy.observe(s));
 
+// 頂欄收縮：往下捲超過 40px 才收、回到 8px 以內才展開（中間不切換，不會在臨界點來回跳）；
+// 頂欄佔的高度固定，收縮只改外觀，所以不會推動下面的內容、也不會讓捲動位置被瀏覽器校正。
+const topbar = $('#topbar');
+let compactFrame = 0;
+function syncTopbar() {
+  compactFrame = 0;
+  const y = scroller.scrollTop;
+  const compact = topbar.classList.contains('is-compact');
+  if (!compact && y > 40) topbar.classList.add('is-compact');
+  else if (compact && y < 8) topbar.classList.remove('is-compact');
+}
+
 scroller.addEventListener(
   'scroll',
   () => {
-    $('#topbar').classList.toggle('is-compact', scroller.scrollTop > 12);
+    if (!compactFrame) compactFrame = requestAnimationFrame(syncTopbar);
     if (navLock) {
       holdNav();
       return;
@@ -1351,6 +1364,213 @@ async function refreshRemote() {
   renderNotices();
 }
 
+/* ---------------- 互傳檔案（M1） ---------------- */
+
+let transfer = null;
+let txPeer = null;
+try {
+  txPeer = localStorage.getItem('copyc.txPeer');
+} catch {}
+
+async function refreshTransfer() {
+  transfer = await invoke('transfer_status').catch(() => null);
+  renderTransfer();
+}
+
+function bytes(n) {
+  const units = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'];
+  let i = 0;
+  let v = Number(n) || 0;
+  while (v >= 1000 && i < units.length - 1) {
+    v /= 1000;
+    i++;
+  }
+  return new Intl.NumberFormat(locale(), {
+    style: 'unit',
+    unit: units[i],
+    unitDisplay: 'short',
+    maximumFractionDigits: i === 0 || v >= 100 ? 0 : 1,
+  }).format(v);
+}
+
+function speed(n) {
+  const units = ['kilobyte-per-second', 'megabyte-per-second', 'gigabyte-per-second'];
+  let i = 0;
+  let v = (Number(n) || 0) / 1000;
+  while (v >= 1000 && i < units.length - 1) {
+    v /= 1000;
+    i++;
+  }
+  return new Intl.NumberFormat(locale(), { style: 'unit', unit: units[i], unitDisplay: 'short', maximumFractionDigits: v >= 100 ? 0 : 1 }).format(v);
+}
+
+function eta(secs) {
+  const s = Math.max(1, Math.round(secs));
+  return s < 60 ? t('transfer.etaSec', s) : t('transfer.etaMin', Math.ceil(s / 60));
+}
+
+function selectedPeer() {
+  const peers = transfer?.peers ?? [];
+  // 上次選的那台還在就用它，否則預設第一台
+  return peers.find((p) => p.id === txPeer)?.id ?? peers[0]?.id ?? null;
+}
+
+function txFlash(key) {
+  const el = $('#tx-flash');
+  el.textContent = key ? t(key) : '';
+  el.hidden = !key;
+  clearTimeout(txFlash.timer);
+  if (key) txFlash.timer = setTimeout(() => (el.hidden = true), 4000);
+}
+
+function renderTransfer() {
+  if (!transfer) return;
+  const ready = transfer.ready === 'ok';
+  const peers = transfer.peers ?? [];
+  const chosen = selectedPeer();
+  const empty = !ready ? (transfer.ready === 'signedOut' ? 'transfer.signedOut' : 'transfer.lanOff') : peers.length ? '' : 'transfer.noPeers';
+  $('#tx-empty').hidden = !empty;
+  $('#tx-empty-text').textContent = empty ? t(empty) : '';
+  $('#tx-go-sync').hidden = ready;
+  $('#tx-peers-row').hidden = !peers.length;
+  $('#tx-drop').classList.toggle('is-off', !chosen);
+  $('#tx-pick').disabled = !chosen;
+  $('#tx-clip').disabled = !chosen;
+
+  $('#tx-peers').replaceChildren(
+    ...peers.map((p) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tx-peer';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(p.id === chosen));
+      b.textContent = p.name || '—';
+      b.addEventListener('click', () => {
+        txPeer = p.id;
+        try {
+          localStorage.setItem('copyc.txPeer', p.id);
+        } catch {}
+        renderTransfer();
+      });
+      return b;
+    }),
+  );
+
+  $('#tx-dir').textContent = transfer.dir ?? '';
+  const items = transfer.items ?? [];
+  $('#tx-none').hidden = items.length > 0;
+  $('#tx-clear').hidden = !items.some((i) => ['done', 'failed', 'canceled'].includes(i.state));
+  $('#tx-list').replaceChildren(...items.map(transferRow));
+}
+
+function transferRow(it) {
+  const li = document.createElement('li');
+  li.className = `tx-item is-${it.state} is-${it.dir}`;
+  const ico = document.createElement('span');
+  ico.className = 'tx-dir-ico';
+  ico.setAttribute('aria-hidden', 'true');
+  ico.innerHTML =
+    it.dir === 'out'
+      ? '<svg viewBox="0 0 24 24"><path d="M12 18.5V6M6.5 11.5 12 6l5.5 5.5"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M12 5.5V18M6.5 12.5 12 18l5.5-5.5"/></svg>';
+
+  const body = document.createElement('div');
+  body.className = 'tx-body';
+  const name = document.createElement('b');
+  name.className = 'tx-name';
+  name.textContent = it.name;
+  name.title = it.name;
+  const meta = document.createElement('span');
+  meta.className = 'tx-meta';
+  const parts = [t(it.dir === 'out' ? 'transfer.toPeer' : 'transfer.fromPeer', it.peer || '—')];
+  if (it.state === 'active') {
+    parts.push(`${bytes(it.done)} / ${bytes(it.size)}`);
+    if (it.speed > 0) {
+      parts.push(speed(it.speed));
+      parts.push(eta((it.size - it.done) / it.speed));
+    }
+  } else if (it.state === 'failed') {
+    parts.push(t(`transfer.err.${it.error ?? 'offline'}`));
+  } else {
+    parts.push(bytes(it.size));
+    parts.push(t(`transfer.state.${it.state}`));
+  }
+  meta.textContent = parts.join(' · ');
+  body.append(name, meta);
+  if (['active', 'retrying', 'waiting'].includes(it.state)) {
+    const bar = document.createElement('span');
+    bar.className = 'tx-bar';
+    const fill = document.createElement('i');
+    fill.style.setProperty('--p', it.size ? Math.min(1, it.done / it.size) : 0);
+    bar.append(fill);
+    body.append(bar);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'tx-row-actions';
+  const btn = (key, fn, primary = false) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `btn btn-small${primary ? ' btn-primary' : ''}`;
+    b.textContent = t(key);
+    b.addEventListener('click', fn);
+    actions.append(b);
+  };
+  if (['active', 'retrying', 'waiting'].includes(it.state)) btn('transfer.cancel', () => invoke('transfer_cancel', { id: it.id }));
+  if (it.state === 'done' && it.dir === 'in') {
+    btn('transfer.open', () => invoke('transfer_open', { id: it.id, reveal: false }), true);
+    btn('transfer.reveal', () => invoke('transfer_open', { id: it.id, reveal: true }));
+  }
+  li.append(ico, body, actions);
+  return li;
+}
+
+async function sendPaths(paths) {
+  const peer = selectedPeer();
+  if (!peer || !paths?.length) return;
+  const n = await invoke('transfer_send', { paths, peer }).catch(() => 0);
+  if (!n) txFlash('transfer.nothing');
+}
+
+$('#tx-pick').addEventListener('click', () => {
+  const peer = selectedPeer();
+  if (peer) invoke('transfer_pick', { peer });
+});
+$('#tx-clip').addEventListener('click', async () => {
+  const peer = selectedPeer();
+  if (!peer) return;
+  const n = await invoke('transfer_clipboard', { peer }).catch(() => 0);
+  if (!n) txFlash('transfer.clipEmpty');
+});
+$('#tx-clear').addEventListener('click', () => invoke('transfer_clear'));
+$('#tx-dir-open').addEventListener('click', () => invoke('transfer_open_dir'));
+$('#tx-dir-change').addEventListener('click', () => invoke('transfer_pick_dir'));
+$('#tx-go-sync').addEventListener('click', () => goTo('sync'));
+
+/** 捲到某一段（系統匣的「傳送檔案…」會帶 #transfer 打開）。 */
+function goTo(id) {
+  const target = document.getElementById(id);
+  if (!target?.classList.contains('section')) return;
+  holdNav();
+  scroller.scrollTo({ top: target.offsetTop - 70, behavior: 'smooth' });
+  activate(id);
+}
+
+// 把檔案拖進偏好設定的任何地方：直接傳給選好的電腦
+function listenDrops() {
+  const drop = $('#tx-drop');
+  listen('tauri://drag-enter', () => {
+    goTo('transfer');
+    drop.classList.add('is-over');
+  });
+  listen('tauri://drag-leave', () => drop.classList.remove('is-over'));
+  listen('tauri://drag-drop', (e) => {
+    drop.classList.remove('is-over');
+    if (!selectedPeer()) return txFlash(transfer?.ready === 'ok' ? 'transfer.pickPeer' : null);
+    sendPaths(e.payload?.paths ?? []);
+  });
+}
+
 async function init() {
   [settings, overview] = await Promise.all([invoke('get_settings'), invoke('get_overview')]);
   remote = (await invoke('remote_data').catch(() => null)) ?? remote;
@@ -1378,8 +1598,17 @@ async function init() {
   });
   listen('history:changed', refreshHistory);
   listen('overview:changed', debounce(refreshOverview, 150));
-  listen('cloud:changed', debounce(refreshCloud, 80));
+  listen('cloud:changed', debounce(() => {
+    refreshCloud();
+    refreshTransfer();
+  }, 80));
   listen('remote:changed', refreshRemote);
+  listen('transfer:changed', debounce(refreshTransfer, 60));
+  listen('settings:goto', (e) => goTo(e.payload));
+  listenDrops();
+  await refreshTransfer();
+  const hash = location.hash.slice(1);
+  if (hash) requestAnimationFrame(() => goTo(hash));
   setInterval(() => {
     if (!overview) return;
     renderHistory();

@@ -93,6 +93,7 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
     let sound = CheckMenuItem::with_id(app, "sound", t.sound, true, s.sound, None::<&str>)?;
     let privacy = CheckMenuItem::with_id(app, "privacy", t.privacy, true, s.privacy_mode, None::<&str>)?;
     let test = MenuItem::with_id(app, "test", t.try_it, true, None::<&str>)?;
+    let send = MenuItem::with_id(app, "send", t.send_files, true, None::<&str>)?;
     let prefs = MenuItem::with_id(app, "settings", t.settings, true, Some("CmdOrCtrl+,"))?;
     let quit = MenuItem::with_id(app, "quit", format!("{} {BRAND}", t.quit), true, Some("CmdOrCtrl+Q"))?;
     let sep = || PredefinedMenuItem::separator(app);
@@ -110,6 +111,7 @@ fn build_menu(app: &AppHandle, s: &Settings) -> tauri::Result<Menu<Wry>> {
             &privacy,
             &language_menu,
             &sep()?,
+            &send,
             &test,
             &prefs,
             &sep()?,
@@ -172,6 +174,7 @@ fn on_menu(app: &AppHandle, id: &str) {
         "privacy" => s.privacy_mode = !s.privacy_mode,
         "test" => return crate::commands::run_preview(app, "text"),
         "settings" => return settings_window::open(app),
+        "send" => return settings_window::open_at(app, "transfer"),
         "quit" => return app.exit(0),
         _ => {
             if let Some(key) = id.strip_prefix("pos:") {

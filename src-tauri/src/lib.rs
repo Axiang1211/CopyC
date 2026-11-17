@@ -31,6 +31,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec![AUTOSTART_FLAG])))
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
             commands::update_settings,
@@ -56,6 +57,15 @@ pub fn run() {
             commands::cloud_delete_all,
             commands::remote_data,
             commands::open_notice,
+            commands::transfer_status,
+            commands::transfer_send,
+            commands::transfer_pick,
+            commands::transfer_clipboard,
+            commands::transfer_cancel,
+            commands::transfer_clear,
+            commands::transfer_open,
+            commands::transfer_open_dir,
+            commands::transfer_pick_dir,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock

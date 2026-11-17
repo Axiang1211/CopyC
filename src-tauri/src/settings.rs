@@ -107,6 +107,10 @@ pub struct Settings {
     pub cloud_apply: bool,
     /// 即時同步時，同一個網路裡的電腦直接互傳（不經過網際網路）。
     pub cloud_lan: bool,
+    /// 其他電腦傳來的檔案存放位置；空字串表示「下載/CopyC」。
+    pub transfer_dir: String,
+    /// 收到檔案後放進剪貼簿（單張圖片放圖片本身，其他放檔案），馬上就能貼上。
+    pub transfer_clipboard: bool,
 }
 
 /// 「最多保留筆數」可選的值。
@@ -147,6 +151,8 @@ impl Default for Settings {
             cloud_live: true,
             cloud_apply: true,
             cloud_lan: true,
+            transfer_dir: String::new(),
+            transfer_clipboard: true,
         }
     }
 }
@@ -165,6 +171,11 @@ impl Settings {
         self.blacklist.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
         if !HISTORY_LIMITS.contains(&self.history_limit) {
             self.history_limit = 1000;
+        }
+        // 只接受絕對路徑，其他一律回到預設的「下載/CopyC」
+        self.transfer_dir = self.transfer_dir.trim().to_string();
+        if !std::path::Path::new(&self.transfer_dir).is_absolute() {
+            self.transfer_dir.clear();
         }
         self
     }
