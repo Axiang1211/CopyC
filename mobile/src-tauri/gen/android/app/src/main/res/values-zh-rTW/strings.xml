@@ -6,4 +6,6 @@
     <string name="sync_text">"電腦上複製的文字會直接放進這支手機的剪貼簿"</string>
     <string name="received_channel">"從電腦收到的內容"</string>
     <string name="received_title">"收到來自 %1$s 的內容，已放進剪貼簿"</string>
+    <string name="file_title">"%1$s 傳來檔案"</string>
+    <string name="file_incoming">"%1$s · 24 小時內點一下下載"</string>
 </resources>

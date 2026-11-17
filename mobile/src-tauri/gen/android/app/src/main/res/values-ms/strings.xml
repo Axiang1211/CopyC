@@ -6,4 +6,6 @@
     <string name="sync_text">"Teks yang anda salin pada komputer terus masuk ke papan keratan telefon ini"</string>
     <string name="received_channel">"Diterima daripada komputer"</string>
     <string name="received_title">"Diterima daripada %1$s — dalam papan keratan"</string>
+    <string name="file_title">"%1$s menghantar fail"</string>
+    <string name="file_incoming">"%1$s · ketik untuk muat turun dalam 24 jam"</string>
 </resources>

@@ -42,6 +42,7 @@
       <div class="tabs" role="tablist">
         <span class="tab-ind" aria-hidden="true"></span>
         <button class="press" role="tab" id="tab-recent" aria-selected="true" type="button" data-i18n="tab.recent"></button>
+        <button class="press" role="tab" id="tab-files" aria-selected="false" type="button" data-i18n="tab.files"></button>
         <button class="press" role="tab" id="tab-history" aria-selected="false" type="button" data-i18n="tab.history"></button>
         <button class="press" role="tab" id="tab-settings" aria-selected="false" type="button" data-i18n="tab.settings"></button>
       </div>
@@ -50,6 +51,23 @@
       <div id="panel-recent" role="tabpanel">
         <ol class="list" id="list"></ol>
         <p class="empty" id="empty" data-i18n="in.empty"></p>
+      </div>
+
+      <!-- 檔案：和電腦（或其他手機）互傳檔案與照片 -->
+      <div id="panel-files" role="tabpanel" hidden>
+        <div class="card files-send">
+          <p class="files-pending" id="files-pending" hidden></p>
+          <button class="press btn primary" id="files-pick" type="button" data-i18n="files.pick"></button>
+          <p class="hint" data-i18n="files.hint"></p>
+          <h3 class="files-h" data-i18n="files.to"></h3>
+          <div class="chips files-peers" id="files-peers"></div>
+          <p class="hint" id="files-nopeers" data-i18n="files.noPeers" hidden></p>
+          <button class="press btn primary" id="files-go" type="button" hidden></button>
+        </div>
+        <h3 class="files-h" id="files-inbox-h" data-i18n="files.inbox" hidden></h3>
+        <ol class="list files-list" id="files-inbox"></ol>
+        <h3 class="files-h" id="files-list-h" data-i18n="files.list" hidden></h3>
+        <ol class="list files-list" id="files-list"></ol>
       </div>
 
       <!-- 歷史紀錄：各電腦備份到 Google Drive 的 -->
@@ -77,6 +95,10 @@
         <div class="card setting">
           <div><h3 data-i18n="set.lan"></h3><p data-i18n="set.lanDesc"></p><p class="note" id="lan-note" hidden></p></div>
           <input type="checkbox" class="switch" id="pref-lan">
+        </div>
+        <div class="card setting">
+          <div><h3 data-i18n="set.remote"></h3><p data-i18n="set.remoteDesc"></p></div>
+          <select class="select" id="pref-remote"></select>
         </div>
         <div class="card lang-setting" hidden>
           <button class="row-btn lang-open press" type="button">

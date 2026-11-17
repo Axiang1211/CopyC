@@ -278,7 +278,7 @@ main {
 .tabs {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   margin: 20px 0 14px;
   padding: 4px;
   border-radius: 16px;
@@ -290,7 +290,7 @@ main {
   top: 4px;
   bottom: 4px;
   left: 4px;
-  width: calc((100% - 8px) / 3);
+  width: calc((100% - 8px) / 4);
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -752,4 +752,62 @@ main {
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
+}
+
+/* ---------- 檔案 ---------- */
+.files-send {
+  display: grid;
+  gap: 10px;
+}
+.files-h {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+#panel-files > .files-h {
+  margin: 18px 4px 8px;
+}
+.files-peers {
+  margin-top: 0;
+}
+.files-pending {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--sunken);
+  font-weight: 600;
+}
+.files-list .text {
+  -webkit-line-clamp: 1;
+  font-weight: 600;
+}
+.files-list .bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.files-list .bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(var(--p, 0));
+  transform-origin: 0 50%;
+  transition: transform 300ms linear;
+}
+.files-list li.bad .meta {
+  color: var(--danger, #e05a47);
+}
+.select {
+  flex: none;
+  max-width: 46%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
 }

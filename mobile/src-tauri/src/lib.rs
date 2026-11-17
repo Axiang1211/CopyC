@@ -4,6 +4,7 @@
 mod android;
 mod auth;
 mod cloud;
+mod files;
 mod history;
 mod lan;
 
@@ -91,6 +92,34 @@ fn resume(cloud: State<'_, Cloud>) {
     cloud.resume();
 }
 
+/// 互傳檔案：可以傳給誰、傳送紀錄、經由 Google Drive 收到的檔案。
+#[tauri::command]
+fn files_status(app: tauri::AppHandle) -> files::Status {
+    files::status(&app)
+}
+
+/// 傳送已經準備好的檔案（App 暫存資料夾裡的路徑）。
+#[tauri::command]
+fn files_send(app: tauri::AppHandle, paths: Vec<String>, peer: String) -> usize {
+    files::send(&app, paths, peer)
+}
+
+/// 下載經由 Google Drive 傳來的檔案；超過 24 小時回傳 "expired"。
+#[tauri::command]
+async fn files_download(app: tauri::AppHandle, mid: String) -> Result<(), String> {
+    files::download(&app, &mid).await
+}
+
+#[tauri::command]
+fn files_cancel(app: tauri::AppHandle, id: u64) {
+    app.state::<files::Files>().cancel(&app, id);
+}
+
+#[tauri::command]
+fn files_clear(app: tauri::AppHandle) {
+    app.state::<files::Files>().clear(&app);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -108,14 +137,22 @@ pub fn run() {
             set_prefs,
             history_cached,
             history_refresh,
+            files_status,
+            files_send,
+            files_download,
+            files_cancel,
+            files_clear,
         ])
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             app.manage(Cloud::new(app.handle().clone(), dir));
+            app.manage(files::Files::default());
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move { cloud::run(handle).await });
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move { lan::run(handle).await });
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move { files::run(handle).await });
             Ok(())
         })
         .run(tauri::generate_context!())

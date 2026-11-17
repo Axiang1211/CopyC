@@ -2,4 +2,6 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
   <external-path name="my_images" path="." />
   <cache-path name="my_cache_images" path="." />
+  <!-- Android 9 以前收到的檔案存在 App 自己的「下載」資料夾 -->
+  <external-files-path name="received" path="." />
 </paths>

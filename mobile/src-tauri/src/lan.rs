@@ -2,14 +2,20 @@
 //! 手機和同一個 Wi-Fi 裡、登入同一個帳號的電腦直接互傳，不繞到網際網路。
 //! 使用者在 App 裡開啟才會執行；手機要拿著 MulticastLock 才收得到廣播信標。
 
-use crate::{android, cloud::lan_proto::*, cloud::Cloud};
+use crate::{android, cloud::file_proto, cloud::lan_proto::*, cloud::Cloud, files};
 use std::{
     io,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     time::Duration,
 };
 use tauri::{AppHandle, Manager};
-use tokio::net::{TcpListener, TcpStream, UdpSocket};
+use tokio::{
+    io::AsyncReadExt,
+    net::{TcpListener, TcpStream, UdpSocket},
+};
+
+/// 這支手機在信標裡宣告支援的功能：可以收檔案。
+const CAPS: u32 = CAP_FILES;
 
 fn enabled(cloud: &Cloud) -> bool {
     cloud.signed_in() && cloud.prefs().lan
@@ -69,11 +75,12 @@ async fn serve(app: &AppHandle, cloud: &Cloud) -> io::Result<()> {
                     if beacon.d == me.id {
                         continue;
                     }
-                    if cloud.lan.saw(beacon.d, SocketAddr::new(from.ip(), beacon.p)) {
+                    if cloud.lan.saw_beacon(beacon.d, beacon.n, beacon.c, SocketAddr::new(from.ip(), beacon.p)) {
                         cloud.changed();
+                        let _ = tauri::Emitter::emit(app, "files", ());
                     }
                     if beacon.r {
-                        let _ = udp.send_to(&seal_beacon(&key, &me, false), from).await;
+                        let _ = udp.send_to(&seal_beacon_with(&key, &me, false, CAPS), from).await;
                     }
                 }
             }
@@ -84,7 +91,7 @@ async fn serve(app: &AppHandle, cloud: &Cloud) -> io::Result<()> {
                 };
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    let _ = tokio::time::timeout(IO_TIMEOUT, accept(&app, stream)).await;
+                    let _ = accept(&app, stream).await;
                 });
             }
             _ = cloud.lan_wake.notified() => {
@@ -100,15 +107,25 @@ async fn serve(app: &AppHandle, cloud: &Cloud) -> io::Result<()> {
 
 async fn broadcast(udp: &UdpSocket, cloud: &Cloud, me: &Me, reply: bool) {
     let Some(key) = cloud.key.lock().clone() else { return };
-    let packet = seal_beacon(&key, me, reply);
+    let packet = seal_beacon_with(&key, me, reply, CAPS);
     for target in broadcast_targets() {
         let _ = udp.send_to(&packet, SocketAddrV4::new(target, PORT)).await;
     }
 }
 
+/// 收一個連線：`CPF1` 開頭是檔案，其他是一則即時同步的內容。
 async fn accept(app: &AppHandle, mut stream: TcpStream) -> io::Result<()> {
-    let msg = read_frame(&mut stream).await?;
-    let cloud = app.state::<Cloud>();
-    let ok = cloud.key.lock().clone().is_some_and(|key| cloud.receive(&key, &msg, Some(MAX_AGE)));
-    write_ack(&mut stream, ok).await
+    let mut head = [0u8; 4];
+    tokio::time::timeout(IO_TIMEOUT, stream.read_exact(&mut head)).await.map_err(|_| io::ErrorKind::TimedOut)??;
+    if &head == file_proto::MAGIC {
+        return files::receive_lan(app, stream).await;
+    }
+    tokio::time::timeout(IO_TIMEOUT, async {
+        let msg = read_frame_body(&mut stream, head).await?;
+        let cloud = app.state::<Cloud>();
+        let ok = cloud.key.lock().clone().is_some_and(|key| cloud.receive(&key, &msg, Some(MAX_AGE)));
+        write_ack(&mut stream, ok).await
+    })
+    .await
+    .map_err(|_| io::ErrorKind::TimedOut)?
 }

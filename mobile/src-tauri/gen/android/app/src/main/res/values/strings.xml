@@ -8,4 +8,6 @@
     <string name="sync_text">"Text you copy on your computers goes straight to this phone’s clipboard"</string>
     <string name="received_channel">"Received from computers"</string>
     <string name="received_title">"Received from %1$s — on your clipboard"</string>
+    <string name="file_title">"%1$s sent you a file"</string>
+    <string name="file_incoming">"%1$s · tap to download within 24 hours"</string>
 </resources>

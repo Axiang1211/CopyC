@@ -87,6 +87,59 @@ mod imp {
         });
     }
 
+    /// 把收到的檔案存到「下載/CopyC」（圖片存到「圖片/CopyC」），回傳 content:// URI。
+    pub fn save_received(path: &std::path::Path, name: &str) -> Option<String> {
+        with_bridge(|env, class, ctx| {
+            let p = env.new_string(path.to_string_lossy())?;
+            let n = env.new_string(name)?;
+            let obj = env
+                .call_static_method(
+                    class,
+                    "saveReceived",
+                    "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+                    &[JValue::Object(ctx), JValue::Object(&p), JValue::Object(&n)],
+                )?
+                .l()?;
+            if obj.is_null() {
+                return Ok(None);
+            }
+            let jstr = jni::objects::JString::from(obj);
+            Ok(Some(String::from(env.get_string(&jstr)?)))
+        })
+        .flatten()
+    }
+
+    /// 收到檔案的通知：點一下打開。
+    pub fn notify_file(device: &str, name: &str, uri: &str) {
+        with_bridge(|env, class, ctx| {
+            let d = env.new_string(device)?;
+            let n = env.new_string(name)?;
+            let u = env.new_string(uri)?;
+            env.call_static_method(
+                class,
+                "notifyFile",
+                "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                &[JValue::Object(ctx), JValue::Object(&d), JValue::Object(&n), JValue::Object(&u)],
+            )?;
+            Ok(())
+        });
+    }
+
+    /// 有檔案經由 Google Drive 傳來：通知一下，點一下打開 App 下載。
+    pub fn notify_incoming(device: &str, name: &str) {
+        with_bridge(|env, class, ctx| {
+            let d = env.new_string(device)?;
+            let n = env.new_string(name)?;
+            env.call_static_method(
+                class,
+                "notifyIncoming",
+                "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V",
+                &[JValue::Object(ctx), JValue::Object(&d), JValue::Object(&n)],
+            )?;
+            Ok(())
+        });
+    }
+
     pub fn device_name() -> Option<String> {
         with_bridge(|env, class, _| {
             let obj = env.call_static_method(class, "deviceName", "()Ljava/lang/String;", &[])?.l()?;
@@ -108,6 +161,14 @@ mod imp {
     pub fn device_name() -> Option<String> {
         None
     }
+    /// 電腦上開發時：直接複製到暫存資料夾。
+    pub fn save_received(path: &std::path::Path, name: &str) -> Option<String> {
+        let dest = std::env::temp_dir().join(name);
+        std::fs::copy(path, &dest).ok()?;
+        Some(dest.to_string_lossy().into_owned())
+    }
+    pub fn notify_file(_device: &str, _name: &str, _uri: &str) {}
+    pub fn notify_incoming(_device: &str, _name: &str) {}
 }
 
 pub use imp::*;

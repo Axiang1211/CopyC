@@ -6,4 +6,6 @@
     <string name="sync_text">"컴퓨터에서 복사한 텍스트가 이 휴대폰의 클립보드로 바로 들어옵니다"</string>
     <string name="received_channel">"컴퓨터에서 받은 내용"</string>
     <string name="received_title">"%1$s에서 받은 내용을 클립보드에 넣었습니다"</string>
+    <string name="file_title">"%1$s에서 파일을 보냈습니다"</string>
+    <string name="file_incoming">"%1$s · 24시간 안에 탭해서 다운로드"</string>
 </resources>

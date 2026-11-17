@@ -57,6 +57,7 @@
           <h2>What CopyC reads</h2>
           <ul>
             <li><b>Clipboard content:</b> each time you copy, CopyC reads the clipboard to work out what kind of content it is (text, image, files, color, link) and show a confirmation. It listens to the system clipboard event and <b>does not log keystrokes</b>.</li>
+            <li><b>Your Mac’s model and the camera area of its screen:</b> used only on your Mac, to show the model under About and to let top-center notifications grow out of the Dynamic Island or notch. They are never sent anywhere.</li>
             <li><b>The foreground app's name:</b> to show which app you copied from and to apply your app blocklist.</li>
             <li><b>Whether an app is fullscreen:</b> to switch to an unobtrusive indicator while you watch videos, play games or present.</li>
           </ul>
@@ -89,14 +90,16 @@
           <p>CopyC's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements: this data is only used to provide the sync features you can see, is never used for advertising, never sold and never given to third parties, and is not read by humans.</p>
         </section>
         <section>
-          <h2>Send files (optional, from CopyC 1.2.0)</h2>
-          <p>You can send files, folders and images to your other computers on the same network that are signed in to the same Google account. Something is only sent when <b>you</b> drop files in, click “Choose files” or “Send clipboard” — clipboard content is never sent automatically.</p>
+          <h2>Send files (optional, from desktop 1.2.0 and Android 1.1.0)</h2>
+          <p>You can send files, folders and images to your other computers and phones signed in to the same Google account. Something is only sent when <b>you</b> choose to send it: on a computer by dropping files in, clicking “Choose files”, “Send clipboard” or “Send to…” in the notification; on a phone through the Share menu or “Choose files”. Clipboard content is never sent automatically.</p>
           <ul>
-            <li><b>Where it goes:</b> straight to a computer found through “Direct transfer on the same network” above, over your local network only — <b>never through the internet, Cloudflare or any server of ours</b>. If the other computer can’t be reached, nothing is sent another way.</li>
-            <li><b>What is sent:</b> the file content, its name (including the path inside a folder you send), its size, and this computer’s name and device ID.</li>
-            <li><b>End-to-end encryption:</b> every piece is encrypted and authenticated with your account key (the same key as sync above) using XChaCha20-Poly1305, and the whole file is checked with SHA-256 when it arrives. Only computers signed in to the same Google account can decrypt it; others on the network can’t see file names or content.</li>
-            <li><b>Storage on the receiving computer:</b> received files are saved in Downloads/CopyC on that computer (you can change this in Preferences). Partly received files wait in a hidden folder there and are deleted if not resumed within 7 days. By default, received files or images are also put on that computer’s clipboard; you can turn this off. The transfer list is kept in memory only and is gone when you quit the app.</li>
-            <li><b>How to turn it off:</b> nothing is transferred unless you send something. With Preferences → Sync → “Send directly on the same network” off, this computer can’t be found by your other computers and won’t receive files.</li>
+            <li><b>On the same network:</b> when the other device is on the same network (found through “Direct transfer on the same network” above), files go directly over your local network — <b>never through the internet, Cloudflare or any server of ours</b>.</li>
+            <li><b>On different networks:</b> the file is encrypted and kept in the application data folder of your own Google Drive (the same hidden folder as the history backup above), together with an encrypted note of its name, size, hash, sender and recipient. The live sync relay only forwards an encrypted “a file is waiting” notice. The receiving device downloads it only when you tap “Download”, <b>within 24 hours of the upload</b>; <b>after 24 hours any of your devices deletes it automatically</b>, and it shows as expired. Meanwhile it uses your Google Drive storage; you can change the per-file limit in Settings (100 MB by default, up to 200 GB). Uploads that were interrupted are deleted after 48 hours.</li>
+            <li><b>Device list:</b> so you can see where to send, each device keeps an encrypted entry with its name, platform (Windows, macOS, Android) and supported features in the same application data folder. Signing out removes the list and the received-files list from that device.</li>
+            <li><b>What is sent:</b> the file content, its name (including the path inside a folder you send), its size, and this device’s name and device ID.</li>
+            <li><b>End-to-end encryption:</b> every piece is encrypted and authenticated with your account key (the same key as sync above) using XChaCha20-Poly1305, and the whole file is checked with SHA-256 when it arrives. Only devices signed in to the same Google account can decrypt it; others on the network, Google, Cloudflare and we can’t see file names or content.</li>
+            <li><b>Storage on the receiving device:</b> computers save received files in Downloads/CopyC (changeable in Preferences) and, by default, put them on the clipboard (you can turn this off); phones save them in Download/CopyC, and images in Pictures/CopyC. Partly received files are deleted if not resumed within 7 days. The transfer list is kept in memory only; the list of files received through Google Drive is kept on the device and removed a day after they expire.</li>
+            <li><b>How to turn it off:</b> nothing is transferred unless you send something. With “Send directly on the same network” off, the device can’t be found on your local network; after signing out it receives no files at all.</li>
           </ul>
         </section>
         <section>
@@ -108,7 +111,8 @@
             <li><b>History:</b> the phone downloads the encrypted history your computers back up to Google Drive, decrypts it on the phone and keeps it in the app; it is deleted when you sign out. The phone does not upload history of its own yet.</li>
             <li><b>Receive in the background (optional):</b> when on, CopyC keeps a persistent notification so it stays connected to your own computers, and tells you with a notification when something arrives (the content is hidden on the lock screen).</li>
             <li><b>Send directly on the same network (optional):</b> needs Android’s “Nearby devices” permission and works like the desktop feature described above.</li>
-            <li><b>Nothing else:</b> the Android version has no ads, analytics or trackers, and does not read your contacts, location, photos or other apps’ data.</li>
+            <li><b>Send files:</b> only the files you pick in the Share menu or with “Choose files” are read and sent; no photos or storage permission is needed (see “Send files” above).</li>
+            <li><b>Nothing else:</b> the Android version has no ads, analytics or trackers, does not read your contacts, location or other apps’ data, and never reads your photos on its own.</li>
           </ul>
         </section>
         <section>
@@ -148,7 +152,7 @@
           <h2>Changes to this policy</h2>
           <p>Every time this policy changes we update this page, raise the policy version above and describe the change in the version history below. If you don't agree with a revised policy, you can stop using and uninstall CopyC.</p>
           <ul>
-            <li><b>1.6 (November 17, 2026):</b> added “Send files” for CopyC 1.2.0: files are only sent when you choose to, encrypted and sent directly to your own computers on the same network, never through a server; where they are saved on the receiving computer and how to turn it off.</li>
+            <li><b>1.6 (November 17, 2026):</b> added “Send files” for desktop 1.2.0 and Android 1.1.0: files are only sent when you choose to; directly and encrypted on the same network, never through a server; across networks, encrypted and kept in your own Google Drive for 24 hours, then deleted; the device list; where files are saved on the receiving device and how to turn it off. Also explains that your Mac’s model and camera area are only used locally.</li>
             <li><b>1.5 (November 10, 2026):</b> added “Android version”: how the clipboard is used, Google sign-in, history, background receiving and the local network permission.</li>
             <li><b>1.4 (November 5, 2026):</b> added automatic updates for CopyC 1.1.1 (the website version downloads updates in the background and checks their signature) and “Notices and configuration data” (every version downloads a signed data file from our website).</li>
             <li><b>1.3 (October 28, 2026):</b> added “Direct transfer on the same network” for CopyC 1.1.1: what is sent on your local network, how it is encrypted and how to turn it off; the relay now receives a random device ID.</li>

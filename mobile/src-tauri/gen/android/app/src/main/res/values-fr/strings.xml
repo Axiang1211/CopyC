@@ -6,4 +6,6 @@
     <string name="sync_text">"Le texte copié sur vos ordinateurs arrive directement dans le presse-papiers de ce téléphone"</string>
     <string name="received_channel">"Reçu de vos ordinateurs"</string>
     <string name="received_title">"Reçu de %1$s — dans le presse-papiers"</string>
+    <string name="file_title">"%1$s vous a envoyé un fichier"</string>
+    <string name="file_incoming">"%1$s · touchez pour télécharger (24 heures)"</string>
 </resources>

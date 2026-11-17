@@ -6,4 +6,6 @@
     <string name="sync_text">"パソコンでコピーしたテキストがこのスマホのクリップボードに届きます"</string>
     <string name="received_channel">"パソコンから届いた内容"</string>
     <string name="received_title">"%1$s から届きました（クリップボードに入れました）"</string>
+    <string name="file_title">"%1$s からファイルが届きました"</string>
+    <string name="file_incoming">"%1$s · 24 時間以内にタップしてダウンロード"</string>
 </resources>

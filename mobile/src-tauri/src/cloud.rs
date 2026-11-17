@@ -19,6 +19,12 @@ pub mod crypto;
 #[allow(dead_code)]
 #[path = "../../../src-tauri/src/cloud/drive.rs"]
 pub mod drive;
+#[path = "../../../src-tauri/src/cloud/drive_xfer.rs"]
+pub mod drive_xfer;
+// 電腦版的檔案互傳協定還有電腦用的功能（例如資料夾裡的檔名不撞名），Android 版只用其中一部分
+#[allow(dead_code)]
+#[path = "../../../src-tauri/src/cloud/file_proto.rs"]
+pub mod file_proto;
 #[path = "../../../src-tauri/src/cloud/lan_proto.rs"]
 pub mod lan_proto;
 #[path = "../../../src-tauri/src/cloud/texthash.rs"]
@@ -87,13 +93,21 @@ struct Session {
 }
 
 /// 使用者在 App 裡的開關。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Prefs {
     /// 背景接收：常駐通知讓 App 在背景時也保持連線
     pub background: bool,
     /// 同一個網路直接互傳（Android 17 起需要「附近裝置」權限，使用者開啟時才詢問）
     pub lan: bool,
+    /// 經由 Google Drive 跨網路傳送的單一檔案上限（MB），和電腦版相同：預設 100 MB，最大 200 GB
+    pub remote_mb: u64,
+}
+
+impl Default for Prefs {
+    fn default() -> Self {
+        Prefs { background: false, lan: false, remote_mb: 100 }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -246,7 +260,10 @@ impl Cloud {
         self.foreground.store(false, Ordering::Relaxed);
     }
 
-    pub fn set_prefs(&self, prefs: Prefs) {
+    pub fn set_prefs(&self, mut prefs: Prefs) {
+        if !crate::files::LIMITS_MB.contains(&prefs.remote_mb) {
+            prefs.remote_mb = 100;
+        }
         *self.prefs.lock() = prefs;
         let _ = std::fs::write(self.dir.join(PREFS_FILE), serde_json::to_vec(&prefs).unwrap_or_default());
         self.apply_background();
@@ -309,9 +326,15 @@ impl Cloud {
         *self.key.lock() = None;
         let _ = std::fs::remove_file(self.dir.join(crate::history::CACHE_FILE));
         android::set_background(false);
+        crate::files::forget(&self.app);
         self.set_error(None);
         self.wake.notify_one();
         self.lan_wake.notify_one();
+    }
+
+    /// 經由即時同步送出一則訊息（連線中才會送出）。
+    pub(crate) fn relay(&self, msg: String) -> bool {
+        self.relay_tx.lock().clone().is_some_and(|tx| tx.send(msg).is_ok())
     }
 
     pub(crate) fn signed_in(&self) -> bool {
@@ -436,7 +459,15 @@ impl Cloud {
         if max_age.is_some_and(|age| now_ms().abs_diff(clip.at) > age.as_millis() as u64) {
             return true;
         }
-        if !self.first_time(clip.id) || clip.text.trim().is_empty() {
+        if !self.first_time(clip.id) {
+            return true;
+        }
+        // 有檔案經由 Google Drive 傳過來（跨網路傳檔）
+        if let Some(note) = clip.file {
+            crate::files::on_note(&self.app, note);
+            return true;
+        }
+        if clip.text.trim().is_empty() {
             return true;
         }
         *self.last_received.lock() = Some(clip.text.clone());
@@ -594,7 +625,7 @@ mod tests {
     #[test]
     fn prefs_default_off_and_tolerate_missing_fields() {
         let p: Prefs = serde_json::from_str("{}").unwrap();
-        assert_eq!(p, Prefs { background: false, lan: false });
+        assert_eq!(p, Prefs { background: false, lan: false, remote_mb: 100 });
         let p: Prefs = serde_json::from_str(r#"{"lan":true}"#).unwrap();
         assert!(p.lan && !p.background);
     }

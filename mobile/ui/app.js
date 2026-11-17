@@ -91,7 +91,7 @@ function row(clip, meta) {
 
 /* ---------------- 分頁 ---------------- */
 
-const TABS = ['recent', 'history', 'settings'];
+const TABS = ['recent', 'files', 'history', 'settings'];
 function selectTab(name) {
   $('.tabs').style.setProperty('--tab', TABS.indexOf(name));
   for (const t of TABS) {
@@ -99,6 +99,7 @@ function selectTab(name) {
     $(`#panel-${t}`).hidden = t !== name;
   }
   if (name === 'history') loadHistory(true);
+  if (name === 'files') refreshFiles();
 }
 TABS.forEach((t) => $(`#tab-${t}`).addEventListener('click', () => selectTab(t)));
 
@@ -235,6 +236,7 @@ async function refresh() {
   $('#send').disabled = status.live !== 'on' && !status.lanPeers;
   $('#pref-bg').checked = status.prefs.background;
   $('#pref-lan').checked = status.prefs.lan;
+  $('#pref-remote').value = String(status.prefs.remoteMb ?? 100);
   const needPerm = status.prefs.lan && bridge && !bridge.hasLocalNetwork();
   const note = $('#lan-note');
   note.hidden = !status.prefs.lan || (!needPerm && !status.lanPeers);
@@ -245,7 +247,9 @@ async function refresh() {
 }
 
 function savePrefs() {
-  invoke('set_prefs', { prefs: { background: $('#pref-bg').checked, lan: $('#pref-lan').checked } });
+  invoke('set_prefs', {
+    prefs: { background: $('#pref-bg').checked, lan: $('#pref-lan').checked, remoteMb: Number($('#pref-remote').value) || 100 },
+  });
 }
 
 $('#pref-bg').addEventListener('change', (e) => {
@@ -393,7 +397,10 @@ let sendClipboardPending = false;
 function takePending() {
   const text = bridge?.takeShared?.();
   if (text) sharedText = text;
-  if (bridge?.takeAction?.() === 'sendClipboard') sendClipboardPending = true;
+  const action = bridge?.takeAction?.();
+  if (action === 'sendClipboard') sendClipboardPending = true;
+  if (action === 'openFiles') selectTab('files');
+  takeFiles();
 }
 async function runPending() {
   if (sharedText) {
@@ -461,6 +468,211 @@ async function autoSend() {
     autoBusy = false;
   }
 }
+
+/* ---------------- 檔案：和電腦、其他手機互傳 ---------------- */
+
+let files = null;
+let pendingFiles = [];
+let filesPeer = null;
+try {
+  filesPeer = localStorage.getItem('copyc-files-peer');
+} catch {}
+
+const LIMITS = [100, 500, 1024, 5120, 20480, 51200, 204800];
+$('#pref-remote').replaceChildren(
+  ...LIMITS.map((mb) => {
+    const o = document.createElement('option');
+    o.value = String(mb);
+    o.textContent = mb === 100 ? T['set.remoteRec'] : mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`;
+    return o;
+  }),
+);
+$('#pref-remote').addEventListener('change', savePrefs);
+
+function bytes(n) {
+  const units = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'];
+  let i = 0;
+  let v = Number(n) || 0;
+  while (v >= 1000 && i < units.length - 1) {
+    v /= 1000;
+    i++;
+  }
+  return new Intl.NumberFormat(LOCALE, { style: 'unit', unit: units[i], unitDisplay: 'short', maximumFractionDigits: i && v < 100 ? 1 : 0 }).format(v);
+}
+
+/** 分享選單或「選擇檔案」準備好的檔案。 */
+function takeFiles() {
+  const raw = bridge?.takeSharedFiles?.();
+  if (!raw) {
+    if (bridge?.isPreparing?.()) {
+      selectTab('files');
+      $('#files-pending').hidden = false;
+      $('#files-pending').textContent = T['files.preparing'];
+    }
+    return;
+  }
+  try {
+    const list = JSON.parse(raw);
+    if (list.length) {
+      pendingFiles = list;
+      selectTab('files');
+    }
+  } catch {}
+  renderFiles();
+}
+window.copycFilesReady = takeFiles;
+
+async function refreshFiles() {
+  files = await invoke('files_status').catch(() => null);
+  renderFiles();
+}
+
+function chosenPeer() {
+  const peers = files?.peers ?? [];
+  return peers.find((p) => p.id === filesPeer) ?? peers[0] ?? null;
+}
+
+function renderFiles() {
+  const peers = files?.peers ?? [];
+  const peer = chosenPeer();
+  $('#files-peers').replaceChildren(
+    ...peers.map((p) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `chip press${p.id === peer?.id ? ' on' : ''}`;
+      b.textContent = `${p.name || '—'} · ${p.lan ? 'Wi-Fi' : T['files.cloud']}`;
+      b.addEventListener('click', () => {
+        filesPeer = p.id;
+        try {
+          localStorage.setItem('copyc-files-peer', p.id);
+        } catch {}
+        renderFiles();
+      });
+      return b;
+    }),
+  );
+  $('#files-nopeers').hidden = peers.length > 0;
+  const pending = $('#files-pending');
+  if (pendingFiles.length) {
+    const total = pendingFiles.reduce((a, f) => a + (f.size || 0), 0);
+    pending.hidden = false;
+    pending.textContent = T['files.pending'](pendingFiles.length, bytes(total));
+  } else if (!bridge?.isPreparing?.()) {
+    pending.hidden = true;
+  }
+  // 有待傳送的檔案時，「傳送到…」才是主要按鈕
+  $('#files-pick').classList.toggle('primary', !pendingFiles.length);
+  $('#files-pick').classList.toggle('ghost', pendingFiles.length > 0);
+  const go = $('#files-go');
+  go.hidden = !pendingFiles.length || !peer;
+  if (peer) go.textContent = T['files.sendTo'](peer.name || '—');
+
+  const inbox = files?.inbox ?? [];
+  $('#files-inbox-h').hidden = !inbox.length;
+  $('#files-inbox').replaceChildren(...inbox.map(inboxRow));
+  const items = files?.items ?? [];
+  $('#files-list-h').hidden = !items.length;
+  $('#files-list').replaceChildren(...items.map(itemRow));
+}
+
+function fileRow(name, meta, bad, button, progress) {
+  const li = document.createElement('li');
+  if (bad) li.className = 'bad';
+  const text = document.createElement('div');
+  text.className = 'text';
+  text.textContent = name;
+  const info = document.createElement('div');
+  info.className = 'meta';
+  info.textContent = meta;
+  li.append(text);
+  if (button) li.append(button);
+  li.append(info);
+  if (progress != null) {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const fill = document.createElement('i');
+    fill.style.setProperty('--p', progress);
+    bar.append(fill);
+    li.append(bar);
+  }
+  return li;
+}
+
+function actionButton(label, fn) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'copy press';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+
+const errFile = (code) => T['files.err'][code] ?? T['files.err'].offline;
+
+function inboxRow(e) {
+  const expired = e.state === 'expired' || Date.now() >= e.expires;
+  const parts = [T['files.from'](e.from || '—'), bytes(e.size)];
+  let button = null;
+  if (expired) parts.push(T['files.expired']);
+  else if (e.state === 'downloading') parts.push(T['files.downloading']);
+  else if (e.state === 'done' && e.uri) {
+    parts.push(T['files.done']);
+    button = actionButton(T['files.open'], () => bridge?.openUri?.(e.uri));
+  } else {
+    const ms = e.expires - Date.now();
+    const h = Math.floor(ms / 3_600_000);
+    parts.push(h >= 1 ? T['files.hoursLeft'](h) : T['files.minsLeft'](Math.max(1, Math.ceil(ms / 60_000))));
+    if (e.error) parts.push(errFile(e.error === 'network' ? 'offline' : e.error));
+    button = actionButton(T['files.download'], async () => {
+      try {
+        await invoke('files_download', { mid: e.mid });
+        toast(T['files.downloaded']);
+      } catch (err) {
+        toast(errFile(err));
+      }
+      refreshFiles();
+    });
+  }
+  return fileRow(e.name, parts.join(' · '), expired, button, null);
+}
+
+function itemRow(it) {
+  const parts = [T[it.dir === 'out' ? 'files.toPeer' : 'files.from'](it.peer || '—')];
+  if (it.via === 'drive') parts.push(T['files.viaDrive']);
+  let button = null;
+  let progress = null;
+  if (['active', 'retrying', 'waiting'].includes(it.state)) {
+    parts.push(it.state === 'active' ? `${bytes(it.done)} / ${bytes(it.size)}` : T[`files.${it.state}`]);
+    progress = it.size ? Math.min(1, it.done / it.size) : 0;
+    button = actionButton(T['files.cancel'], () => invoke('files_cancel', { id: it.id }));
+  } else if (it.state === 'failed') {
+    parts.push(errFile(it.error));
+  } else if (it.state === 'done') {
+    parts.push(bytes(it.size));
+    parts.push(it.dir === 'out' && it.via === 'drive' ? T['files.uploaded'] : T['files.done']);
+    if (it.uri) button = actionButton(T['files.open'], () => bridge?.openUri?.(it.uri));
+  } else {
+    parts.push(T['files.canceled']);
+  }
+  return fileRow(it.name, parts.join(' · '), it.state === 'failed', button, progress);
+}
+
+$('#files-pick').addEventListener('click', () => bridge?.pickFiles?.());
+$('#files-go').addEventListener('click', async () => {
+  const peer = chosenPeer();
+  if (!peer || !pendingFiles.length) return;
+  const paths = pendingFiles.map((f) => f.path);
+  pendingFiles = [];
+  const n = await invoke('files_send', { paths, peer: peer.id }).catch(() => 0);
+  toast(n ? T['files.sent'](peer.name) : T['files.err'].offline);
+  refreshFiles();
+});
+
+let filesTimer = 0;
+listen('files', () => {
+  clearTimeout(filesTimer);
+  filesTimer = setTimeout(refreshFiles, 80);
+});
 
 /* ---------------- 事件 ---------------- */
 
