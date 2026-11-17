@@ -104,7 +104,8 @@ mod imp {
                 return Ok(None);
             }
             let jstr = jni::objects::JString::from(obj);
-            Ok(Some(String::from(env.get_string(&jstr)?)))
+            let saved = String::from(env.get_string(&jstr)?);
+            Ok(Some(saved))
         })
         .flatten()
     }

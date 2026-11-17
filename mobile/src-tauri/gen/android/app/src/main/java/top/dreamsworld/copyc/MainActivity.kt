@@ -85,13 +85,16 @@ class MainActivity : TauriActivity() {
     return out
   }
 
-  private fun displayName(uri: Uri): String? = try {
-    contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
-      if (c.moveToFirst()) c.getString(0) else null
+  private fun displayName(uri: Uri): String? {
+    val name = try {
+      contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+        if (c.moveToFirst()) c.getString(0) else null
+      }
+    } catch (e: Exception) {
+      null
     }
-  } catch (e: Exception) {
-    null
-  } ?: uri.lastPathSegment?.substringAfterLast('/')
+    return name ?: uri.lastPathSegment?.substringAfterLast('/')
+  }
 
   /**
    * 把檔案複製到 App 的暫存資料夾（傳送時要能重讀、接著傳），完成後通知畫面。
