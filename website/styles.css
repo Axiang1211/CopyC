@@ -1587,6 +1587,15 @@ kbd.is-pressed {
 .whats-new li::marker {
   color: var(--caramel);
 }
+.whats-new-links {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.whats-new-links a {
+  font-weight: 600;
+  white-space: nowrap;
+}
 .whats-new-note {
   margin-top: 12px;
   color: var(--text-2);

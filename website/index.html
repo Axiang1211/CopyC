@@ -280,7 +280,7 @@
             </button>
             <div class="strip-body">
               <h3>這台複製，那台直接貼上</h3>
-              <p>用 Google 登入後，在一台電腦複製的文字，你的其他電腦按 Ctrl+V 就能貼上。內容先在你的電腦上加密，伺服器看不到；同一個 Wi-Fi 裡的電腦直接互傳，更快，也不經過網際網路。預設關閉，圖片、檔案與密碼永遠不會同步。</p>
+              <p>用 Google 登入後，在一台電腦複製的文字，你的其他電腦按 Ctrl+V 就能貼上。內容先在你的電腦上加密，伺服器看不到；同一個 Wi-Fi 裡的電腦直接互傳，更快，也不經過網際網路。預設關閉；剪貼簿裡的圖片、檔案與密碼不會自動同步，要傳檔案就用 1.2.0 的「互傳檔案」。</p>
               <div class="mini-hud"><span class="mini-lead lead-check"></span><span><b>收到來自「辦公室電腦」的內容</b><small>已放進剪貼簿 · 端對端加密</small></span></div>
             </div>
           </article>
@@ -303,7 +303,7 @@
         <div class="section-head">
           <p class="eyebrow">下載</p>
           <h2>來一杯？選你的平台。</h2>
-          <p class="section-sub" id="release-line">最新版本 v1.1.2 · 2026/11/10 發布 · 免費、無廣告，點擊直接下載。</p>
+          <p class="section-sub" id="release-line">最新版本 v1.2.0 · 2026/11/17 發布 · 免費、無廣告，點擊直接下載。</p>
         </div>
 
         <div class="platforms">
@@ -385,17 +385,20 @@
           <a class="android-soon" href="https://forms.gle/ARTb5h1wf6FfARb48" target="_blank" rel="noopener">
             <span class="os-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.5 18.5h3"/></svg></span>
             <div>
-              <h3>Android <span class="android-soon-tag">封閉測試中</span></h3>
-              <p>電腦上複製的文字直接出現在手機剪貼簿，手機的內容也能一鍵傳回電腦。即將在 Google Play 推出，現在可以申請搶先測試。</p>
+              <h3>Android 1.1.0 <span class="android-soon-tag">封閉測試中</span></h3>
+              <p>電腦上複製的文字直接出現在手機剪貼簿，手機的內容也能一鍵傳回電腦；1.1.0 起也能和電腦互傳檔案與照片。即將在 Google Play 推出，現在可以申請搶先測試。</p>
               <span class="android-cta">申請加入封閉測試 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
             </div>
           </a>
           <article class="whats-new">
-            <h3>1.1.2 更新內容</h3>
+            <h3>1.2.0 更新內容</h3>
             <ul>
-              <li><b>驗證碼分類：</b>4～8 位的純數字（例如簡訊或驗證器 App 的一次性密碼）自動歸類為「驗證碼」，歷史紀錄可以用標籤篩選。</li>
-              <li><b>為 Android 版做準備：</b>電腦版與 Android 版共用同一套同步與加密程式。</li>
+              <li><b>互傳檔案與圖片：</b>把檔案、資料夾或圖片拖進偏好設定的「互傳檔案」，或複製檔案後在提示上按「發送到…」，傳給你的其他電腦與 Android 手機。</li>
+              <li><b>同一個 Wi-Fi 直接傳：</b>不限大小、不經過任何伺服器，斷線會自動接著傳。</li>
+              <li><b>跨網路也能傳：</b>加密後經由你自己的 Google Drive 傳送（預設上限 100 MB，最大 200 GB），對方 24 小時內下載，之後自動刪除。</li>
+              <li><b>新款 MacBook Pro：</b>提示從動態島出現。</li>
             </ul>
+            <p class="whats-new-links">直接下載 v1.2.0：<a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.0/CopyC-windows-x64-setup.exe" download>Windows x64</a> · <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.0/CopyC-windows-arm64-setup.exe" download>Windows ARM64</a> · <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.0/CopyC-macos-universal.dmg" download>macOS</a></p>
             <p class="whats-new-note">官網版 1.1.1 以上會自動在背景更新；Microsoft Store 版由商店更新。</p>
           </article>
         </div>
@@ -416,7 +419,7 @@
         <div class="faq-list">
           <details>
             <summary>CopyC 會把我複製的內容傳到網路上嗎？</summary>
-            <p>預設不會。複製內容只用來在本機產生提示，歷史紀錄存在你自己的電腦上（可以隨時清除或關閉），密碼預設不保存。只有你自己登入 Google 開啟跨裝置同步時，文字類內容才會先在你的電腦上加密，再傳到你的其他電腦與你自己的 Google Drive；圖片、檔案與密碼永遠不會同步。詳見<a href="/privacy/">隱私權政策</a>。</p>
+            <p>預設不會。複製內容只用來在本機產生提示，歷史紀錄存在你自己的電腦上（可以隨時清除或關閉），密碼預設不保存。只有你自己登入 Google 開啟跨裝置同步時，文字類內容才會先在你的電腦上加密，再傳到你的其他電腦與你自己的 Google Drive；剪貼簿裡的圖片、檔案與密碼不會自動同步。用「互傳檔案」主動傳送的檔案，同一個 Wi-Fi 時直接傳，跨網路時加密後暫放在你自己的 Google Drive，24 小時後自動刪除。詳見<a href="/privacy/">隱私權政策</a>。</p>
           </details>
           <details>
             <summary>它是靠監聽鍵盤來偵測的嗎？</summary>
