@@ -2490,6 +2490,19 @@ body[data-platform="macos"] .spot-br {
   font-weight: 550;
   transition: background 160ms ease, box-shadow 160ms ease;
 }
+.tx-peer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tx-peer small {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--line);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
 .tx-peer[aria-checked='true'] {
   background: var(--brand-soft);
   box-shadow: 0 0 0 1.5px var(--brand);

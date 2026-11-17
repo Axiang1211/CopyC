@@ -23,13 +23,32 @@ pub struct Clip {
     /// 每次複製一個隨機編號：同一份內容可能從區域網路與中繼各收到一次，收過就略過。舊版沒有這個欄位（0）。
     #[serde(default)]
     pub id: u64,
+    /// 經由 Google Drive 傳的檔案已經上傳好（文字是空的；舊版遇到空文字會直接略過）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<FileNote>,
+}
+
+/// 「有檔案在 Drive 等你下載」的通知。
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileNote {
+    /// 說明檔（x1-<編號>.m）在 Drive 上的 ID
+    pub m: String,
+    /// 收件裝置 ID
+    pub to: Vec<String>,
 }
 
 /// 加密一次複製的內容，回傳 (編號, 密文)。區域網路與中繼送的是同一份密文。
 pub fn seal(key: &Key, text: &str, device: &str) -> (u64, String) {
     let id = rand::random::<u64>() | 1;
-    let clip = Clip { text: text.to_string(), device: device.to_string(), at: now_ms(), id };
+    let clip = Clip { text: text.to_string(), device: device.to_string(), at: now_ms(), id, file: None };
     (id, STANDARD.encode(key.seal(&serde_json::to_vec(&clip).unwrap_or_default())))
+}
+
+/// 加密一則「檔案已經上傳到 Drive」的通知。
+pub fn seal_note(key: &Key, device: &str, note: FileNote) -> String {
+    let id = rand::random::<u64>() | 1;
+    let clip = Clip { text: String::new(), device: device.to_string(), at: now_ms(), id, file: Some(note) };
+    STANDARD.encode(key.seal(&serde_json::to_vec(&clip).unwrap_or_default()))
 }
 
 /// 包成線路訊息；`skip` 是不需要中繼再轉送的裝置 ID。
@@ -66,6 +85,19 @@ mod tests {
         assert_eq!(decode(&key, &relayed).unwrap().id, id);
         assert!(decode(&Key::generate(), &msg).is_none());
         assert!(decode(&key, "not json").is_none());
+    }
+
+    #[test]
+    fn file_notes_have_empty_text_for_old_clients() {
+        let key = Key::generate();
+        let note = FileNote { m: "abc".into(), to: vec!["0123456789abcdef".into()] };
+        let msg = wire(&seal_note(&key, "PC", note.clone()), &[]);
+        let clip = decode(&key, &msg).unwrap();
+        assert_eq!(clip.text, "");
+        assert_eq!(clip.file, Some(note));
+        // 舊版的格式（沒有 file 欄位）照樣解得開
+        let (_, data) = seal(&key, "hi", "PC");
+        assert!(decode(&key, &wire(&data, &[])).unwrap().file.is_none());
     }
 
     #[test]

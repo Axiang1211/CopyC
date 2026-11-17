@@ -1,6 +1,6 @@
 // 通知框前端：接收 hud:show / hud:hover，負責動畫、計時與回報內容區塊位置。
 import { buildLead, compose, fill, summary, timeAgo } from './shared/compose.js';
-import { applyI18n, setLang, setOverrides } from './shared/i18n.js';
+import { applyI18n, locale, setLang, setOverrides, t } from './shared/i18n.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -15,6 +15,8 @@ const badgeEl = $('badge');
 const detailEl = $('detail');
 const trayList = $('tray-list');
 const dot = $('dot');
+const act = $('act');
+const trayLabel = document.querySelector('.tray-label');
 
 const EXIT_MS = 240;
 const HOVER_LEAVE_MS = 800;
@@ -28,6 +30,20 @@ let exitTimer = 0;
 let audio = null;
 let lastEvent = null;
 let hoverItems = [];
+let picking = false;
+
+const seg = (text, cls) => ({ t: text, cls });
+
+function bytes(n) {
+  const units = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'];
+  let i = 0;
+  let v = Number(n) || 0;
+  while (v >= 1000 && i < units.length - 1) {
+    v /= 1000;
+    i++;
+  }
+  return new Intl.NumberFormat(locale(), { style: 'unit', unit: units[i], unitDisplay: 'short', maximumFractionDigits: i && v < 100 ? 1 : 0 }).format(v);
+}
 
 function restart(el, cls) {
   el.classList.remove(cls);
@@ -40,6 +56,15 @@ function render(ev) {
   leadSlot.replaceChildren(buildLead(view.lead));
   fill(titleEl, view.title);
   fill(detailEl, view.detail);
+  const action = ev.action;
+  if (action?.kind === 'download') {
+    // 其他裝置經由 Google Drive 傳來的檔案
+    fill(titleEl, [seg(t('hud.incoming', action.from)), seg(ev.payload.first, 'strong')]);
+    fill(detailEl, [seg(`${bytes(action.size)} · ${t('hud.keep24')}`)]);
+  }
+  act.hidden = !action;
+  act.classList.remove('is-busy');
+  act.textContent = action ? t(action.kind === 'download' ? 'hud.download' : 'hud.sendTo') : '';
   if (view.badge) {
     badgeEl.textContent = view.badge;
     badgeEl.hidden = false;
@@ -94,6 +119,8 @@ function leave() {
 function reset() {
   shown = false;
   hovering = false;
+  picking = false;
+  act.hidden = true;
   lastKey = '';
   hud.className = 'hud';
   dot.className = 'dot';
@@ -166,9 +193,17 @@ function onHover({ inside, history }) {
   hoverItems = history;
   if (!shown) return;
   hovering = inside;
+  if (picking) {
+    if (!inside) {
+      stopPicking();
+      schedule(HOVER_LEAVE_MS);
+    }
+    return;
+  }
   if (inside) {
     clearTimeout(hideTimer);
     if (history.length) {
+      trayLabel.textContent = t('hud.recent');
       renderHistory(history);
       hud.classList.add('is-hover');
     }
@@ -177,6 +212,68 @@ function onHover({ inside, history }) {
     schedule(HOVER_LEAVE_MS);
   }
 }
+
+/* ---------------- 按鈕：發送到… / 下載 ---------------- */
+
+function stopPicking() {
+  picking = false;
+  hud.classList.remove('is-picking');
+}
+
+/** 按完按鈕後：換成一句結果，稍後收起。 */
+function finish(text) {
+  stopPicking();
+  act.hidden = true;
+  fill(titleEl, [seg(text)]);
+  fill(detailEl, []);
+  hovering = false;
+  schedule(1600);
+}
+
+async function pickPeer() {
+  const peers = await invoke('hud_peers').catch(() => []);
+  if (!peers.length) return finish(t('hud.noPeers'));
+  trayLabel.textContent = t('hud.sendTo');
+  trayList.replaceChildren(
+    ...peers.map((p) => {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'peer';
+      const name = document.createElement('span');
+      name.textContent = p.name || '—';
+      const via = document.createElement('small');
+      via.textContent = p.lan ? 'Wi-Fi' : t('hud.viaCloud');
+      b.append(name, via);
+      b.addEventListener('click', async () => {
+        const n = await invoke('hud_send', { peer: p.id }).catch(() => 0);
+        finish(n ? t('hud.sending', p.name) : t('hud.nothing'));
+      });
+      li.append(b);
+      return li;
+    }),
+  );
+  picking = true;
+  hud.classList.remove('is-hover');
+  hud.classList.add('is-picking');
+  requestAnimationFrame(reportRect);
+}
+
+act.addEventListener('click', async () => {
+  const action = lastEvent?.action;
+  if (!action || act.classList.contains('is-busy')) return;
+  clearTimeout(hideTimer);
+  if (action.kind === 'send') {
+    if (picking) return stopPicking();
+    return pickPeer();
+  }
+  act.classList.add('is-busy');
+  const err = await invoke('transfer_download', { mid: action.mid }).then(
+    () => null,
+    (e) => String(e),
+  );
+  finish(err === 'expired' ? t('hud.expired') : err ? t('hud.failed') : t('hud.downloading'));
+});
 
 hud.addEventListener('animationend', (e) => {
   if (e.target !== hud && e.target !== main) return;

@@ -14,10 +14,13 @@
 pub mod auth;
 mod crypto;
 mod drive;
+pub mod drive_xfer;
 mod file_proto;
 mod lan;
 mod lan_proto;
 mod relay;
+mod remote_xfer;
+pub use remote_xfer::LIMITS_MB as REMOTE_LIMITS_MB;
 mod sync;
 #[cfg_attr(not(test), allow(dead_code))]
 mod texthash;
@@ -328,6 +331,7 @@ impl Cloud {
         if let Ok(mut s) = self.session.try_lock() {
             *s = None;
         }
+        remote_xfer::forget(self);
         self.set_signed_in(false);
         if let Some(store) = self.app.state::<crate::state::AppState>().store.get() {
             let _ = store.delete_remote();
@@ -542,6 +546,8 @@ pub fn start(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { relay::run(a).await });
     let a = app.clone();
     tauri::async_runtime::spawn(async move { lan::run(a).await });
+    let a = app.clone();
+    tauri::async_runtime::spawn(async move { remote_xfer::run(a).await });
     let a = app.clone();
     std::thread::spawn(move || transfer::cleanup(&a));
 }

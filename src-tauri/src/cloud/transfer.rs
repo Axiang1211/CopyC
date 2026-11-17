@@ -5,11 +5,12 @@
 //!   一批收完後放進剪貼簿：單張圖片放圖片本身，其他放檔案，馬上就能貼上。
 //!
 //! 協定在 [`super::file_proto`]；探索沿用區域網路直傳的信標（[`super::lan`]）。
+//! 對方不在同一個網路時改經由 Google Drive 傳（M3，見 [`super::remote_xfer`]）。
 
 use super::{
     file_proto::{self as fp, Offer, SendError},
-    lan_proto::{Nearby, CAP_FILES},
-    Cloud,
+    lan_proto::{Nearby, CAP_DRIVE, CAP_FILES},
+    remote_xfer, Cloud,
 };
 use crate::state::{now_ms, AppState};
 use parking_lot::Mutex;
@@ -28,7 +29,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
 /// 接收中的暫存檔放在接收資料夾裡的這個子資料夾（同一顆磁碟，收完直接改名）。
-const PARTIAL_DIR: &str = ".copyc-partial";
+pub(super) const PARTIAL_DIR: &str = ".copyc-partial";
 /// 這麼久沒有接續的暫存檔就刪掉。
 const PARTIAL_KEEP: Duration = Duration::from_secs(7 * 24 * 3600);
 /// 斷線後依序等這麼多秒再試（總共約 4 分鐘），之後才算失敗。
@@ -48,6 +49,14 @@ const CLIPBOARD_IMAGE_MAX: u64 = 40 * 1024 * 1024;
 pub enum Direction {
     Out,
     In,
+}
+
+/// 經由哪裡傳：同一個網路直接傳，或經由 Google Drive。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Via {
+    Lan,
+    Drive,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -73,19 +82,42 @@ impl TransferState {
 pub struct Item {
     pub id: u64,
     dir: Direction,
+    pub(super) via: Via,
     name: String,
-    size: u64,
-    done: u64,
+    pub(super) size: u64,
+    pub(super) done: u64,
     /// 對方裝置的名稱
     peer: String,
-    state: TransferState,
-    /// 失敗原因的代碼，前端翻譯（offline / rejected / disk / missing / signedOut）
-    error: Option<String>,
+    pub(super) state: TransferState,
+    /// 失敗原因的代碼，前端翻譯（offline / rejected / disk / missing / signedOut / quota / tooBig / expired / corrupt）
+    pub(super) error: Option<String>,
     /// 傳送：本機原檔；接收：存好的位置
-    path: Option<String>,
+    pub(super) path: Option<String>,
     /// 每秒位元組數
     speed: f64,
     at: u64,
+    /// 經由 Drive 傳出去的檔案：對方可以下載到什麼時候
+    pub(super) expires: Option<u64>,
+}
+
+impl Item {
+    pub(super) fn new(dir: Direction, via: Via, name: String, size: u64, peer: String, state: TransferState) -> Self {
+        Item {
+            id: 0,
+            dir,
+            via,
+            name,
+            size,
+            done: 0,
+            peer,
+            state,
+            error: None,
+            path: None,
+            speed: 0.0,
+            at: now_ms(),
+            expires: None,
+        }
+    }
 }
 
 struct Entry {
@@ -102,7 +134,6 @@ struct Batch {
     count: u32,
     seen: u32,
     tops: Vec<PathBuf>,
-    image: Option<(PathBuf, u64)>,
     device: String,
     started: Instant,
 }
@@ -112,6 +143,7 @@ pub struct Transfers {
     entries: Mutex<Vec<Entry>>,
     next: AtomicU64,
     batches: Mutex<HashMap<String, Batch>>,
+    pub(super) remote: remote_xfer::Remote,
 }
 
 #[derive(Serialize)]
@@ -119,28 +151,36 @@ pub struct Transfers {
 pub enum Ready {
     Ok,
     SignedOut,
-    /// 即時同步或「同一個網路直接互傳」沒有開
-    LanOff,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Peer {
-    id: String,
-    name: String,
+    pub id: String,
+    pub name: String,
+    /// windows / macos / android（只在 Drive 的裝置清單裡有）
+    platform: String,
+    /// 在同一個網路裡（直接傳）
+    lan: bool,
+    /// 可以經由 Drive 傳
+    remote: bool,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
     ready: Ready,
+    /// 即時同步或「同一個網路直接互傳」沒有開：只能經由 Drive 傳
+    lan_off: bool,
     peers: Vec<Peer>,
     items: Vec<Item>,
+    inbox: Vec<remote_xfer::InboxOut>,
     dir: String,
+    remote_mb: u64,
 }
 
 impl Transfers {
-    fn add(&self, mut item: Item, key: Option<String>) -> (u64, Arc<AtomicBool>) {
+    pub(super) fn add(&self, mut item: Item, key: Option<String>) -> (u64, Arc<AtomicBool>) {
         let id = self.next.fetch_add(1, Ordering::Relaxed) + 1;
         item.id = id;
         let cancel = Arc::new(AtomicBool::new(false));
@@ -168,7 +208,14 @@ impl Transfers {
             .map(|e| (e.item.id, e.cancel.clone()))
     }
 
-    fn set(&self, app: &AppHandle, id: u64, f: impl FnOnce(&mut Item)) {
+    pub(super) fn fail(&self, app: &AppHandle, id: u64, code: &str) {
+        self.set(app, id, |it| {
+            it.state = TransferState::Failed;
+            it.error = Some(code.to_string());
+        });
+    }
+
+    pub(super) fn set(&self, app: &AppHandle, id: u64, f: impl FnOnce(&mut Item)) {
         if let Some(e) = self.entries.lock().iter_mut().find(|e| e.item.id == id) {
             f(&mut e.item);
             e.touched = Instant::now();
@@ -180,7 +227,7 @@ impl Transfers {
         let _ = app.emit("transfer:changed", ());
     }
 
-    fn progress(&self, app: &AppHandle, id: u64, done: u64) {
+    pub(super) fn progress(&self, app: &AppHandle, id: u64, done: u64) {
         let mut emit = false;
         if let Some(e) = self.entries.lock().iter_mut().find(|e| e.item.id == id) {
             e.item.done = done;
@@ -244,19 +291,66 @@ impl Transfers {
 pub fn status(app: &AppHandle) -> Status {
     let cloud = app.state::<Cloud>();
     let c = *cloud.config.borrow();
-    let ready = if !c.signed_in {
-        Ready::SignedOut
-    } else if !(c.live && c.lan) {
-        Ready::LanOff
-    } else {
-        Ready::Ok
-    };
-    let peers = if matches!(ready, Ready::Ok) {
-        cloud.lan.nearby(CAP_FILES).into_iter().map(|n| Peer { id: n.id, name: n.name }).collect()
+    let ready = if c.signed_in { Ready::Ok } else { Ready::SignedOut };
+    let peers = if c.signed_in { peers(&cloud) } else { Vec::new() };
+    if c.signed_in {
+        cloud.transfers.remote.poke();
+    }
+    Status {
+        ready,
+        lan_off: !(c.live && c.lan),
+        peers,
+        items: cloud.transfers.items(),
+        inbox: if c.signed_in { remote_xfer::inbox(&cloud) } else { Vec::new() },
+        dir: dest_dir(app).to_string_lossy().into_owned(),
+        remote_mb: app.state::<AppState>().settings.lock().transfer_remote_mb,
+    }
+}
+
+/// 有沒有其他裝置可以傳（通知框要不要顯示「發送到…」）。
+pub fn has_peers(app: &AppHandle) -> bool {
+    let cloud = app.state::<Cloud>();
+    let signed_in = cloud.config.borrow().signed_in;
+    signed_in && !peers(&cloud).is_empty()
+}
+
+/// 通知框「發送到…」列出的裝置。
+pub fn peer_list(app: &AppHandle) -> Vec<Peer> {
+    let cloud = app.state::<Cloud>();
+    let signed_in = cloud.config.borrow().signed_in;
+    if signed_in {
+        peers(&cloud)
     } else {
         Vec::new()
-    };
-    Status { ready, peers, items: cloud.transfers.items(), dir: dest_dir(app).to_string_lossy().into_owned() }
+    }
+}
+
+/// 可以傳給誰：同一個網路裡的裝置，加上 Drive 裝置清單裡的其他裝置。
+fn peers(cloud: &Cloud) -> Vec<Peer> {
+    let mut out: Vec<Peer> = cloud
+        .lan
+        .nearby(CAP_FILES)
+        .into_iter()
+        .map(|n| Peer { id: n.id, name: n.name, platform: String::new(), lan: true, remote: false })
+        .collect();
+    for d in cloud.transfers.remote.devices() {
+        if d.caps & CAP_DRIVE == 0 {
+            continue;
+        }
+        match out.iter_mut().find(|p| p.id == d.id) {
+            Some(p) => {
+                p.remote = true;
+                p.platform = d.platform;
+                if p.name.is_empty() {
+                    p.name = d.name;
+                }
+            }
+            None => out.push(Peer { id: d.id, name: d.name, platform: d.platform, lan: false, remote: true }),
+        }
+    }
+    // 同一個網路裡的排前面
+    out.sort_by(|a, b| b.lan.cmp(&a.lan).then(a.name.cmp(&b.name)));
+    out
 }
 
 /// 收到的檔案放在哪裡：使用者選的資料夾，預設是「下載/CopyC」。
@@ -311,7 +405,9 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
         return 0;
     }
     let cloud = app.state::<Cloud>();
-    let peer_name = cloud.lan.nearby(CAP_FILES).into_iter().find(|n| n.id == peer).map(|n| n.name).unwrap_or_default();
+    let target = peers(&cloud).into_iter().find(|p| p.id == peer);
+    let peer_name = target.as_ref().map(|p| p.name.clone()).unwrap_or_default();
+    let (lan, remote) = target.as_ref().map_or((false, false), |p| (p.lan, p.remote));
     let batch = format!("{:016x}", rand::random::<u64>());
     let count = files.len() as u32;
     let jobs: Vec<_> = files
@@ -334,19 +430,9 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
             offer.batch = batch.clone();
             offer.index = i as u32;
             offer.count = count;
-            let item = Item {
-                id: 0,
-                dir: Direction::Out,
-                name,
-                size,
-                done: 0,
-                peer: peer_name.clone(),
-                state: TransferState::Waiting,
-                error: None,
-                path: Some(path.to_string_lossy().into_owned()),
-                speed: 0.0,
-                at: now_ms(),
-            };
+            let via = if lan { Via::Lan } else { Via::Drive };
+            let mut item = Item::new(Direction::Out, via, name, size, peer_name.clone(), TransferState::Waiting);
+            item.path = Some(path.to_string_lossy().into_owned());
             let (id, cancel) = cloud.transfers.add(item, None);
             (id, cancel, offer, path)
         })
@@ -355,7 +441,16 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         for (id, cancel, offer, path) in jobs {
-            send_one(&app, id, &cancel, offer, &path, &peer).await;
+            if cancel.load(Ordering::Relaxed) {
+                continue;
+            }
+            if lan {
+                send_one(&app, id, &cancel, offer, &path, &peer, remote).await;
+            } else if remote {
+                remote_xfer::send_one(&app, id, &cancel, &path, &offer.name, offer.size, &peer).await;
+            } else {
+                app.state::<Cloud>().transfers.fail(&app, id, "offline");
+            }
         }
     });
     count as usize
@@ -367,7 +462,8 @@ async fn cancelled(flag: &AtomicBool) {
     }
 }
 
-async fn send_one(app: &AppHandle, id: u64, cancel: &AtomicBool, mut offer: Offer, path: &Path, peer: &str) {
+/// 同一個網路直接傳。`fallback`：一直連不上時改經由 Drive 傳（大小在上限內才會）。
+async fn send_one(app: &AppHandle, id: u64, cancel: &AtomicBool, mut offer: Offer, path: &Path, peer: &str, fallback: bool) {
     let cloud = app.state::<Cloud>();
     let transfers = &cloud.transfers;
     let mut attempt = 0usize;
@@ -431,6 +527,11 @@ async fn send_one(app: &AppHandle, id: u64, cancel: &AtomicBool, mut offer: Offe
                 return;
             }
             Err(SendError::Io(_)) | Err(SendError::Corrupt) => {
+                // 對方離開了這個網路（不在清單裡），或重試完了：可以的話改經由 Drive 傳
+                let gone = !cloud.lan.nearby(CAP_FILES).iter().any(|n| n.id == peer);
+                if fallback && (gone || attempt >= RETRY_AFTER.len()) && remote_xfer::within_limit(app, offer.size) {
+                    return remote_xfer::send_one(app, id, cancel, path, &offer.name, offer.size, peer).await;
+                }
                 let Some(wait) = RETRY_AFTER.get(attempt) else {
                     transfers.set(app, id, |it| {
                         it.state = TransferState::Failed;
@@ -543,19 +644,7 @@ pub async fn receive(app: &AppHandle, mut stream: TcpStream) -> io::Result<()> {
     let transfers = &cloud.transfers;
     let row = format!("{}:{}", offer.from_id, offer.id);
     let (id, cancel) = transfers.find_in(&row).unwrap_or_else(|| {
-        let item = Item {
-            id: 0,
-            dir: Direction::In,
-            name: offer.name.clone(),
-            size: offer.size,
-            done: 0,
-            peer: offer.from.clone(),
-            state: TransferState::Active,
-            error: None,
-            path: None,
-            speed: 0.0,
-            at: now_ms(),
-        };
+        let item = Item::new(Direction::In, Via::Lan, offer.name.clone(), offer.size, offer.from.clone(), TransferState::Active);
         transfers.add(item, Some(row.clone()))
     });
     transfers.set(app, id, |it| it.state = TransferState::Active);
@@ -611,7 +700,6 @@ fn finish_batch(app: &AppHandle, offer: &Offer, dest: &Path, rel: &Path, saved: 
             count: offer.count.max(1),
             seen: 0,
             tops: Vec::new(),
-            image: None,
             device: offer.from.clone(),
             started: Instant::now(),
         });
@@ -621,9 +709,6 @@ fn finish_batch(app: &AppHandle, offer: &Offer, dest: &Path, rel: &Path, saved: 
                 b.tops.push(top);
             }
         }
-        if !nested && is_image(saved) {
-            b.image = Some((saved.to_path_buf(), offer.size));
-        }
         if b.seen >= b.count {
             batches.remove(&batch_id)
         } else {
@@ -631,15 +716,19 @@ fn finish_batch(app: &AppHandle, offer: &Offer, dest: &Path, rel: &Path, saved: 
         }
     };
     let Some(batch) = ready else { return };
-    if !app.state::<AppState>().settings.lock().transfer_clipboard {
+    put_on_clipboard(app, batch.tops, &batch.device);
+}
+
+/// 把收到的檔案放進剪貼簿：單張圖片放圖片本身，其他放檔案。通知框會標示是哪台裝置傳來的。
+pub(super) fn put_on_clipboard(app: &AppHandle, tops: Vec<PathBuf>, device: &str) {
+    if !app.state::<AppState>().settings.lock().transfer_clipboard || tops.is_empty() {
         return;
     }
-    let image = match (&batch.image, batch.tops.len()) {
-        (Some((path, size)), 1) if *size <= CLIPBOARD_IMAGE_MAX => Some(path.clone()),
+    let image = match tops.as_slice() {
+        [one] if is_image(one) && std::fs::metadata(one).is_ok_and(|m| m.len() <= CLIPBOARD_IMAGE_MAX) => Some(one.clone()),
         _ => None,
     };
-    cloud.expect_incoming_any(batch.device.clone());
-    let tops = batch.tops;
+    app.state::<Cloud>().expect_incoming_any(device.to_string());
     std::thread::spawn(move || {
         let Ok(mut cb) = arboard::Clipboard::new() else { return };
         if let Some(img) = image.and_then(|p| image::open(p).ok()) {
@@ -689,6 +778,26 @@ pub fn cleanup(app: &AppHandle) {
             }
         }
     }
+}
+
+/* ---------------- 經由 Drive 傳來的檔案 ---------------- */
+
+/// 收件匣裡這個檔案還能不能下載（超過 24 小時回傳 "expired"）。
+pub fn inbox_ready(app: &AppHandle, mid: &str) -> Result<(), &'static str> {
+    let cloud = app.state::<Cloud>();
+    match remote_xfer::inbox(&cloud).into_iter().find(|e| e.mid() == mid) {
+        Some(e) if e.expired_now() => Err("expired"),
+        Some(_) => Ok(()),
+        None => Err("expired"),
+    }
+}
+
+pub async fn download(app: &AppHandle, mid: &str) -> Result<(), &'static str> {
+    remote_xfer::download(app, mid).await.map_err(remote_xfer::code)
+}
+
+pub fn inbox_file(app: &AppHandle, mid: &str) -> Option<PathBuf> {
+    remote_xfer::inbox_path_of(app, mid)
 }
 
 /* ---------------- 打開檔案 ---------------- */

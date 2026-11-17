@@ -1428,10 +1428,10 @@ function renderTransfer() {
   const ready = transfer.ready === 'ok';
   const peers = transfer.peers ?? [];
   const chosen = selectedPeer();
-  const empty = !ready ? (transfer.ready === 'signedOut' ? 'transfer.signedOut' : 'transfer.lanOff') : peers.length ? '' : 'transfer.noPeers';
+  const empty = !ready ? 'transfer.signedOut' : peers.length ? (transfer.lanOff ? 'transfer.lanOffHint' : '') : 'transfer.noPeers2';
   $('#tx-empty').hidden = !empty;
   $('#tx-empty-text').textContent = empty ? t(empty) : '';
-  $('#tx-go-sync').hidden = ready;
+  $('#tx-go-sync').hidden = ready && !transfer.lanOff;
   $('#tx-peers-row').hidden = !peers.length;
   $('#tx-drop').classList.toggle('is-off', !chosen);
   $('#tx-pick').disabled = !chosen;
@@ -1444,7 +1444,11 @@ function renderTransfer() {
       b.className = 'tx-peer';
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-checked', String(p.id === chosen));
-      b.textContent = p.name || '—';
+      const name = document.createElement('span');
+      name.textContent = p.name || '—';
+      const via = document.createElement('small');
+      via.textContent = p.lan ? 'Wi-Fi' : t('transfer.viaDrive');
+      b.append(name, via);
       b.addEventListener('click', () => {
         txPeer = p.id;
         try {
@@ -1461,6 +1465,72 @@ function renderTransfer() {
   $('#tx-none').hidden = items.length > 0;
   $('#tx-clear').hidden = !items.some((i) => ['done', 'failed', 'canceled'].includes(i.state));
   $('#tx-list').replaceChildren(...items.map(transferRow));
+
+  const inbox = transfer.inbox ?? [];
+  $('#tx-inbox-panel').hidden = !inbox.length;
+  $('#tx-inbox').replaceChildren(...inbox.map(inboxRow));
+}
+
+function hoursLeft(expires) {
+  const ms = expires - Date.now();
+  if (ms <= 0) return null;
+  const h = Math.floor(ms / 3_600_000);
+  return h >= 1 ? t('transfer.hoursLeft', h) : t('transfer.minsLeft', Math.max(1, Math.ceil(ms / 60_000)));
+}
+
+function inboxRow(e) {
+  const expired = e.state === 'expired' || Date.now() >= e.expires;
+  const li = document.createElement('li');
+  li.className = `tx-item is-in${expired ? ' is-failed' : ''}`;
+  const ico = document.createElement('span');
+  ico.className = 'tx-dir-ico';
+  ico.setAttribute('aria-hidden', 'true');
+  ico.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 18.5h10.2a4 4 0 0 0 .6-8 5.8 5.8 0 0 0-11.2 1.3A3.4 3.4 0 0 0 7 18.5z"/><path d="M10 13l2 2 2-2M12 15V10.5"/></svg>';
+  const body = document.createElement('div');
+  body.className = 'tx-body';
+  const name = document.createElement('b');
+  name.className = 'tx-name';
+  name.textContent = e.name;
+  name.title = e.name;
+  const meta = document.createElement('span');
+  meta.className = 'tx-meta';
+  const parts = [t('transfer.fromPeer', e.from || '—'), bytes(e.size)];
+  if (expired) parts.push(t('transfer.expired'));
+  else if (e.state === 'downloading') parts.push(t('transfer.downloading'));
+  else if (e.state === 'done') parts.push(t('transfer.state.done'));
+  else {
+    if (e.error) parts.push(t(`transfer.err.${e.error === 'network' ? 'offline' : e.error}`));
+    parts.push(hoursLeft(e.expires));
+  }
+  meta.textContent = parts.filter(Boolean).join(' · ');
+  body.append(name, meta);
+  const actions = document.createElement('div');
+  actions.className = 'tx-row-actions';
+  const btn = (key, fn, primary = false) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `btn btn-small${primary ? ' btn-primary' : ''}`;
+    b.textContent = t(key);
+    b.addEventListener('click', fn);
+    actions.append(b);
+  };
+  if (e.state === 'done' && e.hasFile) {
+    btn('transfer.open', () => invoke('transfer_inbox_open', { mid: e.mid, reveal: false }), true);
+    btn('transfer.reveal', () => invoke('transfer_inbox_open', { mid: e.mid, reveal: true }));
+  } else if (!expired && e.state !== 'downloading') {
+    btn(e.state === 'done' ? 'transfer.downloadAgain' : 'transfer.download', async () => {
+      const err = await invoke('transfer_download', { mid: e.mid }).then(
+        () => null,
+        (x) => String(x),
+      );
+      if (err) {
+        txFlash(err === 'expired' ? 'transfer.expiredFlash' : 'transfer.err.offline');
+        refreshTransfer();
+      }
+    }, true);
+  }
+  li.append(ico, body, actions);
+  return li;
 }
 
 function transferRow(it) {
@@ -1483,7 +1553,11 @@ function transferRow(it) {
   const meta = document.createElement('span');
   meta.className = 'tx-meta';
   const parts = [t(it.dir === 'out' ? 'transfer.toPeer' : 'transfer.fromPeer', it.peer || '—')];
-  if (it.state === 'active') {
+  if (it.via === 'drive') parts.push(t('transfer.viaDrive'));
+  if (it.state === 'done' && it.dir === 'out' && it.via === 'drive' && it.expires) {
+    parts.push(bytes(it.size));
+    parts.push(t('transfer.uploaded'));
+  } else if (it.state === 'active') {
     parts.push(`${bytes(it.done)} / ${bytes(it.size)}`);
     if (it.speed > 0) {
       parts.push(speed(it.speed));

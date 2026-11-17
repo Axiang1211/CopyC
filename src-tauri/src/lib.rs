@@ -66,6 +66,10 @@ pub fn run() {
             commands::transfer_open,
             commands::transfer_open_dir,
             commands::transfer_pick_dir,
+            commands::transfer_download,
+            commands::transfer_inbox_open,
+            commands::hud_peers,
+            commands::hud_send,
         ])
         .setup(|app| {
             // 只常駐在選單列，不出現在 Dock

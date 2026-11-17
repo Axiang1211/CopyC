@@ -10,7 +10,7 @@ use rand::RngCore;
 
 /// 密文開頭的版本標記，之後換演算法時用來分辨。
 const MAGIC: &[u8; 4] = b"CPC1";
-const NONCE: usize = 24;
+pub const NONCE: usize = 24;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Key(pub [u8; 32]);
@@ -38,6 +38,18 @@ impl Key {
         let mut out = Vec::with_capacity(MAGIC.len() + NONCE + ct.len());
         out.extend_from_slice(MAGIC);
         out.extend_from_slice(&nonce);
+        out.extend_from_slice(&ct);
+        out
+    }
+
+    /// 用指定的 nonce 加密（同一段內容重傳時要產生一模一樣的密文，見 drive_xfer）。
+    /// 同一把金鑰下，同一個 nonce 只能用在同一段明文上。
+    pub fn seal_with_nonce(&self, nonce: &[u8; NONCE], plain: &[u8]) -> Vec<u8> {
+        let cipher = XChaCha20Poly1305::new((&self.0).into());
+        let ct = cipher.encrypt(XNonce::from_slice(nonce), plain).expect("encryption cannot fail");
+        let mut out = Vec::with_capacity(MAGIC.len() + NONCE + ct.len());
+        out.extend_from_slice(MAGIC);
+        out.extend_from_slice(nonce);
         out.extend_from_slice(&ct);
         out
     }

@@ -61,6 +61,9 @@ pub struct Beacon {
 
 /// 支援檔案互傳（file_proto 第 1 版）。
 pub const CAP_FILES: u32 = 1;
+/// 支援經由 Google Drive 收檔案（drive_xfer 第 1 版；寫在 Drive 的裝置清單裡）。
+#[allow(dead_code)] // Android 版也用
+pub const CAP_DRIVE: u32 = 2;
 
 fn is_zero(v: &u32) -> bool {
     *v == 0

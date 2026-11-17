@@ -5,7 +5,7 @@
 //! 連按時只會送出新的 `hud:show`（count 遞增），視窗不會關閉再重開。
 
 use crate::{
-    classify::{Clip, Outcome},
+    classify::{Clip, Outcome, Payload},
     platform,
     settings::{FullscreenAction, Position, Settings},
     state::{AppState, HistoryOut},
@@ -69,7 +69,22 @@ pub struct HudState {
     rect: Option<[f64; 4]>,
     hovering: bool,
     poller_running: bool,
+    /// 這次的通知框有按鈕（發送到… / 下載）：游標移上去時要能點擊
+    interactive: bool,
 }
+
+/// 通知框右邊的按鈕。
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "kind")]
+pub enum Action {
+    /// 複製了檔案或圖片：「發送到…」選一台裝置傳過去
+    Send,
+    /// 其他裝置經由 Google Drive 傳來檔案：「下載」
+    Download { mid: String, from: String, size: u64 },
+}
+
+/// 有按鈕的通知框至少停留這麼久，來得及把游標移過去。
+const ACTION_MIN_MS: u32 = 3000;
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -89,6 +104,7 @@ struct ShowEvent<'a> {
     sound: bool,
     platform: &'static str,
     lang: crate::i18n::Lang,
+    action: Option<&'a Action>,
 }
 
 #[derive(Serialize, Clone)]
@@ -96,6 +112,12 @@ struct ShowEvent<'a> {
 struct HoverEvent {
     inside: bool,
     history: Vec<HistoryOut>,
+}
+
+/// 複製的是檔案或圖片、而且有其他裝置可以傳：顯示「發送到…」。
+fn send_action(app: &AppHandle, clip: &Clip) -> Option<Action> {
+    let sendable = matches!(clip.payload, Payload::Files { .. } | Payload::Image { .. });
+    (sendable && clip.via.is_none() && crate::cloud::transfer::has_peers(app)).then_some(Action::Send)
 }
 
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
@@ -111,6 +133,8 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
         .visible_on_all_workspaces(true)
         .focused(false)
         .focusable(false)
+        // 「發送到…」等按鈕：視窗不在前景時第一下點擊就要有反應（macOS）
+        .accept_first_mouse(true)
         .visible(false)
         .build()?;
     // 滑鼠穿透在各平台的 prepare_hud 裡設定（Linux 必須等視窗實際顯示後才能設）
@@ -179,7 +203,39 @@ pub fn handle(app: &AppHandle, outcome: Outcome) {
             }
         }
     };
-    present(app, &clip, count, &settings, minimal);
+    let action = send_action(app, &clip);
+    present(app, &clip, count, &settings, minimal, action);
+}
+
+/// 其他裝置經由 Google Drive 傳來檔案：通知框顯示檔名與「下載」按鈕。
+pub fn incoming_file(app: &AppHandle, mid: &str, name: &str, size: u64, from: &str) {
+    let settings = app.state::<AppState>().settings.lock().clone();
+    if settings.paused {
+        return;
+    }
+    let ext = std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let clip = Clip {
+        payload: Payload::Files { first: name.to_string(), count: 1, is_dir: false, ext, icon: None },
+        hash: rand::random(),
+        source: None,
+        entry: None,
+        share: None,
+        via: Some(from.to_string()),
+    };
+    let action = Action::Download { mid: mid.to_string(), from: from.to_string(), size };
+    let app = app.clone();
+    // 從背景工作呼叫：定位要在主執行緒以外做（present 會同步呼叫主執行緒）
+    std::thread::spawn(move || {
+        let count = {
+            let state = app.state::<AppState>();
+            let mut h = state.hud.lock();
+            h.count = 1;
+            h.last_hash = Some(clip.hash);
+            h.last_at = Some(Instant::now());
+            1
+        };
+        present(&app, &clip, count, &settings, false, Some(action));
+    });
 }
 
 /// 「試一下」預覽：不寫入歷史，也不受暫停 / 全螢幕影響。
@@ -195,10 +251,11 @@ pub fn preview(app: &AppHandle, clip: &Clip, minimal: bool) {
         h.last_at = Some(now);
         h.count
     };
-    present(app, clip, count, &settings, minimal);
+    present(app, clip, count, &settings, minimal, None);
 }
 
-fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minimal: bool) {
+fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minimal: bool, action: Option<Action>) {
+    let action = action.filter(|_| !minimal);
     let Some(win) = app.get_webview_window(HUD_LABEL) else { return };
     let state = app.state::<AppState>();
 
@@ -207,7 +264,8 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
         h.seq += 1;
         let was_visible = h.visible;
         h.visible = true;
-        let start_poller = settings.hover_history && !minimal && !h.poller_running;
+        h.interactive = action.is_some();
+        let start_poller = (settings.hover_history || action.is_some()) && !minimal && !h.poller_running;
         if start_poller {
             h.poller_running = true;
         }
@@ -250,10 +308,11 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
             variant,
             minimal,
             opacity: settings.opacity,
-            duration_ms: settings.duration_ms,
+            duration_ms: if action.is_some() { settings.duration_ms.max(ACTION_MIN_MS) } else { settings.duration_ms },
             sound: settings.sound,
             platform: platform::PLATFORM,
             lang: crate::i18n::resolve(settings.language),
+            action: action.as_ref(),
         },
     );
 
@@ -315,13 +374,13 @@ fn spawn_hover_poller(app: AppHandle) {
         let state = app.state::<AppState>();
         loop {
             thread::sleep(HOVER_POLL);
-            let (rect, hovering) = {
+            let (rect, hovering, interactive) = {
                 let mut h = state.hud.lock();
                 if !h.visible {
                     h.poller_running = false;
                     return;
                 }
-                (h.rect, h.hovering)
+                (h.rect, h.hovering, h.interactive)
             };
             let (Some(r), Some(win)) = (rect, app.get_webview_window(HUD_LABEL)) else { continue };
             let (Ok(c), Ok(p), Ok(s)) = (app.cursor_position(), win.outer_position(), win.scale_factor()) else {
@@ -331,7 +390,12 @@ fn spawn_hover_poller(app: AppHandle) {
             let inside = c.x >= left && c.x <= left + r[2] * s && c.y >= top && c.y <= top + r[3] * s;
             if inside != hovering {
                 state.hud.lock().hovering = inside;
-                let history = if inside { state.history_out(1, 3) } else { Vec::new() };
+                // 有按鈕時，游標在通知框上才接收點擊；移開就恢復滑鼠穿透
+                if interactive {
+                    let _ = win.set_ignore_cursor_events(!inside);
+                }
+                let history_on = state.settings.lock().hover_history;
+                let history = if inside && history_on { state.history_out(1, 3) } else { Vec::new() };
                 let _ = app.emit_to(HUD_LABEL, "hud:hover", HoverEvent { inside, history });
             }
         }
@@ -347,8 +411,10 @@ pub fn finished(app: &AppHandle, seq: u64) {
         }
         h.visible = false;
         h.hovering = false;
+        h.interactive = false;
     }
     if let Some(win) = app.get_webview_window(HUD_LABEL) {
+        let _ = win.set_ignore_cursor_events(true);
         let w = win.clone();
         let _ = app.run_on_main_thread(move || platform::hide_hud(&w));
     }

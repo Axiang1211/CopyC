@@ -307,7 +307,7 @@
                 <svg viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 14.5v3.2a1.8 1.8 0 0 0 1.8 1.8h11.4a1.8 1.8 0 0 0 1.8-1.8v-3.2"/></svg>
               </span>
               <h3 data-i18n="transfer.dropTitle">把檔案或資料夾拖到這裡</h3>
-              <p data-i18n="transfer.dropDesc">直接傳給同一個 Wi-Fi 裡的電腦：不限大小，中斷了會自動接著傳</p>
+              <p data-i18n="transfer.dropDesc2">同一個 Wi-Fi 直接傳、不限大小；不在同一個網路就經由你的 Google Drive 傳，中斷了都會自動接著傳</p>
               <div class="tx-actions">
                 <button class="btn btn-primary" id="tx-pick" type="button" data-i18n="transfer.pick">選擇檔案</button>
                 <button class="btn" id="tx-clip" type="button" data-i18n="transfer.clip">傳送剪貼簿</button>
@@ -322,6 +322,13 @@
               <p id="tx-empty-text"></p>
               <button class="btn" id="tx-go-sync" type="button" data-i18n="transfer.goSync">前往同步設定</button>
             </div>
+          </div>
+          <!-- 其他裝置經由 Google Drive 傳來的檔案：24 小時內按「下載」 -->
+          <div class="panel tx-list-panel" id="tx-inbox-panel" hidden>
+            <div class="tx-list-head">
+              <h3 data-i18n="transfer.inbox">收到的檔案（經由 Google Drive）</h3>
+            </div>
+            <ul class="tx-list" id="tx-inbox"></ul>
           </div>
           <div class="panel tx-list-panel">
             <div class="tx-list-head">
@@ -349,8 +356,15 @@
               </div>
               <input type="checkbox" class="switch" data-setting="transferClipboard" aria-label="收到後放進剪貼簿" data-i18n-aria="transfer.clipboard" />
             </div>
+            <div class="row">
+              <div class="row-text">
+                <h3 data-i18n="transfer.limit">跨網路傳送上限</h3>
+                <p data-i18n="transfer.limitDesc">不在同一個網路時，單一檔案經由你的 Google Drive 傳送的上限。檔案保存 24 小時後自動刪除，期間會佔用你的 Drive 空間</p>
+              </div>
+              <div class="select" data-setting="transferRemoteMb" data-options='[[100,"transfer.limitRec"],[500,"500 MB"],[1024,"1 GB"],[5120,"5 GB"],[20480,"20 GB"],[51200,"50 GB"],[204800,"200 GB"]]'></div>
+            </div>
           </div>
-          <p class="sync-fine" data-i18n="transfer.fine">只在登入同一個 Google 帳號的電腦之間傳送，全程端對端加密，不經過任何伺服器。</p>
+          <p class="sync-fine" data-i18n="transfer.fine2">只在登入同一個 Google 帳號的裝置之間傳送，全程端對端加密：同一個 Wi-Fi 時直接傳，不經過任何伺服器；跨網路時加密後暫放在你自己的 Google Drive，24 小時後自動刪除。</p>
         </section>
 
         <!-- 顯示與動畫 -->

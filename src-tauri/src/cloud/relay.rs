@@ -130,6 +130,11 @@ pub(super) fn receive(app: &AppHandle, cloud: &Cloud, key: &Key, msg: &str, max_
     if !cloud.first_time(clip.id) {
         return true;
     }
+    // 有檔案經由 Google Drive 傳過來（跨網路傳檔）
+    if let Some(note) = clip.file {
+        super::remote_xfer::on_note(app, note);
+        return true;
+    }
     let Some(entry) = classify::remote_entry(&clip.text) else { return true };
     let hash = classify::text_hash(&clip.text);
     let state = app.state::<AppState>();

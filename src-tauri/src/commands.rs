@@ -120,6 +120,45 @@ pub fn transfer_pick_dir(app: AppHandle) {
     });
 }
 
+/// 下載其他裝置經由 Google Drive 傳來的檔案。超過 24 小時回傳 "expired"。
+#[tauri::command]
+pub async fn transfer_download(app: AppHandle, mid: String) -> Result<(), String> {
+    let handle = app.clone();
+    // 下載可能很久：背景進行，進度在清單裡；這裡只先確認還沒過期
+    let entry_ok = transfer::inbox_ready(&app, &mid);
+    if let Err(code) = entry_ok {
+        return Err(code.into());
+    }
+    tauri::async_runtime::spawn(async move {
+        let _ = transfer::download(&handle, &mid).await;
+    });
+    Ok(())
+}
+
+/// 打開（或在資料夾裡顯示）下載好的檔案。
+#[tauri::command]
+pub fn transfer_inbox_open(app: AppHandle, mid: String, reveal: bool) -> bool {
+    let Some(path) = transfer::inbox_file(&app, &mid) else { return false };
+    if reveal {
+        transfer::reveal(&path);
+    } else {
+        transfer::open_path(&path);
+    }
+    true
+}
+
+/// 通知框的「發送到…」：列出可以傳的裝置。
+#[tauri::command]
+pub fn hud_peers(app: AppHandle) -> Vec<transfer::Peer> {
+    transfer::peer_list(&app)
+}
+
+/// 通知框的「發送到…」：把剛複製的檔案或圖片傳給選好的裝置，回傳排進去的檔案數。
+#[tauri::command]
+pub async fn hud_send(app: AppHandle, peer: String) -> usize {
+    tauri::async_runtime::spawn_blocking(move || transfer::send_clipboard(&app, peer)).await.unwrap_or(0)
+}
+
 fn lang(app: &AppHandle) -> i18n::Lang {
     i18n::resolve(app.state::<AppState>().settings.lock().language)
 }

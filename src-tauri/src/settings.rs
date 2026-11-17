@@ -111,6 +111,8 @@ pub struct Settings {
     pub transfer_dir: String,
     /// 收到檔案後放進剪貼簿（單張圖片放圖片本身，其他放檔案），馬上就能貼上。
     pub transfer_clipboard: bool,
+    /// 經由 Google Drive 跨網路傳送的單一檔案上限（MB）：預設 100 MB，最大 200 GB。
+    pub transfer_remote_mb: u64,
 }
 
 /// 「最多保留筆數」可選的值。
@@ -153,6 +155,7 @@ impl Default for Settings {
             cloud_lan: true,
             transfer_dir: String::new(),
             transfer_clipboard: true,
+            transfer_remote_mb: 100,
         }
     }
 }
@@ -176,6 +179,9 @@ impl Settings {
         self.transfer_dir = self.transfer_dir.trim().to_string();
         if !std::path::Path::new(&self.transfer_dir).is_absolute() {
             self.transfer_dir.clear();
+        }
+        if !crate::cloud::REMOTE_LIMITS_MB.contains(&self.transfer_remote_mb) {
+            self.transfer_remote_mb = 100;
         }
         self
     }
