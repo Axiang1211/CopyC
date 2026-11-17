@@ -283,6 +283,10 @@ pub struct Overview {
     update: Option<String>,
     /// 新版本已經在背景下載好，可以直接重新啟動更新
     update_ready: bool,
+    /// 這台電腦的型號（目前只有 Mac 會有），例如「MacBook Pro (Mac17,2)」
+    device: Option<String>,
+    /// 內建螢幕頂端：island（靈動島）、notch（瀏海）
+    camera: Option<&'static str>,
 }
 
 #[tauri::command]
@@ -300,6 +304,8 @@ pub fn get_overview(app: AppHandle, state: tauri::State<'_, AppState>) -> Overvi
         packaged: platform::is_packaged(),
         update: state.update.lock().clone(),
         update_ready: app.state::<crate::updater::Updater>().is_ready(),
+        device: platform::device_model_cached(),
+        camera: platform::camera_kind(&app),
     }
 }
 

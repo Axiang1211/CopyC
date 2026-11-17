@@ -35,6 +35,16 @@ pub fn open_url(url: &str) {
     let _ = std::process::Command::new("xdg-open").arg(url).spawn();
 }
 
+/// 螢幕頂端的鏡頭區（MacBook 的靈動島或瀏海），實體像素、相對於螢幕左上角。
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+pub struct Housing {
+    pub left: f64,
+    pub width: f64,
+    pub height: f64,
+    /// 靈動島（PROLED XDR 螢幕的 MacBook Pro）；false 是瀏海
+    pub island: bool,
+}
+
 /// 複製來源應用程式。
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 pub struct AppInfo {

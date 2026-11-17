@@ -76,6 +76,10 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             platform::platform_setup();
+            // 查這台電腦的型號要一點時間：先在背景查好，偏好設定的「關於」直接顯示
+            std::thread::spawn(|| {
+                let _ = platform::device_model();
+            });
 
             let settings_path = app.path().app_config_dir()?.join("settings.json");
             let first_run = !settings_path.exists();

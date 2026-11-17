@@ -446,3 +446,20 @@ pub fn hide_hud(window: &tauri::WebviewWindow) {
         let _ = ShowWindow(hwnd, SW_HIDE);
     }
 }
+
+/// 只有 Mac 會有靈動島或瀏海。
+pub fn camera_housing(_app: &tauri::AppHandle, _x: f64, _width: f64, _height: f64) -> Option<super::Housing> {
+    None
+}
+
+pub fn camera_kind(_app: &tauri::AppHandle) -> Option<&'static str> {
+    None
+}
+
+pub fn device_model() -> Option<String> {
+    None
+}
+
+pub fn device_model_cached() -> Option<String> {
+    None
+}

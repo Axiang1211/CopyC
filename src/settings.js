@@ -48,6 +48,14 @@ function applyPlatform(platform) {
   $('#updates-row').hidden = overview.packaged;
   renderAutostart();
   $('#about-version').textContent = t('about.version', overview.version, platformLabel(platform));
+  // Mac：顯示這台的型號，以及有沒有偵測到靈動島 / 瀏海
+  const device = $('#about-device');
+  const lines = [];
+  if (overview.device) lines.push(t('about.device', overview.device));
+  if (overview.camera === 'island') lines.push(t('about.island'));
+  else if (overview.camera === 'notch') lines.push(t('about.notch'));
+  device.textContent = lines.join(' · ');
+  device.hidden = !lines.length;
 }
 
 /** 套用語言：靜態文字、動態文字與所有元件重新繪製。 */

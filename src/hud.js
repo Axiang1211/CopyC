@@ -157,6 +157,13 @@ function show(ev) {
   document.body.dataset.v = ev.anchor.v;
   document.body.dataset.platform = ev.platform;
   document.body.classList.toggle('is-minimal', ev.minimal);
+  // Mac 的靈動島 / 瀏海：從鏡頭區長出來
+  document.body.classList.toggle('is-island', Boolean(ev.island));
+  if (ev.island) {
+    document.body.dataset.island = ev.island.kind;
+    document.documentElement.style.setProperty('--island-w', `${ev.island.width}px`);
+    document.documentElement.style.setProperty('--island-h', `${ev.island.height}px`);
+  }
   document.documentElement.style.setProperty('--alpha', String(ev.opacity));
 
   const key = JSON.stringify(ev.payload);
@@ -278,7 +285,7 @@ act.addEventListener('click', async () => {
 hud.addEventListener('animationend', (e) => {
   if (e.target !== hud && e.target !== main) return;
   if (e.animationName === 'shake') hud.classList.remove('is-shake');
-  if (['pill-drop', 'bubble-in', 'card-in', 'card-in-up'].includes(e.animationName)) {
+  if (['pill-drop', 'bubble-in', 'card-in', 'card-in-up', 'island-grow'].includes(e.animationName)) {
     hud.classList.remove('is-entering');
   }
 });

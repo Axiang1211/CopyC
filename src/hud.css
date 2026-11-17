@@ -715,3 +715,63 @@ body.is-minimal .dot {
   font-weight: 600;
   color: #a1a1aa;
 }
+
+/* ---------- Mac 的靈動島 / 瀏海：通知框從鏡頭區長出來 ----------
+ * 視窗貼著螢幕最上緣、對準鏡頭區中央；--island-w / --island-h 是鏡頭區大小。
+ * 主列是全黑的，和鏡頭區融成一塊：內容放在鏡頭區下方。 */
+body.is-island .stage {
+  padding-top: 0;
+}
+.hud[data-variant="island"] .main {
+  --surface: #000;
+  min-width: max(var(--island-w, 200px) + 40px, 300px);
+  padding-top: calc(var(--island-h, 32px) + 8px);
+  padding-bottom: 12px;
+  border-radius: 0 0 26px 26px;
+  background: #000;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+/* 靈動島（不貼頂端的膠囊形鏡頭區）：四邊都是圓角 */
+body[data-island="island"] .hud[data-variant="island"] .main {
+  margin-top: 6px;
+  border-radius: 30px;
+}
+.hud[data-variant="island"] .tray {
+  --tray: #0b0b0c;
+}
+.hud.is-entering[data-variant="island"] .main {
+  animation: island-grow 520ms var(--spring) both;
+}
+.hud.is-entering[data-variant="island"] .copy,
+.hud.is-entering[data-variant="island"] .lead-slot,
+.hud.is-entering[data-variant="island"] .act {
+  animation: island-content 360ms ease 140ms both;
+}
+.hud.is-out[data-variant="island"] {
+  animation: none;
+}
+.hud.is-out[data-variant="island"] .main {
+  animation: island-shrink 240ms ease-in forwards;
+}
+@keyframes island-grow {
+  from {
+    clip-path: inset(0 calc(50% - var(--island-w, 200px) / 2) calc(100% - var(--island-h, 32px)) round 0 0 14px 14px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0 0 26px 26px);
+  }
+}
+@keyframes island-shrink {
+  from {
+    clip-path: inset(0 0 0 0 round 0 0 26px 26px);
+  }
+  to {
+    clip-path: inset(0 calc(50% - var(--island-w, 200px) / 2) calc(100% - var(--island-h, 32px)) round 0 0 14px 14px);
+  }
+}
+@keyframes island-content {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

@@ -71,6 +71,18 @@ pub struct HudState {
     poller_running: bool,
     /// 這次的通知框有按鈕（發送到… / 下載）：游標移上去時要能點擊
     interactive: bool,
+    /// 螢幕頂端有靈動島或瀏海（Mac）：通知框從那裡長出來
+    island: Option<Island>,
+}
+
+/// 給前端的鏡頭區大小（CSS 像素）。
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Island {
+    width: f64,
+    height: f64,
+    /// island：靈動島（四邊圓角的黑色膠囊）；notch：瀏海（貼著螢幕頂端）
+    kind: &'static str,
 }
 
 /// 通知框右邊的按鈕。
@@ -105,6 +117,7 @@ struct ShowEvent<'a> {
     platform: &'static str,
     lang: crate::i18n::Lang,
     action: Option<&'a Action>,
+    island: Option<Island>,
 }
 
 #[derive(Serialize, Clone)]
@@ -274,15 +287,17 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
 
     // 定位會同步呼叫主執行緒（游標、螢幕、視窗大小），不能拿著 hud 鎖做：
     // 主執行緒上的 hud_rect / hud_finished 指令也要這把鎖，會互相等死。
-    let anchor = if was_visible {
-        state.hud.lock().anchor
+    let (anchor, island) = if was_visible {
+        let h = state.hud.lock();
+        (h.anchor, h.island)
     } else {
-        let anchor = place(app, &win, settings.position);
+        let (anchor, island) = place(app, &win, settings.position);
         let mut h = state.hud.lock();
         h.anchor = anchor;
+        h.island = island;
         h.rect = None;
         h.hovering = false;
-        anchor
+        (anchor, island)
     };
 
     if !was_visible {
@@ -291,6 +306,7 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
     }
 
     let variant = match settings.position {
+        Position::Top if island.is_some() => "island",
         Position::Top => "pill",
         Position::Cursor => "bubble",
         _ => "card",
@@ -313,6 +329,7 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
             platform: platform::PLATFORM,
             lang: crate::i18n::resolve(settings.language),
             action: action.as_ref(),
+            island,
         },
     );
 
@@ -322,12 +339,12 @@ fn present(app: &AppHandle, clip: &Clip, count: u32, settings: &Settings, minima
 }
 
 /// 依設定把視窗擺到目標位置，回傳內容在視窗中的對齊方式。
-fn place(app: &AppHandle, win: &WebviewWindow, position: Position) -> Anchor {
+fn place(app: &AppHandle, win: &WebviewWindow, position: Position) -> (Anchor, Option<Island>) {
     let cursor = app.cursor_position().ok();
     let monitor = cursor
         .and_then(|c| app.monitor_from_point(c.x, c.y).ok().flatten())
         .or_else(|| app.primary_monitor().ok().flatten());
-    let Some(m) = monitor else { return Anchor::default() };
+    let Some(m) = monitor else { return (Anchor::default(), None) };
 
     let s = m.scale_factor();
     let (w, h) = (HUD_W * s, HUD_H * s);
@@ -337,7 +354,16 @@ fn place(app: &AppHandle, win: &WebviewWindow, position: Position) -> Anchor {
     let (ax, ay) = (wa.position.x as f64, wa.position.y as f64);
     let (aw, ah) = (wa.size.width as f64, wa.size.height as f64);
 
-    let (x, y, anchor) = match position {
+    // Mac 的靈動島 / 瀏海：通知框貼著螢幕最上緣、對準鏡頭區的中央
+    let housing = if position == Position::Top { platform::camera_housing(app, mx, mw, mh) } else { None };
+    let island = housing.map(|hs| Island {
+        width: hs.width / s,
+        height: hs.height / s,
+        kind: if hs.island { "island" } else { "notch" },
+    });
+    let (x, y, anchor) = match (position, housing) {
+        (Position::Top, Some(hs)) => (mx + hs.left + hs.width / 2.0 - w / 2.0, my, Anchor { h: HAlign::Center, v: VAlign::Top }),
+        _ => match position {
         Position::Top => (mx + (mw - w) / 2.0, ay, Anchor { h: HAlign::Center, v: VAlign::Top }),
         Position::TopLeft => (ax, ay, Anchor { h: HAlign::Left, v: VAlign::Top }),
         Position::TopRight => (ax + aw - w, ay, Anchor { h: HAlign::Right, v: VAlign::Top }),
@@ -360,11 +386,12 @@ fn place(app: &AppHandle, win: &WebviewWindow, position: Position) -> Anchor {
             }
             (x, y, anchor)
         }
+        },
     };
 
     let _ = win.set_size(PhysicalSize::new(w.round() as u32, h.round() as u32));
     let _ = win.set_position(PhysicalPosition::new(x.round() as i32, y.round() as i32));
-    anchor
+    (anchor, island)
 }
 
 /// 通知框是滑鼠穿透的，收不到 hover 事件；改由這裡輪詢游標位置，

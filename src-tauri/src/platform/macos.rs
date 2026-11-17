@@ -260,3 +260,104 @@ pub fn hide_hud(window: &tauri::WebviewWindow) {
         ns.orderOut(None);
     }
 }
+
+/* ---------------- 靈動島 / 瀏海 ---------------- */
+
+/// 從主執行緒拿 NSScreen 的資訊（NSScreen 只能在主執行緒使用）。已經在主執行緒就直接做。
+fn on_main<T: Send + 'static>(app: &tauri::AppHandle, f: impl FnOnce(objc2::MainThreadMarker) -> T + Send + 'static) -> Option<T> {
+    if let Some(mtm) = objc2::MainThreadMarker::new() {
+        return Some(f(mtm));
+    }
+    let (tx, rx) = std::sync::mpsc::channel();
+    app.run_on_main_thread(move || {
+        if let Some(mtm) = objc2::MainThreadMarker::new() {
+            let _ = tx.send(f(mtm));
+        }
+    })
+    .ok()?;
+    rx.recv_timeout(Duration::from_millis(300)).ok()
+}
+
+/// 一個螢幕頂端的鏡頭區（實體像素，相對於螢幕左上角）。
+fn housing_of(screen: &objc2_app_kit::NSScreen) -> Option<super::Housing> {
+    let frame = screen.frame();
+    let scale = screen.backingScaleFactor();
+    let insets = screen.safeAreaInsets();
+    if insets.top <= 0.0 {
+        return None;
+    }
+    let name = screen.localizedName().to_string().to_ascii_uppercase();
+    // PROLED XDR 螢幕的 MacBook Pro 是靈動島；其他有安全區的是瀏海
+    let island = name.contains("OLED");
+    let left_area = screen.auxiliaryTopLeftArea();
+    let right_area = screen.auxiliaryTopRightArea();
+    // 輔助區域可能是全域座標，也可能相對於螢幕：統一換成相對於螢幕左緣
+    let base = if frame.origin.x.abs() > 1.0 && left_area.origin.x + 1.0 >= frame.origin.x { frame.origin.x } else { 0.0 };
+    let mut left = left_area.origin.x - base + left_area.size.width;
+    let mut width = right_area.origin.x - base - left;
+    if width <= 0.0 || left <= 0.0 {
+        // 拿不到兩側的範圍：當作置中、寬 200pt 的鏡頭區
+        width = 200.0;
+        left = (frame.size.width - width) / 2.0;
+    }
+    Some(super::Housing { left: left * scale, width: width * scale, height: insets.top * scale, island })
+}
+
+/// 這個螢幕（以實體像素的位置與大小比對）頂端有沒有靈動島或瀏海。
+pub fn camera_housing(app: &tauri::AppHandle, x: f64, width: f64, height: f64) -> Option<super::Housing> {
+    on_main(app, move |mtm| {
+        let screens = objc2_app_kit::NSScreen::screens(mtm);
+        for screen in screens.iter() {
+            let f = screen.frame();
+            let s = screen.backingScaleFactor();
+            let same = (f.size.width * s - width).abs() < 2.0 && (f.size.height * s - height).abs() < 2.0 && (f.origin.x * s - x).abs() < 2.0;
+            if same {
+                return housing_of(&screen);
+            }
+        }
+        None
+    })
+    .flatten()
+}
+
+/// 這台 Mac 的內建螢幕：靈動島（island）、瀏海（notch）或都沒有。
+pub fn camera_kind(app: &tauri::AppHandle) -> Option<&'static str> {
+    on_main(app, |mtm| {
+        let screens = objc2_app_kit::NSScreen::screens(mtm);
+        let found = screens.iter().find_map(|s| housing_of(&s));
+        found.map(|h| if h.island { "island" } else { "notch" })
+    })
+    .flatten()
+}
+
+static MODEL: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+
+/// 已經查好的型號（還沒查好時回傳 None，不會等）。
+pub fn device_model_cached() -> Option<String> {
+    MODEL.get().cloned().flatten()
+}
+
+/// 這台 Mac 的型號，例如「MacBook Pro (Mac17,2)」。第一次呼叫時查詢系統（約一秒，在背景執行緒呼叫），之後沿用。
+pub fn device_model() -> Option<String> {
+    MODEL
+        .get_or_init(|| {
+            let id = std::process::Command::new("sysctl")
+                .args(["-n", "hw.model"])
+                .output()
+                .ok()
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+            let name = std::process::Command::new("system_profiler")
+                .args(["SPHardwareDataType", "-json"])
+                .output()
+                .ok()
+                .and_then(|o| serde_json::from_slice::<serde_json::Value>(&o.stdout).ok())
+                .and_then(|v| v["SPHardwareDataType"][0]["machine_name"].as_str().map(str::to_string));
+            match (name, id) {
+                (Some(n), Some(i)) => Some(format!("{n} ({i})")),
+                (n, i) => n.or(i),
+            }
+        })
+        .clone()
+}
