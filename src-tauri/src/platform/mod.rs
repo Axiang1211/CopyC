@@ -25,6 +25,20 @@ pub fn is_packaged() -> bool {
     false
 }
 
+/// Microsoft Store 的更新只有 Windows 封裝版會用到。
+#[cfg(not(windows))]
+pub const STORE_PAGE: &str = "";
+#[cfg(not(windows))]
+pub fn store_update() -> Option<String> {
+    None
+}
+#[cfg(not(windows))]
+pub fn store_install(_owner: isize) -> Result<bool, String> {
+    Ok(false)
+}
+#[cfg(not(windows))]
+pub fn restart_after_update() {}
+
 /// 用預設瀏覽器開啟網址。
 pub fn open_url(url: &str) {
     #[cfg(windows)]

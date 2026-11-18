@@ -249,6 +249,51 @@ pub fn is_packaged() -> bool {
     unsafe { GetCurrentPackageFullName(&mut len, None).0 != APPMODEL_ERROR_NO_PACKAGE }
 }
 
+/// Microsoft Store 上的 CopyC。
+pub const STORE_PAGE: &str = "ms-windows-store://pdp/?productid=9PGS1H8Z2N1P";
+
+/// Microsoft Store 版：商店上有沒有比目前新的 CopyC，有的話回傳新版的版本號。
+/// 商店會自動更新，但不會替換常駐在系統匣、一直在執行的 App，所以由 App 自己檢查。
+pub fn store_update() -> Option<String> {
+    let ctx = windows::Services::Store::StoreContext::GetDefault().ok()?;
+    let updates = ctx.GetAppAndOptionalStorePackageUpdatesAsync().ok()?.join().ok()?;
+    if updates.Size().ok()? == 0 {
+        return None;
+    }
+    let v = updates.GetAt(0).ok()?.Package().ok()?.Id().ok()?.Version().ok()?;
+    Some(format!("{}.{}.{}", v.Major, v.Minor, v.Build))
+}
+
+/// 請 Microsoft Store 下載並安裝更新（會出現商店的確認與進度視窗，掛在 owner 視窗上）。
+/// Ok(true) 已安裝；Ok(false) 使用者取消或已經是最新版；Err 是商店無法處理（例如沒登入商店）。
+pub fn store_install(owner: isize) -> windows::core::Result<bool> {
+    use windows::{
+        core::Interface,
+        Services::Store::{StoreContext, StorePackageUpdate, StorePackageUpdateState},
+        Win32::UI::Shell::IInitializeWithWindow,
+    };
+    let ctx = StoreContext::GetDefault()?;
+    // 桌面 App 呼叫會顯示畫面的商店 API 前，要先告訴它掛在哪個視窗上
+    if owner != 0 {
+        unsafe { ctx.cast::<IInitializeWithWindow>()?.Initialize(HWND(owner as *mut c_void))? };
+    }
+    let updates = ctx.GetAppAndOptionalStorePackageUpdatesAsync()?.join()?;
+    if updates.Size()? == 0 {
+        return Ok(false);
+    }
+    let list: windows_collections::IIterable<StorePackageUpdate> = updates.cast()?;
+    let result = ctx.RequestDownloadAndInstallStorePackageUpdatesAsync(&list)?.join()?;
+    Ok(result.OverallState()? == StorePackageUpdateState::Completed)
+}
+
+/// 商店（或 Windows）為了更新而關閉 CopyC 後，自動重新開啟；當機、無回應、重新開機時不重開（開機由 StartupTask 負責）。
+pub fn restart_after_update() {
+    use windows::Win32::System::Recovery::{RegisterApplicationRestart, RESTART_NO_CRASH, RESTART_NO_HANG, RESTART_NO_REBOOT};
+    if let Err(e) = unsafe { RegisterApplicationRestart(PCWSTR::null(), RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_REBOOT) } {
+        eprintln!("copyc: 無法登記更新後重新開啟：{e}");
+    }
+}
+
 /// 與 packaging/msix/AppxManifest.xml 裡 StartupTask 的 TaskId 一致。
 const STARTUP_TASK_ID: &str = "CopyCStartup";
 

@@ -1,6 +1,9 @@
 //! 自動更新（官網版的大版本更新）：開啟後 5 秒與之後每天檢查一次 GitHub Release 的 `latest.json`，
 //! 有新版就在背景下載，驗證簽章（公鑰在 tauri.conf.json，私鑰只在 GitHub Secrets）後
-//! 在偏好設定顯示「重新啟動並更新」。Microsoft Store 版由商店更新，不使用這個功能。
+//! 在偏好設定顯示「重新啟動並更新」。
+//!
+//! Microsoft Store 版不能自己換檔案，而商店又不會替換一直在執行的 App（CopyC 常駐在系統匣），
+//! 所以改為每天問商店有沒有新版，有就顯示同一張提示卡，按「更新」請商店下載安裝，裝好後自動重新開啟。
 //!
 //! 舊的 Release 沒有 `latest.json`（或下載失敗）時，退回只查詢最新版本號，提示使用者到官網下載。
 
@@ -29,6 +32,17 @@ impl Updater {
 pub fn start(app: &AppHandle) {
     app.manage(Updater::default());
     if platform::is_packaged() {
+        platform::restart_after_update();
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(FIRST_CHECK).await;
+            loop {
+                if app.state::<AppState>().settings.lock().check_updates {
+                    check_store(&app).await;
+                }
+                tokio::time::sleep(EVERY).await;
+            }
+        });
         return;
     }
     let app = app.clone();
@@ -70,6 +84,40 @@ async fn check(app: &AppHandle) {
                 found(app, &version);
             }
         }
+    }
+}
+
+async fn check_store(app: &AppHandle) {
+    let Ok(Some(version)) = tauri::async_runtime::spawn_blocking(platform::store_update).await else { return };
+    let current = app.package_info().version.to_string();
+    if parse_version(&version) > parse_version(&current) {
+        found(app, &version);
+    }
+}
+
+/// Microsoft Store 版的「更新」：請商店下載並安裝（商店的視窗掛在偏好設定上）。
+/// 安裝時 Windows 會關閉 CopyC，裝好後依 restart_after_update 的登記重新開啟。
+/// 商店無法處理時改為打開商店裡的 CopyC 頁面，讓使用者按「更新」。
+pub async fn install_from_store(app: &AppHandle) -> bool {
+    #[cfg(windows)]
+    let owner = app
+        .get_webview_window(crate::settings_window::LABEL)
+        .and_then(|w| w.hwnd().ok())
+        .map_or(0, |h| h.0 as isize);
+    #[cfg(not(windows))]
+    let owner = {
+        let _ = app;
+        0
+    };
+    let result = tauri::async_runtime::spawn_blocking(move || platform::store_install(owner).map_err(|e| e.to_string())).await;
+    match result {
+        Ok(Ok(done)) => done,
+        Ok(Err(e)) => {
+            eprintln!("copyc: Microsoft Store 無法更新：{e}");
+            platform::open_url(platform::STORE_PAGE);
+            false
+        }
+        Err(_) => false,
     }
 }
 

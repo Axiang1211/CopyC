@@ -167,6 +167,8 @@ export default {
   "update.ready": "Versi baharu sudah dimuat turun. Mulakan semula untuk selesai — hanya beberapa saat dan tetapan anda kekal.",
   "update.restart": "Mulakan semula & kemas kini",
   "update.installing": "Sedang dikemas kini…",
+  "update.storeDesc": "Anda menggunakan v{0}. Klik Kemas kini untuk memasangnya daripada Microsoft Store — tetapan anda dikekalkan.",
+  "update.storeGo": "Kemas kini",
   "notice.dismiss": "Faham",
   "notice.more": "Ketahui lagi",
   "general.hover": "Papar 3 salinan terakhir apabila dituding",

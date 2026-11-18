@@ -167,6 +167,8 @@ export default {
   "update.ready": "La nouvelle version est téléchargée. Redémarrez pour terminer : quelques secondes suffisent et vos réglages sont conservés.",
   "update.restart": "Redémarrer et mettre à jour",
   "update.installing": "Mise à jour…",
+  "update.storeDesc": "Vous avez la v{0}. Cliquez sur Mettre à jour pour l’installer depuis le Microsoft Store — vos réglages sont conservés.",
+  "update.storeGo": "Mettre à jour",
   "notice.dismiss": "Compris",
   "notice.more": "En savoir plus",
   "general.hover": "Afficher les 3 dernières copies au survol",

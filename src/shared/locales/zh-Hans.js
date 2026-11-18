@@ -167,6 +167,8 @@ export default {
   "update.ready": "新版本已经下载好，重新启动几秒钟就完成，设置都会保留。",
   "update.restart": "重新启动并更新",
   "update.installing": "正在更新…",
+  "update.storeDesc": "你当前使用的是 v{0}。点“更新”由 Microsoft Store 下载并安装，设置都会保留。",
+  "update.storeGo": "更新",
   "notice.dismiss": "知道了",
   "notice.more": "了解更多",
   "general.hover": "悬停显示最近 3 条记录",

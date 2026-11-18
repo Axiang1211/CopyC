@@ -44,6 +44,7 @@ pub fn run() {
             commands::hud_rect,
             commands::open_settings,
             commands::update_install,
+            commands::update_store,
             commands::open_download,
             commands::open_kopi,
             commands::history_query,
@@ -103,7 +104,7 @@ pub fn run() {
             // 遠端資料（公告、黑名單、同步緊急開關）：先用上次下載的，背景再更新
             remote::load_cached(app.handle());
             remote::start(app.handle());
-            // 官網版的自動更新（商店版不使用）
+            // 自動更新：官網版自己下載安裝；商店版請 Microsoft Store 更新
             updater::start(app.handle());
 
             let config_dir = app.path().app_config_dir()?;

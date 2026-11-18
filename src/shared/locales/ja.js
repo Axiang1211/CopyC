@@ -167,6 +167,8 @@ export default {
   "update.ready": "新しいバージョンをダウンロードしました。再起動すると数秒で完了し、設定はそのまま残ります。",
   "update.restart": "再起動して更新",
   "update.installing": "更新しています…",
+  "update.storeDesc": "現在は v{0} です。「更新」を押すと Microsoft Store からダウンロードしてインストールします。設定は保持されます。",
+  "update.storeGo": "更新",
   "notice.dismiss": "OK",
   "notice.more": "詳しく見る",
   "general.hover": "ホバーで直近3件を表示",

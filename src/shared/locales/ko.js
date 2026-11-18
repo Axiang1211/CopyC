@@ -167,6 +167,8 @@ export default {
   "update.ready": "새 버전을 내려받았습니다. 다시 시작하면 몇 초 만에 끝나며 설정은 그대로 유지됩니다.",
   "update.restart": "다시 시작하고 업데이트",
   "update.installing": "업데이트 중…",
+  "update.storeDesc": "현재 v{0}을(를) 사용 중입니다. '업데이트'를 누르면 Microsoft Store에서 내려받아 설치합니다. 설정은 그대로 유지됩니다.",
+  "update.storeGo": "업데이트",
   "notice.dismiss": "확인",
   "notice.more": "자세히 보기",
   "general.hover": "마우스를 올려 최근 3개 표시",

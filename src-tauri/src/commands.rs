@@ -315,6 +315,12 @@ pub fn update_install(app: AppHandle) -> bool {
     crate::updater::install(&app)
 }
 
+/// Microsoft Store 版：請商店下載並安裝新版。
+#[tauri::command]
+pub async fn update_store(app: AppHandle) -> bool {
+    crate::updater::install_from_store(&app).await
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoteData {

@@ -11,7 +11,7 @@ const samples = {
   'hud.generic': ['text'], 'hud.badge': [3], 'sum.filesMore': [3], 'ago.sec': [20], 'ago.min': [2],
   'tray.count': [1234], 'dial.valuetext': ['1.4'], 'content.count': [3, 5],
   'sample.aria': ['text'], 'suggest.add': ['App'], 'tag.remove': ['App'],
-  'update.title': ['1.2.3'], 'update.desc': ['1.0.5'], 'about.version': ['1.0.5', 'Windows'],
+  'update.title': ['1.2.3'], 'update.desc': ['1.0.5'], 'update.storeDesc': ['1.0.5'], 'about.version': ['1.0.5', 'Windows'],
   'ob.step': [2, 6], 'ob.tryLead': ['Ctrl+C'], 'ob.syncDone': ['a@b.com'], 'sync.device': ['MY-PC'],
   'sync.lastSync': ['2 min ago'], 'sync.lanPeers': [2], 'hud.via': ['MY-PC'], 'history.from': ['MY-PC'],
   'transfer.toPeer': ['MY-MAC'], 'transfer.fromPeer': ['MY-MAC'], 'transfer.etaSec': [12], 'transfer.etaMin': [3],
@@ -20,7 +20,7 @@ const samples = {
 
 test('all eight dictionaries have complete, nonempty and renderable keys', () => {
   const keys = Object.keys(DICTS.en).sort();
-  assert.equal(keys.length, 355);
+  assert.equal(keys.length, 357);
   for (const [lang, dict] of Object.entries(DICTS)) {
     setLang(lang);
     assert.deepEqual(Object.keys(dict).sort(), keys, lang);

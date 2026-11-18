@@ -900,14 +900,26 @@ function renderUpdate() {
   card.hidden = !version || version === updateDismissed;
   if (card.hidden) return;
   $('#update-title').textContent = t('update.title', version);
-  // 官網版在背景下載好新版後，直接重新啟動就能更新；否則（或下載失敗）引導到官網下載
-  $('#update-desc').textContent = overview.updateReady ? t('update.ready') : t('update.desc', overview.version);
+  // 官網版在背景下載好新版後，直接重新啟動就能更新；否則（或下載失敗）引導到官網下載。
+  // Microsoft Store 版交給商店安裝（商店不會替換常駐在系統匣、一直在執行的 App，所以要由 App 自己請商店更新）。
   const go = $('#update-go');
-  go.textContent = t(overview.updateReady ? 'update.restart' : 'update.go');
+  if (overview.packaged) {
+    $('#update-desc').textContent = t('update.storeDesc', overview.version);
+    go.textContent = t('update.storeGo');
+  } else {
+    $('#update-desc').textContent = overview.updateReady ? t('update.ready') : t('update.desc', overview.version);
+    go.textContent = t(overview.updateReady ? 'update.restart' : 'update.go');
+  }
   go.disabled = false;
 }
 
 $('#update-go').addEventListener('click', async (e) => {
+  if (overview.packaged) {
+    e.currentTarget.disabled = true;
+    e.currentTarget.textContent = t('update.installing');
+    await invoke('update_store').catch(() => {});
+    return renderUpdate();
+  }
   if (!overview.updateReady) return invoke('open_download');
   e.currentTarget.disabled = true;
   e.currentTarget.textContent = t('update.installing');

@@ -168,6 +168,8 @@ export default {
   'update.ready': '新版本已經下載好，重新啟動幾秒就搞掂，設定全部會保留。',
   'update.restart': '重新啟動同更新',
   'update.installing': '更新緊…',
+  'update.storeDesc': '你而家用緊 v{0}。撳「更新」由 Microsoft Store 下載同安裝，設定全部會保留。',
+  'update.storeGo': '更新',
   'notice.dismiss': '知道喇',
   'notice.more': '睇多啲',
   'general.hover': '游標放上去就展開最近 3 項記錄',
