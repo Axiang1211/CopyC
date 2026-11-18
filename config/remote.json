@@ -2,6 +2,40 @@
   "$comment": "遠端資料：修改後推上 GitHub，Actions 會簽章並放到官網（見 config/README.md）。App 會在啟動時與每 6 小時下載一次。",
   "notices": [
     {
+      "id": "v1.2.0-store",
+      "level": "info",
+      "title": {
+        "zh-Hant": "CopyC 1.2.0 已在 Microsoft Store 推出",
+        "zh-HK": "CopyC 1.2.0 已經喺 Microsoft Store 推出",
+        "zh-Hans": "CopyC 1.2.0 已在 Microsoft Store 推出",
+        "en": "CopyC 1.2.0 is in the Microsoft Store",
+        "ja": "CopyC 1.2.0 を Microsoft Store で公開しました",
+        "ko": "CopyC 1.2.0이 Microsoft Store에 나왔습니다",
+        "fr": "CopyC 1.2.0 est sur le Microsoft Store",
+        "ms": "CopyC 1.2.0 kini di Microsoft Store"
+      },
+      "body": {
+        "zh-Hant": "新功能：電腦與手機互傳檔案和圖片，不在同一個網路也能傳。Microsoft Store 不會更新正在執行的 CopyC，請按「了解更多」打開商店頁面，再按「更新」。",
+        "zh-HK": "新功能：電腦同手機互傳檔案同圖片，唔喺同一個網絡都傳到。Microsoft Store 唔會更新運行緊嘅 CopyC，請撳「睇多啲」打開商店頁面，再撳「更新」。",
+        "zh-Hans": "新功能：电脑与手机互传文件和图片，不在同一个网络也能传。Microsoft Store 不会更新正在运行的 CopyC，请点“了解更多”打开商店页面，再点“更新”。",
+        "en": "New: send files and images between your computers and phone, even on different networks. The Microsoft Store doesn't update CopyC while it's running — click Learn more to open its Store page, then click Update.",
+        "ja": "新機能：パソコンとスマホでファイルや画像を送り合えます。別のネットワークでも届きます。Microsoft Store は実行中の CopyC を更新しないため、「詳しく見る」からストアのページを開いて「更新」を押してください。",
+        "ko": "새 기능: 컴퓨터와 휴대폰끼리 파일과 이미지를 주고받을 수 있고, 다른 네트워크에서도 됩니다. Microsoft Store는 실행 중인 CopyC를 업데이트하지 않으니 '자세히 보기'로 스토어 페이지를 열고 '업데이트'를 눌러 주세요.",
+        "fr": "Nouveau : envoyez fichiers et images entre vos ordinateurs et votre téléphone, même sur des réseaux différents. Le Microsoft Store ne met pas à jour CopyC pendant qu’il tourne : cliquez sur En savoir plus pour ouvrir sa page, puis sur Mettre à jour.",
+        "ms": "Baharu: hantar fail dan imej antara komputer dan telefon anda, walaupun dalam rangkaian berbeza. Microsoft Store tidak mengemas kini CopyC semasa ia berjalan — klik Ketahui lagi untuk membuka halamannya, kemudian klik Kemas kini."
+      },
+      "url": "https://apps.microsoft.com/detail/9PGS1H8Z2N1P",
+      "until": 1798761600000,
+      "platforms": [
+        "windows"
+      ],
+      "channels": [
+        "store"
+      ],
+      "minVersion": "1.1.1",
+      "maxVersion": "1.1.99"
+    },
+    {
       "id": "v1.1.1-released",
       "level": "info",
       "title": {
