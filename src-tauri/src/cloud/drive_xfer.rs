@@ -566,6 +566,18 @@ pub async fn publish_device(drive: &Drive<'_>, files: &[File], key: &Key, me: &D
     }
 }
 
+/// 同一台電腦以前留下的裝置資料（重灌、或商店版與官網版各一份）：名稱與平台相同、id 不同，
+/// 而且超過一天沒更新（還在執行的每 6 小時會更新一次）。刪掉，免得其他裝置看到兩台同名電腦。
+pub async fn prune_twins(drive: &Drive<'_>, files: &[File], key: &Key, me: &DeviceInfo, now: u64) {
+    for f in files.iter().filter(|f| f.name.starts_with("d1-") && f.name != device_file(&me.id)) {
+        let Ok(raw) = drive.download(&f.id).await else { continue };
+        let Some(d) = open_json::<DeviceInfo>(key, &raw) else { continue };
+        if d.id != me.id && d.name == me.name && d.platform == me.platform && now.saturating_sub(d.seen) > 24 * 3600 * 1000 {
+            let _ = drive.delete(&f.id).await;
+        }
+    }
+}
+
 /// 讀取其他裝置的資料（不含自己、太久沒更新的）。
 pub async fn read_devices(drive: &Drive<'_>, files: &[File], key: &Key, me: &str, now: u64) -> Vec<DeviceInfo> {
     let mut out: Vec<DeviceInfo> = Vec::new();

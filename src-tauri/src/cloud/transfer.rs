@@ -326,15 +326,18 @@ pub fn peer_list(app: &AppHandle) -> Vec<Peer> {
 }
 
 /// 可以傳給誰：同一個網路裡的裝置，加上 Drive 裝置清單裡的其他裝置。
+/// 不列出這台電腦自己：同名的電腦是這台以前的安裝（重灌、或商店版與官網版各一份），傳過去只會傳回自己。
 fn peers(cloud: &Cloud) -> Vec<Peer> {
+    let me = cloud.device_name.as_str();
     let mut out: Vec<Peer> = cloud
         .lan
         .nearby(CAP_FILES)
         .into_iter()
+        .filter(|n| n.name != me)
         .map(|n| Peer { id: n.id, name: n.name, platform: String::new(), lan: true, remote: false })
         .collect();
     for d in cloud.transfers.remote.devices() {
-        if d.caps & CAP_DRIVE == 0 {
+        if d.caps & CAP_DRIVE == 0 || (d.name == me && d.platform == crate::platform::PLATFORM) {
             continue;
         }
         match out.iter_mut().find(|p| p.id == d.id) {

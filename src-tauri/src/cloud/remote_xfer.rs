@@ -227,6 +227,7 @@ async fn once(app: &AppHandle, cloud: &Cloud) -> Result<(), XferError> {
         };
         if dx::publish_device(&drive, &files, &key, &me).await.is_ok() {
             *remote.published.lock() = Some(Instant::now());
+            dx::prune_twins(&drive, &files, &key, &me, now).await;
         }
     }
     if remote.devices_at.lock().is_none_or(|t| t.elapsed() > DEVICES_EVERY) {
