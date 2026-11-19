@@ -6,8 +6,9 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap desktop rescap">
+  IgnorableNamespaces="uap desktop desktop2 rescap">
 
   <Identity Name="__IDENTITY_NAME__" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="__ARCH__" />
 
@@ -59,4 +60,15 @@
       </Extensions>
     </Application>
   </Applications>
+
+  <Extensions>
+    <!-- 同一個網路的裝置互傳：安裝時就建立防火牆規則，不會每次更新（安裝路徑含版本號）都跳出「要允許網路存取嗎？」
+         UDP 47321：探索信標（lan_proto::PORT）；TCP：接收檔案與剪貼簿（系統分配的埠）。內容都用帳號金鑰加密。 -->
+    <desktop2:Extension Category="windows.firewallRules">
+      <desktop2:FirewallRules Executable="copyc.exe">
+        <desktop2:Rule Direction="in" IPProtocol="TCP" Profile="all" />
+        <desktop2:Rule Direction="in" IPProtocol="UDP" LocalPortMin="47321" LocalPortMax="47321" Profile="all" />
+      </desktop2:FirewallRules>
+    </desktop2:Extension>
+  </Extensions>
 </Package>
