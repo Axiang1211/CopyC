@@ -82,11 +82,14 @@ object CopyCBridge {
   fun setMulticast(context: Context, on: Boolean) {
     if (on) {
       if (multicastLock == null) {
+        // 沒有 Wi-Fi 的裝置沒有 WifiManager：只是收不到同一個網路的信標，其他功能照常
         val wifi = context.applicationContext.getSystemService(WifiManager::class.java) ?: return
-        multicastLock = wifi.createMulticastLock("copyc-lan").apply {
-          setReferenceCounted(false)
-          acquire()
-        }
+        multicastLock = runCatching {
+          wifi.createMulticastLock("copyc-lan").apply {
+            setReferenceCounted(false)
+            acquire()
+          }
+        }.getOrNull()
       }
     } else {
       multicastLock?.release()

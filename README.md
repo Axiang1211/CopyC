@@ -20,11 +20,11 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 > **CopyC 完全免費**，沒有廣告、付費版、會員或「啟用碼」。如果有人向你收費，或要你付款才能下載、啟用，那都不是我們，請不要付款。請只從[官網](https://www.copyc.app.dreamsworld.top/)、本頁的 [Releases](https://github.com/Axiang1211/CopyC/releases/latest) 或 [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P) 下載。
 
-## 1.2.3 新功能（Android 1.2.0 同步推出）
+## 1.2.3 新功能（Android 1.2.1 同步推出）
 
 - **Mac 的 HEIC 照片**：從 Mac 傳給 Windows 或 Android 時，自動多附一張 JPEG（原檔照傳），對方收到後可以直接打開或貼上。
 - **Microsoft Store 版不再一直問防火牆**：安裝時就建立「同一個網路互傳」需要的防火牆規則，開機或更新後不會再跳出「要允許網路存取嗎？」。
-- **Android 1.2.0 新介面**：和電腦版一致的設計——米白底、白色卡片、綠色按鈕，底部是深色導覽列；檔案頁像電腦版的「互傳檔案」，設定集中在一張卡片裡。
+- **Android 1.2.1 新介面**：和電腦版一致的設計——米白底、白色卡片、綠色按鈕，底部是深色導覽列；檔案頁像電腦版的「互傳檔案」，設定集中在一張卡片裡。
 
 ## 1.2.2 修正
 
