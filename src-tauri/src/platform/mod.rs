@@ -39,6 +39,19 @@ pub fn store_install(_owner: isize) -> Result<bool, String> {
 #[cfg(not(windows))]
 pub fn restart_after_update() {}
 
+/// 把通知框擺到 (x, y)、大小 w×h（實體像素）。Windows 另有實作，見 windows.rs。
+#[cfg(not(windows))]
+pub fn place_hud(window: &tauri::WebviewWindow, x: i32, y: i32, w: u32, h: u32) {
+    let _ = window.set_size(tauri::PhysicalSize::new(w, h));
+    let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+}
+
+/// 通知框要不要接收滑鼠（Windows 另有實作，見 windows.rs）。
+#[cfg(not(windows))]
+pub fn set_hud_clickable(window: &tauri::WebviewWindow, clickable: bool) {
+    let _ = window.set_ignore_cursor_events(!clickable);
+}
+
 /// 用預設瀏覽器開啟網址。
 pub fn open_url(url: &str) {
     #[cfg(windows)]

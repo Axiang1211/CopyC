@@ -730,17 +730,33 @@ pub(super) fn put_on_clipboard(app: &AppHandle, tops: Vec<PathBuf>, device: &str
     };
     app.state::<Cloud>().expect_incoming_any(device.to_string());
     std::thread::spawn(move || {
-        let Ok(mut cb) = arboard::Clipboard::new() else { return };
-        if let Some(img) = image.and_then(|p| image::open(p).ok()) {
-            let rgba = img.to_rgba8();
-            let (w, h) = rgba.dimensions();
-            let data = arboard::ImageData { width: w as usize, height: h as usize, bytes: rgba.into_raw().into() };
-            if cb.set_image(data).is_ok() {
+        let image = image.and_then(|p| clipboard_image(&p));
+        // 剪貼簿可能正被別的程式（或 CopyC 自己的監聽）開著，寫入失敗就稍等再試
+        let retry = |f: &mut dyn FnMut(&mut arboard::Clipboard) -> bool| {
+            (0..6).any(|i| {
+                if i > 0 {
+                    std::thread::sleep(Duration::from_millis(150 * i));
+                }
+                arboard::Clipboard::new().is_ok_and(|mut cb| f(&mut cb))
+            })
+        };
+        if let Some(img) = image {
+            if retry(&mut |cb| cb.set_image(img.clone()).is_ok()) {
                 return;
             }
         }
-        let _ = cb.set().file_list(&tops);
+        if !retry(&mut |cb| cb.set().file_list(&tops).is_ok()) {
+            eprintln!("copyc: 無法把收到的檔案放進剪貼簿");
+        }
     });
+}
+
+/// 讀圖片給剪貼簿用。依檔案內容判斷格式，不看副檔名：手機分享出來的圖常常叫 .png 其實是 JPEG。
+fn clipboard_image(path: &Path) -> Option<arboard::ImageData<'static>> {
+    let img = image::ImageReader::open(path).ok()?.with_guessed_format().ok()?.decode().ok()?;
+    let rgba = img.to_rgba8();
+    let (w, h) = rgba.dimensions();
+    Some(arboard::ImageData { width: w as usize, height: h as usize, bytes: rgba.into_raw().into() })
 }
 
 fn is_image(path: &Path) -> bool {
@@ -838,6 +854,23 @@ pub fn reveal(path: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clipboard_image_reads_by_content_not_extension() {
+        // 手機分享出來的圖常常叫 .png，內容其實是 JPEG
+        let dir = std::env::temp_dir().join(format!("copyc-img-{}", rand::random::<u32>()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("1795050394855.png");
+        let img = image::RgbImage::from_pixel(4, 3, image::Rgb([200, 100, 50]));
+        let mut jpeg = Vec::new();
+        image::DynamicImage::ImageRgb8(img).write_to(&mut std::io::Cursor::new(&mut jpeg), image::ImageFormat::Jpeg).unwrap();
+        std::fs::write(&path, &jpeg).unwrap();
+        let got = clipboard_image(&path).expect("decodes JPEG named .png");
+        assert_eq!((got.width, got.height), (4, 3));
+        std::fs::write(&path, b"not an image").unwrap();
+        assert!(clipboard_image(&path).is_none());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn folders_expand_to_relative_names() {

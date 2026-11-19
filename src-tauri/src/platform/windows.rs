@@ -47,8 +47,8 @@ use windows::{
                 GetWindowRect, GetWindowThreadProcessId, IsZoomed, RegisterClassW, SetWindowLongPtrW,
                 SetWindowPos, ShowWindow, TranslateMessage, GWL_EXSTYLE, GWL_STYLE, HICON, HWND_MESSAGE,
                 HWND_TOPMOST, ICONINFO, MSG, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
-                SWP_SHOWWINDOW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, WINDOW_EX_STYLE, WINDOW_STYLE,
-                WM_CLIPBOARDUPDATE, WNDCLASSW, WS_CAPTION, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+                SWP_ASYNCWINDOWPOS, SWP_NOZORDER, SWP_SHOWWINDOW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, WINDOW_EX_STYLE, WINDOW_STYLE,
+                WM_CLIPBOARDUPDATE, WNDCLASSW, WS_CAPTION, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
             },
         },
     },
@@ -469,6 +469,35 @@ pub fn prepare_hud(window: &tauri::WebviewWindow) {
     unsafe {
         let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex | (WS_EX_NOACTIVATE.0 | WS_EX_TOOLWINDOW.0) as isize);
+    }
+}
+
+/// 把通知框擺到 (x, y)、大小 w×h（實體像素）。
+///
+/// 不用 tao 的 set_size / set_position：它們會在主執行緒排一次「重算視窗狀態」，
+/// 而 tao 以為通知框是隱藏的，所以那一步會把通知框藏起來；排在顯示之後執行時，通知框一出現就消失。
+pub fn place_hud(window: &tauri::WebviewWindow, x: i32, y: i32, w: u32, h: u32) {
+    let Ok(hwnd) = window.hwnd() else { return };
+    unsafe {
+        // 非同步：視窗屬於主執行緒，從背景執行緒同步呼叫可能和主執行緒互等
+        let _ = SetWindowPos(hwnd, None, x, y, w as i32, h as i32, SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
+    }
+}
+
+/// 通知框要不要接收滑鼠（有「發送到…」按鈕、游標在上面時才接收）。只切換 WS_EX_TRANSPARENT。
+///
+/// 不能用 tao 的 set_ignore_cursor_events：它會依自己記錄的狀態重算整組視窗樣式——
+/// 拿掉 WS_EX_LAYERED（透明背景變成灰色大框）、拿掉工具視窗樣式；而且它以為通知框是隱藏的
+/// （顯示是由 show_hud 直接做的），還會順手把正在顯示的通知框藏起來。
+pub fn set_hud_clickable(window: &tauri::WebviewWindow, clickable: bool) {
+    let Ok(hwnd) = window.hwnd() else { return };
+    unsafe {
+        let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        let t = WS_EX_TRANSPARENT.0 as isize;
+        let new = if clickable { ex & !t } else { ex | t };
+        if new != ex {
+            SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new);
+        }
     }
 }
 

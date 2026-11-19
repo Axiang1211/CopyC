@@ -16,7 +16,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tauri::{
-    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow,
+    AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow,
     WebviewWindowBuilder,
 };
 
@@ -389,8 +389,7 @@ fn place(app: &AppHandle, win: &WebviewWindow, position: Position) -> (Anchor, O
         },
     };
 
-    let _ = win.set_size(PhysicalSize::new(w.round() as u32, h.round() as u32));
-    let _ = win.set_position(PhysicalPosition::new(x.round() as i32, y.round() as i32));
+    platform::place_hud(win, x.round() as i32, y.round() as i32, w.round() as u32, h.round() as u32);
     (anchor, island)
 }
 
@@ -419,7 +418,7 @@ fn spawn_hover_poller(app: AppHandle) {
                 state.hud.lock().hovering = inside;
                 // 有按鈕時，游標在通知框上才接收點擊；移開就恢復滑鼠穿透
                 if interactive {
-                    let _ = win.set_ignore_cursor_events(!inside);
+                    platform::set_hud_clickable(&win, inside);
                 }
                 let history_on = state.settings.lock().hover_history;
                 let history = if inside && history_on { state.history_out(1, 3) } else { Vec::new() };
@@ -441,7 +440,7 @@ pub fn finished(app: &AppHandle, seq: u64) {
         h.interactive = false;
     }
     if let Some(win) = app.get_webview_window(HUD_LABEL) {
-        let _ = win.set_ignore_cursor_events(true);
+        platform::set_hud_clickable(&win, false);
         let w = win.clone();
         let _ = app.run_on_main_thread(move || platform::hide_hud(&w));
     }
