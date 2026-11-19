@@ -93,7 +93,7 @@ function row(clip, meta) {
 
 const TABS = ['recent', 'files', 'history', 'settings'];
 function selectTab(name) {
-  $('.tabs').style.setProperty('--tab', TABS.indexOf(name));
+  $('#page-title').textContent = T[`tab.${name}`];
   for (const t of TABS) {
     $(`#tab-${t}`).setAttribute('aria-selected', String(t === name));
     $(`#panel-${t}`).hidden = t !== name;
@@ -102,6 +102,7 @@ function selectTab(name) {
   if (name === 'files') refreshFiles();
 }
 TABS.forEach((t) => $(`#tab-${t}`).addEventListener('click', () => selectTab(t)));
+$('#page-title').textContent = T['tab.recent'];
 
 /* ---------------- 最近：這支手機收到與送出的（只存在手機上） ---------------- */
 
@@ -227,6 +228,7 @@ async function refresh() {
   $('#sign-in-spin').hidden = !signingIn;
   $('#sign-in-text').textContent = signingIn ? T['out.signingIn'] : T['out.signIn'];
   $('#signed-in').hidden = !status.signedIn;
+  document.body.classList.toggle('signed', !!status.signedIn); // 底部導覽列要讓出空間
   const pill = $('#pill');
   pill.hidden = !status.signedIn;
   pill.classList.toggle('on', status.live === 'on');
@@ -539,8 +541,13 @@ function renderFiles() {
     ...peers.map((p) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = `chip press${p.id === peer?.id ? ' on' : ''}`;
-      b.textContent = `${p.name || '—'} · ${p.lan ? 'Wi-Fi' : T['files.cloud']}`;
+      b.className = `chip peer press${p.id === peer?.id ? ' on' : ''}`;
+      // 像電腦版：裝置名稱＋小標籤（Wi-Fi／雲端）
+      const name = document.createElement('span');
+      name.textContent = p.name || '—';
+      const tag = document.createElement('i');
+      tag.textContent = p.lan ? 'Wi-Fi' : T['files.cloud'];
+      b.append(name, tag);
       b.addEventListener('click', () => {
         filesPeer = p.id;
         try {
@@ -575,9 +582,21 @@ function renderFiles() {
   $('#files-list').replaceChildren(...items.map(itemRow));
 }
 
-function fileRow(name, meta, bad, button, progress) {
+const ICONS = {
+  in: '<svg viewBox="0 0 24 24"><path d="M12 4.5v11M7.5 11l4.5 4.5 4.5-4.5"/><path d="M5 19.5h14"/></svg>',
+  out: '<svg viewBox="0 0 24 24"><path d="M12 15.5v-11M7.5 9 12 4.5 16.5 9"/><path d="M5 19.5h14"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24"><path d="M7.5 18.5h9.8a3.7 3.7 0 0 0 .6-7.4 5.6 5.6 0 0 0-10.8-1.2 4.3 4.3 0 0 0 .4 8.6z"/><path d="M12 10.5v5.5M9.6 13.6 12 16l2.4-2.4"/></svg>',
+};
+
+function fileRow(name, meta, bad, button, progress, kind = 'in') {
   const li = document.createElement('li');
-  if (bad) li.className = 'bad';
+  li.classList.add('file');
+  if (bad) li.classList.add('bad');
+  const lead = document.createElement('span');
+  lead.className = `lead ${kind}`;
+  lead.setAttribute('aria-hidden', 'true');
+  lead.innerHTML = ICONS[kind];
+  li.append(lead);
   const text = document.createElement('div');
   text.className = 'text';
   text.textContent = name;
@@ -598,10 +617,11 @@ function fileRow(name, meta, bad, button, progress) {
   return li;
 }
 
-function actionButton(label, fn) {
+/** 列右邊的按鈕；primary（下載、打開）是綠色，其他（取消）是白底細框。 */
+function actionButton(label, fn, primary = true) {
   const b = document.createElement('button');
   b.type = 'button';
-  b.className = 'copy press';
+  b.className = `copy${primary ? ' go' : ''} press`;
   b.textContent = label;
   b.addEventListener('click', fn);
   return b;
@@ -633,7 +653,7 @@ function inboxRow(e) {
       refreshFiles();
     });
   }
-  return fileRow(e.name, parts.join(' · '), expired, button, null);
+  return fileRow(e.name, parts.join(' · '), expired, button, null, 'cloud');
 }
 
 function itemRow(it) {
@@ -644,7 +664,7 @@ function itemRow(it) {
   if (['active', 'retrying', 'waiting'].includes(it.state)) {
     parts.push(it.state === 'active' ? `${bytes(it.done)} / ${bytes(it.size)}` : T[`files.${it.state}`]);
     progress = it.size ? Math.min(1, it.done / it.size) : 0;
-    button = actionButton(T['files.cancel'], () => invoke('files_cancel', { id: it.id }));
+    button = actionButton(T['files.cancel'], () => invoke('files_cancel', { id: it.id }), false);
   } else if (it.state === 'failed') {
     parts.push(errFile(it.error));
   } else if (it.state === 'done') {
@@ -654,7 +674,7 @@ function itemRow(it) {
   } else {
     parts.push(T['files.canceled']);
   }
-  return fileRow(it.name, parts.join(' · '), it.state === 'failed', button, progress);
+  return fileRow(it.name, parts.join(' · '), it.state === 'failed', button, progress, it.dir === 'out' ? 'out' : 'in');
 }
 
 $('#files-pick').addEventListener('click', () => bridge?.pickFiles?.());

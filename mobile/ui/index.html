@@ -30,25 +30,38 @@
 
     <!-- 已登入 -->
     <section id="signed-in" hidden>
-      <div class="card">
-        <p class="account" id="account"></p>
-        <button class="press btn primary big" id="send" type="button">
-          <svg class="icon-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17V5m0 0-5 5m5-5 5 5"/><path d="M5 20h14"/></svg>
-          <span data-i18n="in.send"></span>
-        </button>
-        <p class="hint" data-i18n="in.hint"></p>
-      </div>
+      <h1 class="page-title" id="page-title"></h1>
 
-      <div class="tabs" role="tablist">
-        <span class="tab-ind" aria-hidden="true"></span>
-        <button class="press" role="tab" id="tab-recent" aria-selected="true" type="button" data-i18n="tab.recent"></button>
-        <button class="press" role="tab" id="tab-files" aria-selected="false" type="button" data-i18n="tab.files"></button>
-        <button class="press" role="tab" id="tab-history" aria-selected="false" type="button" data-i18n="tab.history"></button>
-        <button class="press" role="tab" id="tab-settings" aria-selected="false" type="button" data-i18n="tab.settings"></button>
-      </div>
+      <!-- 底部導覽列（對應電腦版左側的深色側邊欄） -->
+      <nav class="tabs" role="tablist">
+        <button class="press" role="tab" id="tab-recent" aria-selected="true" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>
+          <span data-i18n="tab.recent"></span>
+        </button>
+        <button class="press" role="tab" id="tab-files" aria-selected="false" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5h13M14 5l3.5 3.5L14 12"/><path d="M19.5 15.5h-13M10 12l-3.5 3.5L10 19"/></svg>
+          <span data-i18n="tab.files"></span>
+        </button>
+        <button class="press" role="tab" id="tab-history" aria-selected="false" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 12a7.4 7.4 0 1 0 2.2-5.3"/><path d="M4.4 4.6v3.4h3.4"/><path d="M12 8v4.3l2.9 1.8"/></svg>
+          <span data-i18n="tab.history"></span>
+        </button>
+        <button class="press" role="tab" id="tab-settings" aria-selected="false" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/></svg>
+          <span data-i18n="tab.settings"></span>
+        </button>
+      </nav>
 
       <!-- 最近：這支手機收到與送出的 -->
       <div id="panel-recent" role="tabpanel">
+        <div class="hero">
+          <p class="hero-status"><i aria-hidden="true"></i><span id="account"></span></p>
+          <button class="press btn cta big" id="send" type="button">
+            <svg class="icon-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17V5m0 0-5 5m5-5 5 5"/><path d="M5 20h14"/></svg>
+            <span data-i18n="in.send"></span>
+          </button>
+          <p class="hint" data-i18n="in.hint"></p>
+        </div>
         <ol class="list" id="list"></ol>
         <p class="empty" id="empty" data-i18n="in.empty"></p>
       </div>
@@ -56,17 +69,22 @@
       <!-- 檔案：和電腦（或其他手機）互傳檔案與照片 -->
       <div id="panel-files" role="tabpanel" hidden>
         <div class="card files-send">
-          <p class="files-pending" id="files-pending" hidden></p>
-          <button class="press btn primary" id="files-pick" type="button" data-i18n="files.pick"></button>
-          <p class="hint" data-i18n="files.hint"></p>
-          <h3 class="files-h" data-i18n="files.to"></h3>
-          <div class="chips files-peers" id="files-peers"></div>
+          <div class="drop">
+            <span class="drop-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 14.5v3.2a1.8 1.8 0 0 0 1.8 1.8h11.4a1.8 1.8 0 0 0 1.8-1.8v-3.2"/></svg></span>
+            <p class="files-pending" id="files-pending" hidden></p>
+            <button class="press btn primary" id="files-pick" type="button" data-i18n="files.pick"></button>
+            <p class="hint" data-i18n="files.hint"></p>
+          </div>
+          <div class="files-to">
+            <h3 class="files-h" data-i18n="files.to"></h3>
+            <div class="chips files-peers" id="files-peers"></div>
+          </div>
           <p class="hint" id="files-nopeers" data-i18n="files.noPeers" hidden></p>
           <button class="press btn primary" id="files-go" type="button" hidden></button>
         </div>
-        <h3 class="files-h" id="files-inbox-h" data-i18n="files.inbox" hidden></h3>
+        <h3 class="section-label" id="files-inbox-h" data-i18n="files.inbox" hidden></h3>
         <ol class="list files-list" id="files-inbox"></ol>
-        <h3 class="files-h" id="files-list-h" data-i18n="files.list" hidden></h3>
+        <h3 class="section-label" id="files-list-h" data-i18n="files.list" hidden></h3>
         <ol class="list files-list" id="files-list"></ol>
       </div>
 
@@ -84,6 +102,7 @@
 
       <!-- 設定 -->
       <div id="panel-settings" role="tabpanel" hidden>
+        <div class="group">
         <div class="card setting">
           <div><h3 data-i18n="set.auto"></h3><p data-i18n="set.autoDesc"></p></div>
           <input type="checkbox" class="switch" id="pref-auto">
@@ -110,6 +129,7 @@
         <div class="card">
           <h3 data-i18n="set.tile"></h3>
           <p data-i18n="set.tileDesc"></p>
+        </div>
         </div>
         <button class="press btn ghost small" id="sign-out" type="button" data-i18n="in.signOut"></button>
       </div>
