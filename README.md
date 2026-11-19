@@ -20,6 +20,10 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 > **CopyC 完全免費**，沒有廣告、付費版、會員或「啟用碼」。如果有人向你收費，或要你付款才能下載、啟用，那都不是我們，請不要付款。請只從[官網](https://www.copyc.app.dreamsworld.top/)、本頁的 [Releases](https://github.com/Axiang1211/CopyC/releases/latest) 或 [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P) 下載。
 
+## 1.2.1 新功能
+
+- **Microsoft Store 版自動提示更新**：商店不會更新一直在系統匣執行的 App，所以以前要自己到商店更新。現在 CopyC 每天會問商店有沒有新版，有就在偏好設定提示，按「更新」直接由 Microsoft Store 下載安裝。
+
 ## 1.2.0 新功能（Android 1.1.0 同步推出）
 
 - **互傳檔案與圖片**：把檔案、資料夾或圖片拖進「偏好設定 → 互傳檔案」，或按「選擇檔案」、「傳送剪貼簿」，傳給你的其他電腦與 Android 手機。
