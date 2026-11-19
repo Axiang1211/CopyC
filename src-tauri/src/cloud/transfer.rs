@@ -409,6 +409,23 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
     }
     let cloud = app.state::<Cloud>();
     let target = peers(&cloud).into_iter().find(|p| p.id == peer);
+    // Mac 拍的 HEIC 照片：Windows 和 Android 大多打不開，另外轉一張 JPEG 一起傳（原檔照傳）
+    let heic: Vec<PathBuf> = if cfg!(target_os = "macos") && target.as_ref().is_some_and(|p| !matches!(p.platform.as_str(), "macos" | "ios")) {
+        files.iter().filter(|(p, _)| is_heic(p)).map(|(p, _)| p.clone()).collect()
+    } else {
+        Vec::new()
+    };
+    let extra = heic.len();
+    if !heic.is_empty() {
+        let (app, peer, dir) = (app.clone(), peer.clone(), outbox(app));
+        std::thread::spawn(move || {
+            let jpegs: Vec<PathBuf> = heic.iter().filter_map(|p| to_jpeg(p, &dir)).collect();
+            if !jpegs.is_empty() {
+                // 另一批，對方收完原檔後剪貼簿裡會是這張 JPEG，可以直接貼上
+                send_paths(&app, jpegs, peer);
+            }
+        });
+    }
     let peer_name = target.as_ref().map(|p| p.name.clone()).unwrap_or_default();
     let (lan, remote) = target.as_ref().map_or((false, false), |p| (p.lan, p.remote));
     let batch = format!("{:016x}", rand::random::<u64>());
@@ -442,6 +459,7 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
         .collect();
     let _ = app.emit("transfer:changed", ());
     let app = app.clone();
+    let count = count as usize + extra;
     tauri::async_runtime::spawn(async move {
         for (id, cancel, offer, path) in jobs {
             if cancel.load(Ordering::Relaxed) {
@@ -456,7 +474,28 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
             }
         }
     });
-    count as usize
+    count
+}
+
+fn is_heic(path: &Path) -> bool {
+    let ext = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    matches!(ext.as_str(), "heic" | "heif" | "hif")
+}
+
+/// 用 macOS 內建的 sips 把 HEIC 轉成同名的 JPEG（放在暫存的 outbox，傳完一天後清掉）。
+fn to_jpeg(src: &Path, outbox: &Path) -> Option<PathBuf> {
+    let stem = src.file_stem()?.to_string_lossy().into_owned();
+    let dir = outbox.join(format!("{:08x}", rand::random::<u32>()));
+    std::fs::create_dir_all(&dir).ok()?;
+    let out = dir.join(format!("{stem}.jpg"));
+    let ok = std::process::Command::new("/usr/bin/sips")
+        .args(["-s", "format", "jpeg", "-s", "formatOptions", "90"])
+        .arg(src)
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .is_ok_and(|o| o.status.success());
+    (ok && out.is_file()).then_some(out)
 }
 
 async fn cancelled(flag: &AtomicBool) {
@@ -793,7 +832,9 @@ pub fn cleanup(app: &AppHandle) {
     for (dir, age) in [(dest_dir(app).join(PARTIAL_DIR), PARTIAL_KEEP), (outbox(app), Duration::from_secs(24 * 3600))] {
         for entry in std::fs::read_dir(&dir).into_iter().flatten().flatten() {
             if old(&entry.path(), age) {
-                let _ = std::fs::remove_file(entry.path());
+                // outbox 裡也有轉好的 JPEG 所在的子資料夾
+                let path = entry.path();
+                let _ = if path.is_dir() { std::fs::remove_dir_all(&path) } else { std::fs::remove_file(&path) };
             }
         }
     }
@@ -857,6 +898,14 @@ pub fn reveal(path: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn heic_is_recognized_by_extension() {
+        assert!(is_heic(Path::new("IMG_0001.HEIC")));
+        assert!(is_heic(Path::new("a/b/photo.heif")));
+        assert!(!is_heic(Path::new("photo.jpg")));
+        assert!(!is_heic(Path::new("heic")));
+    }
 
     #[test]
     fn clipboard_image_reads_by_content_not_extension() {
