@@ -19,7 +19,7 @@ if (!keyB64) {
   process.exit(1);
 }
 
-const LANGS = ['zh-Hant', 'zh-Hans', 'en', 'ja', 'ko', 'fr', 'ms'];
+const LANGS = ['zh-Hant', 'zh-HK', 'zh-Hans', 'en', 'ja', 'ko', 'fr', 'ms'];
 const fail = (msg) => {
   console.error(`config/remote.json 格式錯誤：${msg}`);
   process.exit(1);
