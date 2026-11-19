@@ -925,6 +925,24 @@ $('#update-go').addEventListener('click', async (e) => {
   e.currentTarget.textContent = t('update.installing');
   if (!(await invoke('update_install').catch(() => false))) invoke('open_download');
 });
+// 「一般 → 檢查更新」：官網版查 GitHub、商店版問 Microsoft Store；有新版就顯示上方的提示卡並捲過去
+$('#check-now').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  const status = $('#check-status');
+  btn.disabled = true;
+  status.textContent = t('update.checking');
+  const r = await invoke('update_check').catch(() => ({ state: 'failed' }));
+  btn.disabled = false;
+  if (r?.state === 'found') {
+    status.textContent = t('update.found', r.version);
+    updateDismissed = '';
+    overview.update = r.version;
+    renderUpdate();
+    $('#content-scroll').scrollTo({ top: 0, behavior: 'smooth' }); // 提示卡在頁面最上方
+  } else {
+    status.textContent = r?.state === 'latest' ? t('update.latest', overview.version) : t('update.checkFailed');
+  }
+});
 $('#kopi').addEventListener('click', () => invoke('open_kopi'));
 $('#update-later').addEventListener('click', () => {
   updateDismissed = overview.update;

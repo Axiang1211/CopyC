@@ -315,6 +315,12 @@ pub fn update_install(app: AppHandle) -> bool {
     crate::updater::install(&app)
 }
 
+/// 偏好設定的「立即檢查」：官網版查 GitHub，商店版問 Microsoft Store。
+#[tauri::command]
+pub async fn update_check(app: AppHandle) -> crate::updater::Checked {
+    crate::updater::check_now(&app).await
+}
+
 /// Microsoft Store 版：請商店下載並安裝新版。
 #[tauri::command]
 pub async fn update_store(app: AppHandle) -> bool {

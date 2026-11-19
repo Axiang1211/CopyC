@@ -252,16 +252,19 @@ pub fn is_packaged() -> bool {
 /// Microsoft Store 上的 CopyC。
 pub const STORE_PAGE: &str = "ms-windows-store://pdp/?productid=9PGS1H8Z2N1P";
 
-/// Microsoft Store 版：商店上有沒有比目前新的 CopyC，有的話回傳新版的版本號。
+/// Microsoft Store 版：商店上有沒有比目前新的 CopyC，有的話回傳新版的版本號；Err 是問不到商店。
 /// 商店會自動更新，但不會替換常駐在系統匣、一直在執行的 App，所以由 App 自己檢查。
-pub fn store_update() -> Option<String> {
-    let ctx = windows::Services::Store::StoreContext::GetDefault().ok()?;
-    let updates = ctx.GetAppAndOptionalStorePackageUpdatesAsync().ok()?.join().ok()?;
-    if updates.Size().ok()? == 0 {
-        return None;
-    }
-    let v = updates.GetAt(0).ok()?.Package().ok()?.Id().ok()?.Version().ok()?;
-    Some(format!("{}.{}.{}", v.Major, v.Minor, v.Build))
+pub fn store_update() -> Result<Option<String>, String> {
+    let run = || -> windows::core::Result<Option<String>> {
+        let ctx = windows::Services::Store::StoreContext::GetDefault()?;
+        let updates = ctx.GetAppAndOptionalStorePackageUpdatesAsync()?.join()?;
+        if updates.Size()? == 0 {
+            return Ok(None);
+        }
+        let v = updates.GetAt(0)?.Package()?.Id()?.Version()?;
+        Ok(Some(format!("{}.{}.{}", v.Major, v.Minor, v.Build)))
+    };
+    run().map_err(|e| e.to_string())
 }
 
 /// 請 Microsoft Store 下載並安裝更新（會出現商店的確認與進度視窗，掛在 owner 視窗上）。

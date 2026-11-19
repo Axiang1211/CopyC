@@ -45,6 +45,7 @@ pub fn run() {
             commands::open_settings,
             commands::update_install,
             commands::update_store,
+            commands::update_check,
             commands::open_download,
             commands::open_kopi,
             commands::history_query,

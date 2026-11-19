@@ -29,8 +29,8 @@ pub fn is_packaged() -> bool {
 #[cfg(not(windows))]
 pub const STORE_PAGE: &str = "";
 #[cfg(not(windows))]
-pub fn store_update() -> Option<String> {
-    None
+pub fn store_update() -> Result<Option<String>, String> {
+    Ok(None)
 }
 #[cfg(not(windows))]
 pub fn store_install(_owner: isize) -> Result<bool, String> {
