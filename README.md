@@ -20,6 +20,11 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 > **CopyC 完全免費**，沒有廣告、付費版、會員或「啟用碼」。如果有人向你收費，或要你付款才能下載、啟用，那都不是我們，請不要付款。請只從[官網](https://www.copyc.app.dreamsworld.top/)、本頁的 [Releases](https://github.com/Axiang1211/CopyC/releases/latest) 或 [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P) 下載。
 
+## 1.2.2 修正
+
+- **Windows**：複製檔案或圖片時，有「發送到…」的提示會一閃就消失、背後出現灰色大框（1.2.0 起）。
+- **手機傳來的圖片**：收到後直接放進剪貼簿當圖片，可以馬上貼上（以前檔名是 .png、內容其實是 JPEG 的圖會變成「檔案」）。
+
 ## 1.2.1 新功能
 
 - **Microsoft Store 版自動提示更新**：商店不會更新一直在系統匣執行的 App，所以以前要自己到商店更新。現在 CopyC 每天會問商店有沒有新版，有就在偏好設定提示，按「更新」直接由 Microsoft Store 下載安裝。
