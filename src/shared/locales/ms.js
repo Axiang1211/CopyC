@@ -158,6 +158,7 @@ export default {
   "general.autostartWin": "Bermula dengan Windows dalam dulang sistem",
   "general.autostartMac": "Bermula semasa log masuk dalam bar menu",
   "general.autostartBlocked": "Dimatikan dalam Tetapan Windows → Aplikasi → Permulaan. Hidupkan semula di sana.",
+  "general.autostartMove": "Seret CopyC ke folder Aplikasi dan bukanya dari situ dahulu — jika tidak, ia tidak dapat bermula semasa log masuk",
   "general.updates": "Semak kemas kini",
   "general.updatesDesc": "Semak versi baharu di GitHub semasa mula, muat turunnya di latar belakang dan sahkan tandatangannya; satu klik untuk mula semula dan kemas kini. Tiada data peribadi dihantar.",
   "update.title": "CopyC v{0} tersedia",

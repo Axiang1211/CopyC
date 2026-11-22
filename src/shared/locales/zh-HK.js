@@ -159,6 +159,7 @@ export default {
   'general.autostartWin': '開機之後自動喺右下角系統匣度等住',
   'general.autostartMac': '登入之後自動喺頂部選單列度等住',
   'general.autostartBlocked': '已經喺 Windows「設定 → 應用程式 → 啟動」閂咗，請去嗰度再開返',
+  'general.autostartMove': '請先將 CopyC 拖去「應用程式」資料夾，再由嗰度打開，開機自動啟動先會生效',
   'general.updates': '自動檢查更新',
   'general.updatesDesc': '開 App 嗰陣會向 GitHub 查吓有冇新版本，有嘅話就喺背景下載同驗證簽章，撳一下重新啟動就更新好；唔會傳送任何個人資料',
   'update.title': (v) => `CopyC v${v} 出咗喇`,

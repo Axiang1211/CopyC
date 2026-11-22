@@ -158,6 +158,7 @@ export default {
   "general.autostartWin": "Windows 시작 시 시스템 트레이에 상주",
   "general.autostartMac": "로그인 시 메뉴 막대에 상주",
   "general.autostartBlocked": "Windows 설정 → 앱 → 시작 프로그램에서 다시 켜세요",
+  "general.autostartMove": "먼저 CopyC를 '응용 프로그램' 폴더로 옮긴 뒤 그곳에서 여세요. 그래야 로그인할 때 자동으로 시작됩니다",
   "general.updates": "업데이트 확인",
   "general.updatesDesc": "시작 시 GitHub에서 새 버전을 확인해 백그라운드로 내려받고 서명을 검증합니다. 한 번 클릭하면 다시 시작하며 업데이트됩니다. 개인정보는 전송하지 않습니다",
   "update.title": "CopyC v{0} 사용 가능",

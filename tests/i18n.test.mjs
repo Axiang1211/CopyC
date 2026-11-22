@@ -20,7 +20,7 @@ const samples = {
 
 test('all eight dictionaries have complete, nonempty and renderable keys', () => {
   const keys = Object.keys(DICTS.en).sort();
-  assert.equal(keys.length, 364);
+  assert.equal(keys.length, 365);
   for (const [lang, dict] of Object.entries(DICTS)) {
     setLang(lang);
     assert.deepEqual(Object.keys(dict).sort(), keys, lang);

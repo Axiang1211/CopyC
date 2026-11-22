@@ -311,6 +311,7 @@ fn to_autostart(state: StartupTaskState) -> Autostart {
             state,
             StartupTaskState::DisabledByUser | StartupTaskState::DisabledByPolicy | StartupTaskState::EnabledByPolicy
         ),
+        misplaced: false,
     }
 }
 

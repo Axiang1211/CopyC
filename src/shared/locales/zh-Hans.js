@@ -158,6 +158,7 @@ export default {
   "general.autostartWin": "随 Windows 启动并驻留系统托盘",
   "general.autostartMac": "登录后常驻顶部菜单栏",
   "general.autostartBlocked": "已在 Windows「设置 → 应用 → 启动」关闭，请到那里开启",
+  "general.autostartMove": "请先把 CopyC 拖到“应用程序”文件夹，再从那里打开，开机自动启动才会生效",
   "general.updates": "自动检查更新",
   "general.updatesDesc": "启动时向 GitHub 查询新版本，有的话在后台下载并验证签名，点一下重新启动即完成更新；不发送个人数据",
   "update.title": "CopyC v{0} 已推出",

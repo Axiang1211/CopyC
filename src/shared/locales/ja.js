@@ -158,6 +158,7 @@ export default {
   "general.autostartWin": "Windows 起動時にシステムトレイに常駐",
   "general.autostartMac": "ログイン時にメニューバーに常駐",
   "general.autostartBlocked": "Windows「設定 → アプリ → スタートアップ」で再度有効にしてください",
+  "general.autostartMove": "まず CopyC を「アプリケーション」フォルダに移動して、そこから開いてください。ログイン時の自動起動はそのあと有効になります",
   "general.updates": "更新を確認",
   "general.updatesDesc": "起動時に GitHub で新しいバージョンを確認し、バックグラウンドでダウンロードして署名を検証します。クリックひとつで再起動して更新。個人情報は送信しません",
   "update.title": "CopyC v{0} が利用可能です",

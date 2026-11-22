@@ -158,6 +158,7 @@ export default {
   "general.autostartWin": "Démarrer avec Windows dans la zone de notification",
   "general.autostartMac": "Démarrer à la connexion dans la barre des menus",
   "general.autostartBlocked": "Désactivé dans les Paramètres Windows → Applications → Démarrage. Réactivez-le ici.",
+  "general.autostartMove": "Glissez d’abord CopyC dans le dossier Applications et ouvrez-le depuis là, sinon il ne pourra pas démarrer à l’ouverture de session",
   "general.updates": "Vérifier les mises à jour",
   "general.updatesDesc": "Vérifie au démarrage s’il existe une nouvelle version sur GitHub, la télécharge en arrière-plan et vérifie sa signature ; un clic suffit pour redémarrer et mettre à jour. Aucune donnée personnelle n’est envoyée.",
   "update.title": "CopyC v{0} est disponible",

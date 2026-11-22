@@ -199,15 +199,18 @@ $('#status-toggle').addEventListener('click', () => set('paused', !settings.paus
 /* ---------------- 開機自動啟動 ---------------- */
 
 // 實際狀態以系統為準（使用者也可能在 Windows 設定 / 系統設定裡改），開窗與回到視窗時重新讀取
-let autostart = { enabled: false, blocked: false };
+let autostart = { enabled: false, blocked: false, misplaced: false };
 
 function renderAutostart() {
   const sw = $('#autostart');
   sw.checked = autostart.enabled;
-  sw.disabled = autostart.blocked;
+  // Mac 從 DMG 或暫存位置執行時不能登記（重開機就找不到），先請使用者拖進「應用程式」
+  sw.disabled = autostart.blocked || autostart.misplaced;
   const hint = autostart.blocked
     ? 'general.autostartBlocked'
-    : overview.platform === 'macos'
+    : autostart.misplaced
+      ? 'general.autostartMove'
+      : overview.platform === 'macos'
       ? 'general.autostartMac'
       : 'general.autostartWin';
   $('#autostart-hint').textContent = t(hint);

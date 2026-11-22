@@ -92,6 +92,10 @@ pub fn run() {
                 // 規格：安裝即用、預設開機自動啟動；使用者可在偏好設定 → 一般關閉
                 let handle = app.handle().clone();
                 std::thread::spawn(move || autostart::set(&handle, true));
+            } else {
+                // macOS：用現在的位置重新登記開機啟動（搬過位置、或第一次是從 DMG 打開的）
+                let handle = app.handle().clone();
+                std::thread::spawn(move || autostart::refresh(&handle));
             }
             app.manage(AppState::new(settings, settings_path));
             // 本機複製紀錄：開不起來（例如磁碟唯讀）時只停用歷史功能，不影響通知框
