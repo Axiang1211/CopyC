@@ -8,6 +8,7 @@
 //! 對方不在同一個網路時改經由 Google Drive 傳（M3，見 [`super::remote_xfer`]）。
 
 use super::{
+    ble,
     file_proto::{self as fp, Offer, SendError},
     lan_proto::{Nearby, CAP_DRIVE, CAP_FILES},
     remote_xfer, Cloud,
@@ -51,11 +52,12 @@ pub enum Direction {
     In,
 }
 
-/// 經由哪裡傳：同一個網路直接傳，或經由 Google Drive。
+/// 經由哪裡傳：同一個網路直接傳、藍牙（附近的手機，小檔案），或經由 Google Drive。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Via {
     Lan,
+    Ble,
     Drive,
 }
 
@@ -162,6 +164,8 @@ pub struct Peer {
     platform: String,
     /// 在同一個網路裡（直接傳）
     lan: bool,
+    /// 用藍牙連著（附近的手機；只傳小檔案）
+    ble: bool,
     /// 可以經由 Drive 傳
     remote: bool,
 }
@@ -334,7 +338,7 @@ fn peers(cloud: &Cloud) -> Vec<Peer> {
         .nearby(CAP_FILES)
         .into_iter()
         .filter(|n| n.name != me)
-        .map(|n| Peer { id: n.id, name: n.name, platform: String::new(), lan: true, remote: false })
+        .map(|n| Peer { id: n.id, name: n.name, platform: String::new(), lan: true, ble: false, remote: false })
         .collect();
     for d in cloud.transfers.remote.devices() {
         if d.caps & CAP_DRIVE == 0 || (d.name == me && d.platform == crate::platform::PLATFORM) {
@@ -348,7 +352,13 @@ fn peers(cloud: &Cloud) -> Vec<Peer> {
                     p.name = d.name;
                 }
             }
-            None => out.push(Peer { id: d.id, name: d.name, platform: d.platform, lan: false, remote: true }),
+            None => out.push(Peer { id: d.id, name: d.name, platform: d.platform, lan: false, ble: false, remote: true }),
+        }
+    }
+    for (id, name) in cloud.ble.peers() {
+        match out.iter_mut().find(|p| p.id == id) {
+            Some(p) => p.ble = true,
+            None => out.push(Peer { id, name, platform: "android".into(), lan: false, ble: true, remote: false }),
         }
     }
     // 同一個網路裡的排前面
@@ -427,7 +437,7 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
         });
     }
     let peer_name = target.as_ref().map(|p| p.name.clone()).unwrap_or_default();
-    let (lan, remote) = target.as_ref().map_or((false, false), |p| (p.lan, p.remote));
+    let (lan, ble, remote) = target.as_ref().map_or((false, false, false), |p| (p.lan, p.ble, p.remote));
     let batch = format!("{:016x}", rand::random::<u64>());
     let count = files.len() as u32;
     let jobs: Vec<_> = files
@@ -450,27 +460,51 @@ pub fn send_paths(app: &AppHandle, paths: Vec<PathBuf>, peer: String) -> usize {
             offer.batch = batch.clone();
             offer.index = i as u32;
             offer.count = count;
-            let via = if lan { Via::Lan } else { Via::Drive };
+            // 同一個網路最快；不在同一個網路時，小檔案走藍牙，大檔案走 Google Drive
+            let via = if lan {
+                Via::Lan
+            } else if ble && ble::small_enough(size) {
+                Via::Ble
+            } else {
+                Via::Drive
+            };
             let mut item = Item::new(Direction::Out, via, name, size, peer_name.clone(), TransferState::Waiting);
             item.path = Some(path.to_string_lossy().into_owned());
             let (id, cancel) = cloud.transfers.add(item, None);
-            (id, cancel, offer, path)
+            (id, cancel, offer, path, via)
         })
         .collect();
     let _ = app.emit("transfer:changed", ());
     let app = app.clone();
     let count = count as usize + extra;
     tauri::async_runtime::spawn(async move {
-        for (id, cancel, offer, path) in jobs {
+        for (id, cancel, offer, path, via) in jobs {
             if cancel.load(Ordering::Relaxed) {
                 continue;
             }
-            if lan {
-                send_one(&app, id, &cancel, offer, &path, &peer, remote).await;
-            } else if remote {
-                remote_xfer::send_one(&app, id, &cancel, &path, &offer.name, offer.size, &peer).await;
-            } else {
-                app.state::<Cloud>().transfers.fail(&app, id, "offline");
+            match via {
+                Via::Lan => send_one(&app, id, &cancel, offer, &path, &peer, remote).await,
+                Via::Ble => {
+                    let cloud = app.state::<Cloud>();
+                    cloud.transfers.set(&app, id, |it| it.state = TransferState::Active);
+                    match ble::send_file(&app, &peer, &path, &offer.name, id).await {
+                        Ok(()) => cloud.transfers.set(&app, id, |it| {
+                            it.state = TransferState::Done;
+                            it.done = it.size;
+                        }),
+                        // 藍牙斷了：能走 Google Drive 就改走 Drive
+                        Err(_) if remote => {
+                            cloud.transfers.set(&app, id, |it| {
+                                it.via = Via::Drive;
+                                it.done = 0;
+                            });
+                            remote_xfer::send_one(&app, id, &cancel, &path, &offer.name, offer.size, &peer).await;
+                        }
+                        Err(code) => cloud.transfers.fail(&app, id, code),
+                    }
+                }
+                Via::Drive if remote => remote_xfer::send_one(&app, id, &cancel, &path, &offer.name, offer.size, &peer).await,
+                Via::Drive => app.state::<Cloud>().transfers.fail(&app, id, "offline"),
             }
         }
     });

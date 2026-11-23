@@ -35,6 +35,8 @@
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
+    <!-- 沒有 Wi-Fi 時和附近的手機用藍牙互傳 -->
+    <DeviceCapability Name="bluetooth" />
   </Capabilities>
 
   <Applications>

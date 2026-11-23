@@ -107,6 +107,8 @@ pub struct Settings {
     pub cloud_apply: bool,
     /// 即時同步時，同一個網路裡的電腦直接互傳（不經過網際網路）。
     pub cloud_lan: bool,
+    /// 沒有 Wi-Fi 時，用藍牙和附近的手機互傳文字與小檔案。
+    pub cloud_ble: bool,
     /// 其他電腦傳來的檔案存放位置；空字串表示「下載/CopyC」。
     pub transfer_dir: String,
     /// 收到檔案後放進剪貼簿（單張圖片放圖片本身，其他放檔案），馬上就能貼上。
@@ -153,6 +155,7 @@ impl Default for Settings {
             cloud_live: true,
             cloud_apply: true,
             cloud_lan: true,
+            cloud_ble: true,
             transfer_dir: String::new(),
             transfer_clipboard: true,
             transfer_remote_mb: 100,

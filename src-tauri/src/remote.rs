@@ -53,11 +53,13 @@ pub struct Features {
     pub live: bool,
     pub lan: bool,
     pub backup: bool,
+    /// 藍牙近距離互傳（舊的遠端資料沒有這個欄位：預設開）
+    pub ble: bool,
 }
 
 impl Default for Features {
     fn default() -> Self {
-        Self { live: true, lan: true, backup: true }
+        Self { live: true, lan: true, backup: true, ble: true }
     }
 }
 

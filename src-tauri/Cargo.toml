@@ -33,6 +33,9 @@ futures-util = { version = "0.3", default-features = false, features = ["sink", 
 chacha20poly1305 = "0.10"
 rand = "0.8"
 sha2 = "0.10"
+# 藍牙低功耗：沒有 Wi-Fi 時和手機互傳文字與小檔案（Windows WinRT、macOS CoreBluetooth、Linux BlueZ）
+btleplug = "0.11"
+uuid = "1"
 if-addrs = "0.15"
 ed25519-dalek = "2"
 tauri-plugin-updater = "2"

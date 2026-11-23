@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Tauri 建置時會合併進 App 的 Info.plist。區域網路直傳（選用的即時同步）需要 macOS 的「本地網路」權限。 -->
+<!-- Tauri 建置時會合併進 App 的 Info.plist。區域網路直傳（選用的即時同步）需要 macOS 的「本地網路」權限；藍牙互傳需要「藍牙」權限（沒有說明文字時，App 一碰藍牙就會被系統結束）。 -->
 <plist version="1.0">
 <dict>
   <key>NSLocalNetworkUsageDescription</key>
   <string>CopyC sends what you copy directly to your other computers on the same network (only when sync is on). 開啟同步時，CopyC 會把複製的內容直接傳給同一個網路裡、登入同一帳號的其他電腦。</string>
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>Without Wi-Fi, CopyC uses Bluetooth to send text and small files between this Mac and your nearby phone signed in to the same account. 沒有 Wi-Fi 時，CopyC 用藍牙在這台 Mac 和附近登入同一帳號的手機之間互傳文字與小檔案。</string>
 </dict>
 </plist>

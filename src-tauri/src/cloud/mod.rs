@@ -12,6 +12,8 @@
 //! 剪貼簿裡的圖片、檔案與密碼類內容不會自動同步；只有使用者主動傳送的檔案才會傳到自己的其他電腦。
 
 pub mod auth;
+mod ble;
+mod ble_proto;
 mod crypto;
 mod drive;
 pub mod drive_xfer;
@@ -102,6 +104,7 @@ struct Config {
     backup: bool,
     live: bool,
     lan: bool,
+    ble: bool,
 }
 
 impl From<&Settings> for Config {
@@ -113,6 +116,7 @@ impl From<&Settings> for Config {
             backup: settings.cloud_backup && remote.backup,
             live: settings.cloud_live && remote.live,
             lan: settings.cloud_lan && remote.lan,
+            ble: settings.cloud_ble && remote.ble,
         }
     }
 }
@@ -165,6 +169,7 @@ pub struct Cloud {
     relay_tx: Mutex<Option<mpsc::UnboundedSender<String>>>,
     incoming: Mutex<Option<Incoming>>,
     lan: lan::Lan,
+    ble: ble::Ble,
     seen: Mutex<VecDeque<u64>>,
     pub transfers: transfer::Transfers,
 }
@@ -206,6 +211,7 @@ impl Cloud {
             relay_tx: Mutex::new(None),
             incoming: Mutex::new(None),
             lan: lan::Lan::default(),
+            ble: ble::Ble::default(),
             seen: Mutex::new(VecDeque::new()),
             transfers: transfer::Transfers::default(),
         }
@@ -457,6 +463,8 @@ impl Cloud {
         let (_, data) = relay::seal(&key, text, &self.device_name);
         let targets = if config.lan { self.lan.targets() } else { Vec::new() };
         if targets.is_empty() {
+            // 附近用藍牙連著的手機也送一份（沒有網路時就靠它）；對方收過同一則會略過
+            self.ble.send_clip(&key, &relay::wire(&data, &[]), &[]);
             if let Some(tx) = self.relay_tx.lock().clone() {
                 let _ = tx.send(relay::wire(&data, &[]));
             }
@@ -466,6 +474,7 @@ impl Cloud {
         tauri::async_runtime::spawn(async move {
             let cloud = app.state::<Cloud>();
             let delivered = lan::deliver(&cloud, targets, relay::wire(&data, &[])).await;
+            cloud.ble.send_clip(&key, &relay::wire(&data, &[]), &delivered);
             let tx = cloud.relay_tx.lock().clone();
             if let Some(tx) = tx {
                 let _ = tx.send(relay::wire(&data, &delivered));
@@ -548,6 +557,8 @@ pub fn start(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { lan::run(a).await });
     let a = app.clone();
     tauri::async_runtime::spawn(async move { remote_xfer::run(a).await });
+    let a = app.clone();
+    tauri::async_runtime::spawn(async move { ble::run(a).await });
     let a = app.clone();
     std::thread::spawn(move || transfer::cleanup(&a));
 }
