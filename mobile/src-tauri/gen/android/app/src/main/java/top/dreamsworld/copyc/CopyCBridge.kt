@@ -37,6 +37,16 @@ object CopyCBridge {
   private val main = Handler(Looper.getMainLooper())
   private var multicastLock: WifiManager.MulticastLock? = null
 
+  /** 藍牙近距離互傳：開始（或換新的暗號）廣播；沒有權限或藍牙關著時回傳 false。見 BleServer.kt。 */
+  @JvmStatic
+  fun bleStart(context: Context, token: ByteArray): Boolean = BleServer.start(context, token)
+
+  @JvmStatic
+  fun bleStop() = BleServer.stop()
+
+  @JvmStatic
+  fun bleNotify(address: String, frame: ByteArray) = BleServer.notify(address, frame)
+
   @JvmStatic
   fun setClipboard(context: Context, text: String) {
     main.post {

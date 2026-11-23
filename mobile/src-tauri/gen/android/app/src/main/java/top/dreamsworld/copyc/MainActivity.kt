@@ -247,6 +247,18 @@ class MainActivity : TauriActivity() {
       @JavascriptInterface
       fun hasLocalNetwork(): Boolean = Build.VERSION.SDK_INT < 37 || granted(LOCAL_NETWORK)
 
+      /** 藍牙互傳需要的「附近的裝置」權限（Android 12 起） */
+      @JavascriptInterface
+      fun hasBluetooth(): Boolean = BleServer.hasPermission(this@MainActivity)
+
+      @JavascriptInterface
+      fun requestBluetooth() {
+        val missing = BleServer.permissions().filter { !granted(it) }
+        if (missing.isNotEmpty()) {
+          runOnUiThread { ActivityCompat.requestPermissions(this@MainActivity, missing.toTypedArray(), 3) }
+        }
+      }
+
       /** 區域網路直傳需要的權限（Android 17 起） */
       @JavascriptInterface
       fun requestLocalNetwork() {

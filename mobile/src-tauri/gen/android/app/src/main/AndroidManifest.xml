@@ -12,6 +12,12 @@
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <!-- Wi-Fi 只用在「同一個網路直傳」；沒有 Wi-Fi 的裝置（平板、Chromebook、XR）照樣能裝，改經由 Google Drive 傳 -->
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <!-- 藍牙近距離互傳（沒有 Wi-Fi 時和電腦互傳文字與小檔案）：只廣播與接受連線，不掃描、不需要定位 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
     <application
         android:icon="@mipmap/ic_launcher"

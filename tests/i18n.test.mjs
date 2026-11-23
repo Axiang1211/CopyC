@@ -14,13 +14,13 @@ const samples = {
   'update.title': ['1.2.3'], 'update.desc': ['1.0.5'], 'update.storeDesc': ['1.0.5'], 'update.latest': ['1.0.5'], 'update.found': ['1.2.3'], 'about.version': ['1.0.5', 'Windows'],
   'ob.step': [2, 6], 'ob.tryLead': ['Ctrl+C'], 'ob.syncDone': ['a@b.com'], 'sync.device': ['MY-PC'],
   'sync.lastSync': ['2 min ago'], 'sync.lanPeers': [2], 'hud.via': ['MY-PC'], 'history.from': ['MY-PC'],
-  'transfer.toPeer': ['MY-MAC'], 'transfer.fromPeer': ['MY-MAC'], 'transfer.etaSec': [12], 'transfer.etaMin': [3],
+  'transfer.toPeer': ['MY-MAC'], 'sync.blePeers': [2], 'transfer.fromPeer': ['MY-MAC'], 'transfer.etaSec': [12], 'transfer.etaMin': [3],
   'hud.sending': ['MY-MAC'], 'hud.incoming': ['MY-MAC'], 'transfer.hoursLeft': [5], 'transfer.minsLeft': [20], 'about.device': ['MacBook Pro (Mac17,2)'],
 };
 
 test('all eight dictionaries have complete, nonempty and renderable keys', () => {
   const keys = Object.keys(DICTS.en).sort();
-  assert.equal(keys.length, 365);
+  assert.equal(keys.length, 369);
   for (const [lang, dict] of Object.entries(DICTS)) {
     setLang(lang);
     assert.deepEqual(Object.keys(dict).sort(), keys, lang);

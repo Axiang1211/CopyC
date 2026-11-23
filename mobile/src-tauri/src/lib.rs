@@ -3,6 +3,7 @@
 
 mod android;
 mod auth;
+mod ble;
 mod cloud;
 mod files;
 mod history;
@@ -147,12 +148,15 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             app.manage(Cloud::new(app.handle().clone(), dir));
             app.manage(files::Files::default());
+            app.manage(ble::Ble::default());
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move { cloud::run(handle).await });
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move { lan::run(handle).await });
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move { files::run(handle).await });
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move { ble::run(handle).await });
             Ok(())
         })
         .run(tauri::generate_context!())

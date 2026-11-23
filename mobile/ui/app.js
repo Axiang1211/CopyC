@@ -235,9 +235,15 @@ async function refresh() {
   const live = T.live[status.live] ?? T.live.off;
   $('#pill-text').textContent = live;
   if (status.signedIn) $('#account').textContent = T.signedInAs(status.email ?? '');
-  $('#send').disabled = status.live !== 'on' && !status.lanPeers;
+  $('#send').disabled = status.live !== 'on' && !status.lanPeers && !status.blePeers;
   $('#pref-bg').checked = status.prefs.background;
   $('#pref-lan').checked = status.prefs.lan;
+  $('#pref-ble').checked = !!status.prefs.ble;
+  // 藍牙：沒有權限（或藍牙關著）時提示；連上電腦時顯示幾台
+  const bleNote = $('#ble-note');
+  const bleNeed = status.prefs.ble && bridge && !bridge.hasBluetooth?.();
+  bleNote.hidden = !status.prefs.ble || (!bleNeed && !status.blePeers);
+  bleNote.textContent = bleNeed ? T['set.blePerm'] : T['set.blePeers'](status.blePeers);
   $('#pref-remote').value = String(status.prefs.remoteMb ?? 100);
   const needPerm = status.prefs.lan && bridge && !bridge.hasLocalNetwork();
   const note = $('#lan-note');
@@ -245,12 +251,17 @@ async function refresh() {
   note.textContent = needPerm ? T['set.lanPerm'] : T['set.lanPeers'](status.lanPeers);
   if (status.error && status.error !== lastError) toast(errText(status.error));
   lastError = status.error;
-  if (status.live === 'on' || status.lanPeers) runPending();
+  if (status.live === 'on' || status.lanPeers || status.blePeers) runPending();
 }
 
 function savePrefs() {
   invoke('set_prefs', {
-    prefs: { background: $('#pref-bg').checked, lan: $('#pref-lan').checked, remoteMb: Number($('#pref-remote').value) || 100 },
+    prefs: {
+      background: $('#pref-bg').checked,
+      lan: $('#pref-lan').checked,
+      ble: $('#pref-ble').checked,
+      remoteMb: Number($('#pref-remote').value) || 100,
+    },
   });
 }
 
@@ -260,6 +271,10 @@ $('#pref-bg').addEventListener('change', (e) => {
 });
 $('#pref-lan').addEventListener('change', (e) => {
   if (e.target.checked && bridge && !bridge.hasLocalNetwork()) bridge.requestLocalNetwork();
+  savePrefs();
+});
+$('#pref-ble').addEventListener('change', (e) => {
+  if (e.target.checked && bridge && !bridge.hasBluetooth?.()) bridge.requestBluetooth?.();
   savePrefs();
 });
 
@@ -546,7 +561,7 @@ function renderFiles() {
       const name = document.createElement('span');
       name.textContent = p.name || '—';
       const tag = document.createElement('i');
-      tag.textContent = p.lan ? 'Wi-Fi' : T['files.cloud'];
+      tag.textContent = p.lan ? 'Wi-Fi' : p.ble ? T['files.ble'] : T['files.cloud'];
       b.append(name, tag);
       b.addEventListener('click', () => {
         filesPeer = p.id;

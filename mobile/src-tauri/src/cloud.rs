@@ -13,12 +13,17 @@ use std::{
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{mpsc, Notify};
 
+// 掃描與比對暗號是電腦那邊的事，手機只用其中一部分
+#[allow(dead_code)]
+#[path = "../../../src-tauri/src/cloud/ble_proto.rs"]
+pub mod ble_proto;
 #[path = "../../../src-tauri/src/cloud/crypto.rs"]
 pub mod crypto;
 // 電腦版的 Drive 模組還有上傳備份用的功能，Android 版目前只用來讀取金鑰
 #[allow(dead_code)]
 #[path = "../../../src-tauri/src/cloud/drive.rs"]
 pub mod drive;
+#[allow(dead_code)] // 清理重複的電腦裝置資料只有電腦版用
 #[path = "../../../src-tauri/src/cloud/drive_xfer.rs"]
 pub mod drive_xfer;
 // 電腦版的檔案互傳協定還有電腦用的功能（例如資料夾裡的檔名不撞名），Android 版只用其中一部分
@@ -102,11 +107,13 @@ pub struct Prefs {
     pub lan: bool,
     /// 經由 Google Drive 跨網路傳送的單一檔案上限（MB），和電腦版相同：預設 100 MB，最大 200 GB
     pub remote_mb: u64,
+    /// 藍牙互傳：沒有 Wi-Fi 時和附近的電腦互傳文字與小檔案（需要「附近的裝置」權限，使用者開啟時才詢問）
+    pub ble: bool,
 }
 
 impl Default for Prefs {
     fn default() -> Self {
-        Prefs { background: false, lan: false, remote_mb: 100 }
+        Prefs { background: false, lan: false, remote_mb: 100, ble: false }
     }
 }
 
@@ -123,6 +130,8 @@ pub struct Status {
     prefs: Prefs,
     /// 區域網路裡找到幾台同帳號的電腦
     lan_peers: usize,
+    /// 用藍牙連著幾台電腦
+    ble_peers: usize,
 }
 
 /// 收到或送出的一則內容（給畫面顯示）。
@@ -231,7 +240,12 @@ impl Cloud {
             error: *self.error.lock(),
             prefs: *self.prefs.lock(),
             lan_peers: self.lan.count(),
+            ble_peers: self.app.state::<crate::ble::Ble>().peers().len(),
         }
+    }
+
+    pub(crate) fn app(&self) -> &AppHandle {
+        &self.app
     }
 
     pub(crate) fn changed(&self) {
@@ -396,14 +410,19 @@ impl Cloud {
         let (id, data) = wire::seal(&key, text, &self.device_name);
         self.first_time(id);
         let targets = if self.prefs().lan { self.lan.targets() } else { Vec::new() };
-        let delivered = if targets.is_empty() {
+        let mut delivered = if targets.is_empty() {
             Vec::new()
         } else {
             lan_proto::deliver(&self.lan, targets, wire::wire(&data, &[])).await
         };
-        // 手機在背景時連線可能已經被切斷，但看起來還是「已連線」：先確認還活著，不然就等它重新連上
+        // 附近用藍牙連著、但不在同一個網路的電腦：從藍牙送（沒有網路時就靠它）
+        let by_ble = self.app.state::<crate::ble::Ble>().send_clip(&key, &wire::wire(&data, &[]), &delivered);
+        delivered.extend(by_ble);
+        // 手機在背景時連線可能已經被切斷，但看起來還是「已連線」：先確認還活著，不然就等它重新連上。
+        // 已經直接送到（區域網路或藍牙）時不必等：中繼只是補送給其他裝置
         let relay_ok = match early {
             Some(ok) => ok,
+            None if !delivered.is_empty() => *self.live.lock() == Live::On,
             None => self.ensure_fresh().await,
         };
         let tx = if relay_ok { self.relay_tx.lock().clone() } else { None };

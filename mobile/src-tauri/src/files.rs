@@ -55,6 +55,7 @@ enum Dir {
 #[serde(rename_all = "camelCase")]
 enum Via {
     Lan,
+    Ble,
     Drive,
 }
 
@@ -138,6 +139,8 @@ pub struct Peer {
     name: String,
     platform: String,
     lan: bool,
+    /// 用藍牙連著（只傳小檔案）
+    ble: bool,
     remote: bool,
 }
 
@@ -255,7 +258,7 @@ fn peers(cloud: &Cloud, files: &Files) -> Vec<Peer> {
             .lan
             .nearby(CAP_FILES)
             .into_iter()
-            .map(|n| Peer { id: n.id, name: n.name, platform: String::new(), lan: true, remote: false })
+            .map(|n| Peer { id: n.id, name: n.name, platform: String::new(), lan: true, ble: false, remote: false })
             .collect()
     } else {
         Vec::new()
@@ -271,8 +274,18 @@ fn peers(cloud: &Cloud, files: &Files) -> Vec<Peer> {
                 name: d.name.clone(),
                 platform: d.platform.clone(),
                 lan: false,
+                ble: false,
                 remote: true,
             }),
+        }
+    }
+    if cloud.prefs().ble {
+        let ble = cloud.app().state::<crate::ble::Ble>();
+        for (id, name) in ble.peers() {
+            match out.iter_mut().find(|p| p.id == id) {
+                Some(p) => p.ble = true,
+                None => out.push(Peer { id, name, platform: String::new(), lan: false, ble: true, remote: false }),
+            }
         }
     }
     out.sort_by(|a, b| b.lan.cmp(&a.lan).then(a.name.cmp(&b.name)));
@@ -312,23 +325,30 @@ pub fn send(app: &AppHandle, paths: Vec<String>, peer: String) -> usize {
             offer.batch = batch.clone();
             offer.index = i as u32;
             offer.count = count;
-            let via = if target.lan { Via::Lan } else { Via::Drive };
+            // 同一個網路最快；不在同一個網路時，小檔案走藍牙，大檔案走 Google Drive
+            let via = if target.lan {
+                Via::Lan
+            } else if target.ble && crate::ble::small_enough(size) {
+                Via::Ble
+            } else {
+                Via::Drive
+            };
             let (id, cancel) = files.add(item(Dir::Out, via, name, size, target.name.clone(), State::Waiting), None);
-            (id, cancel, offer, path)
+            (id, cancel, offer, path, via)
         })
         .collect();
     changed(app);
     let app = app.clone();
     let n = jobs.len();
     tauri::async_runtime::spawn(async move {
-        for (id, cancel, offer, path) in jobs {
+        for (id, cancel, offer, path, via) in jobs {
             if cancel.load(Ordering::Relaxed) {
                 continue;
             }
-            if target.lan {
-                send_lan(&app, id, &cancel, offer, &path, &target.id, target.remote).await;
-            } else {
-                send_drive(&app, id, &cancel, &path, &offer.name, offer.size, &target.id).await;
+            match via {
+                Via::Lan => send_lan(&app, id, &cancel, offer, &path, &target.id, target.remote).await,
+                Via::Ble => send_ble(&app, id, &cancel, &path, &offer.name, offer.size, &target.id, target.remote).await,
+                Via::Drive => send_drive(&app, id, &cancel, &path, &offer.name, offer.size, &target.id).await,
             }
             // 傳完（或失敗）就刪掉暫存的複本
             let _ = std::fs::remove_file(&path);
@@ -414,6 +434,60 @@ fn code(e: XferError) -> &'static str {
         XferError::Corrupt => "corrupt",
         XferError::Disk => "disk",
         XferError::Canceled => "canceled",
+    }
+}
+
+/// 從藍牙傳一個小檔案；藍牙斷了而且對方在 Drive 的裝置清單裡，就改走 Google Drive。
+#[allow(clippy::too_many_arguments)]
+async fn send_ble(app: &AppHandle, id: u64, cancel: &AtomicBool, path: &Path, name: &str, size: u64, peer: &str, remote: bool) {
+    let files = app.state::<Files>();
+    files.set(app, id, |it| it.state = State::Active);
+    match crate::ble::send_file(app, peer, path, name).await {
+        Ok(()) => files.set(app, id, |it| {
+            it.state = State::Done;
+            it.done = it.size;
+        }),
+        Err(_) if remote => {
+            files.set(app, id, |it| {
+                it.via = Via::Drive;
+                it.done = 0;
+            });
+            send_drive(app, id, cancel, path, name, size, peer).await;
+        }
+        Err(code) => files.fail(app, id, code),
+    }
+}
+
+/// 藍牙連著的電腦變了：更新畫面上的傳送對象。
+pub fn ble_changed(app: &AppHandle) {
+    changed(app);
+    app.state::<Cloud>().changed();
+}
+
+/// 電腦從藍牙傳來一個小檔案：存到「下載/CopyC」（圖片存到「圖片/CopyC」）、列在傳送紀錄、通知。
+pub async fn ble_received(app: &AppHandle, name: &str, bytes: &[u8], from: &str) {
+    let files = app.state::<Files>();
+    let name = Path::new(name).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "file".into());
+    let size = bytes.len() as u64;
+    let (id, _) = files.add(item(Dir::In, Via::Ble, name.clone(), size, from.to_string(), State::Active), None);
+    let dir = app.path().app_cache_dir().unwrap_or_else(|_| std::env::temp_dir()).join("ble-in");
+    let _ = tokio::fs::create_dir_all(&dir).await;
+    let partial = dir.join(format!("{:016x}", rand::random::<u64>()));
+    if tokio::fs::write(&partial, bytes).await.is_err() {
+        return files.fail(app, id, "disk");
+    }
+    let uri = android::save_received(&partial, &name);
+    let _ = tokio::fs::remove_file(&partial).await;
+    match uri {
+        Some(uri) => {
+            files.set(app, id, |it| {
+                it.state = State::Done;
+                it.done = it.size;
+                it.uri = Some(uri.clone());
+            });
+            android::notify_file(from, &name, &uri);
+        }
+        None => files.fail(app, id, "disk"),
     }
 }
 

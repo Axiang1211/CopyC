@@ -1176,6 +1176,7 @@ function renderCloud() {
     const parts = [t('sync.device', cloud.deviceName)];
     if (settings.cloudLive) parts.push(t(cloud.live === 'on' ? 'sync.liveOn' : 'sync.liveConnecting'));
     if (settings.cloudLive && settings.cloudLan && cloud.lanPeers) parts.push(t('sync.lanPeers', cloud.lanPeers));
+    if (settings.cloudBle && cloud.blePeers) parts.push(t('sync.blePeers', cloud.blePeers));
     if (cloud.syncing) parts.push(t('sync.syncing'));
     else if (settings.cloudBackup && cloud.lastSync) parts.push(t('sync.lastSync', timeAgo(cloud.lastSync)));
     const dot = document.createElement('span');
@@ -1488,7 +1489,7 @@ function renderTransfer() {
       const name = document.createElement('span');
       name.textContent = p.name || '—';
       const via = document.createElement('small');
-      via.textContent = p.lan ? 'Wi-Fi' : t('transfer.viaDrive');
+      via.textContent = p.lan ? 'Wi-Fi' : p.ble ? t('transfer.viaBle') : t('transfer.viaDrive');
       b.append(name, via);
       b.addEventListener('click', () => {
         txPeer = p.id;
@@ -1595,6 +1596,7 @@ function transferRow(it) {
   meta.className = 'tx-meta';
   const parts = [t(it.dir === 'out' ? 'transfer.toPeer' : 'transfer.fromPeer', it.peer || '—')];
   if (it.via === 'drive') parts.push(t('transfer.viaDrive'));
+  if (it.via === 'ble') parts.push(t('transfer.viaBle'));
   if (it.state === 'done' && it.dir === 'out' && it.via === 'drive' && it.expires) {
     parts.push(bytes(it.size));
     parts.push(t('transfer.uploaded'));

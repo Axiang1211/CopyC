@@ -141,6 +141,32 @@ mod imp {
         });
     }
 
+    /// 藍牙近距離互傳：開始（或用新的暗號重新開始）廣播。沒有權限、沒有藍牙或藍牙關著時回傳 false。
+    pub fn ble_start(token: &[u8]) -> bool {
+        with_bridge(|env, class, ctx| {
+            let t = env.byte_array_from_slice(token)?;
+            env.call_static_method(class, "bleStart", "(Landroid/content/Context;[B)Z", &[JValue::Object(ctx), JValue::Object(&t)])?.z()
+        })
+        .unwrap_or(false)
+    }
+
+    pub fn ble_stop() {
+        with_bridge(|env, class, _| {
+            env.call_static_method(class, "bleStop", "()V", &[])?;
+            Ok(())
+        });
+    }
+
+    /// 送一塊給用藍牙連著的電腦（Kotlin 那邊排隊依序送出）。
+    pub fn ble_notify(address: &str, frame: &[u8]) {
+        with_bridge(|env, class, _| {
+            let a = env.new_string(address)?;
+            let f = env.byte_array_from_slice(frame)?;
+            env.call_static_method(class, "bleNotify", "(Ljava/lang/String;[B)V", &[JValue::Object(&a), JValue::Object(&f)])?;
+            Ok(())
+        });
+    }
+
     pub fn device_name() -> Option<String> {
         with_bridge(|env, class, _| {
             let obj = env.call_static_method(class, "deviceName", "()Ljava/lang/String;", &[])?.l()?;
@@ -158,6 +184,11 @@ mod imp {
     }
     pub fn notify_received(_device: &str, _preview: &str) {}
     pub fn set_background(_on: bool) {}
+    pub fn ble_start(_token: &[u8]) -> bool {
+        false
+    }
+    pub fn ble_stop() {}
+    pub fn ble_notify(_address: &str, _frame: &[u8]) {}
     pub fn set_multicast(_on: bool) {}
     pub fn device_name() -> Option<String> {
         None

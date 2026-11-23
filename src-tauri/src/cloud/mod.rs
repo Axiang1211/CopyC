@@ -143,6 +143,8 @@ pub struct Status {
     live: Live,
     /// 區域網路裡找到幾台同帳號的電腦
     lan_peers: usize,
+    /// 用藍牙連著幾支手機
+    ble_peers: usize,
     error: Option<CloudError>,
 }
 
@@ -230,6 +232,7 @@ impl Cloud {
             syncing: rt.syncing,
             live: rt.live,
             lan_peers: self.lan.count(),
+            ble_peers: self.ble.peers().len(),
             error: rt.error,
         }
     }

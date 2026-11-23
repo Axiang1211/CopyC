@@ -250,7 +250,7 @@ async function pickPeer() {
       const name = document.createElement('span');
       name.textContent = p.name || '—';
       const via = document.createElement('small');
-      via.textContent = p.lan ? 'Wi-Fi' : t('hud.viaCloud');
+      via.textContent = p.lan ? 'Wi-Fi' : p.ble ? t('transfer.viaBle') : t('hud.viaCloud');
       b.append(name, via);
       b.addEventListener('click', async () => {
         const n = await invoke('hud_send', { peer: p.id }).catch(() => 0);
