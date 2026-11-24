@@ -18,7 +18,7 @@
 
 Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也是一杯在你需要時回應你的咖啡。
 
-> **CopyC 完全免費**，沒有廣告、付費版、會員或「啟用碼」。如果有人向你收費，或要你付款才能下載、啟用，那都不是我們，請不要付款。請只從[官網](https://www.copyc.app.dreamsworld.top/)、本頁的 [Releases](https://github.com/Axiang1211/CopyC/releases/latest) 或 [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P) 下載。
+> **CopyC 完全免費**，沒有廣告、付費版、會員或「啟用碼」。如果有人向你收費，或要你付款才能下載、啟用，那都不是我們，請不要付款。Windows 版請只從 [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P) 安裝；Mac 版請從[官網](https://www.copyc.app.dreamsworld.top/)或本頁的 [Releases](https://github.com/Axiang1211/CopyC/releases/latest) 下載。
 
 ## 1.2.3 新功能（Android 1.2.1 同步推出）
 
@@ -76,30 +76,27 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 
 | 平台 | 下載 | 系統需求 |
 | --- | --- | --- |
-| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)（推薦，自動更新）或 .exe 安裝程式：[x64](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe)／[ARM64](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe) | Windows 10 / 11（Intel / AMD 選 x64；Snapdragon 等 ARM 電腦選 ARM64） |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)（自動更新，商店會自動選 x64 或 ARM64） | Windows 10 / 11 |
 | macOS | [CopyC-macos-universal.dmg](https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-macos-universal.dmg) | macOS 11 以上，Apple Silicon 與 Intel 都可用 |
 | Android | Google Play 封閉測試中：[申請加入](https://forms.gle/ARTb5h1wf6FfARb48) | Android 8.0 以上 |
 
 免費、無廣告。
 
 ### 安裝
-**Windows：Microsoft Store（推薦）**
+**Windows：Microsoft Store**
 
-打開 [Copy C 的商店頁](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)，按「取得」就完成，之後會自動更新。
+打開 [Copy C 的商店頁](https://apps.microsoft.com/detail/9PGS1H8Z2N1P)，按「取得」就完成，CopyC 會出現在右下角的系統匣（杯子圖示），之後由商店自動更新。
 
-**Windows：.exe 安裝程式**
-1. 執行下載的 `.exe` 安裝程式。
-2. 如果出現 SmartScreen「Windows 已保護您的電腦」，按「其他資訊 → 仍要執行」。
-3. 安裝完成後，CopyC 會出現在右下角的系統匣（杯子圖示）。
+> Windows 版只在 Microsoft Store 提供。以前從官網或這裡下載過 `.exe` 版的話，那個版本不會再更新：請先從商店安裝，再到「設定 → 應用程式」解除安裝舊版。用 Google 登入後，同步與備份的內容會回來。
 
 **macOS**
 1. 打開 `.dmg`，把 CopyC 拖進「應用程式」資料夾。
 2. 第一次開啟如果被擋下，在 Finder 對 CopyC 按右鍵 →「打開」。
 3. CopyC 只會出現在頂部選單列，不會出現在 Dock。
 
-> 官網下載的安裝包還沒有付費的程式碼簽章，所以系統會出現一次安全性提醒，照上面的步驟操作即可。Microsoft Store 版不會有這個提醒。
+> Mac 版還沒有 Apple 的付費簽章，所以第一次開啟會出現一次安全性提醒，照上面的步驟操作即可。
 
-已經裝了舊版？官網版開啟時會提醒你有新版本，下載後直接覆蓋安裝，設定與歷史紀錄都會保留；Microsoft Store 版會自動更新。
+已經裝了舊版？Mac 版開啟時會提醒你有新版本，在背景下載後按一下就完成，設定與歷史紀錄都會保留；Windows 版由 Microsoft Store 自動更新。
 
 ## 功能
 
@@ -147,7 +144,7 @@ Copy 的發音很像馬來語的 **Kopi**（咖啡），所以它叫 CopyC，也
 - **右鍵點杯子圖示**（Windows 系統匣／macOS 選單列）可以：暫停、切換隱私模式、開關提示音、調整位置與停留時間、切換語言、打開偏好設定。
 - **偏好設定**可以調整更多細節，按「試一下提示」可以直接預覽各種提示的樣子。
 - **開機自動啟動**：預設開啟，可以在「偏好設定 → 一般 → 開機自動啟動」關閉。
-- **自動更新**：官網版開啟時會檢查有沒有新版本，1.1.1 起會在背景下載並驗證簽章，按「重新啟動並更新」幾秒就完成；可以在「偏好設定 → 一般」關閉。Microsoft Store 版由商店更新。
+- **自動更新**：Mac 版開啟時會檢查有沒有新版本，在背景下載並驗證簽章，按「重新啟動並更新」幾秒就完成；可以在「偏好設定 → 一般」關閉。Windows 版由 Microsoft Store 更新，有新版時偏好設定也會提示。
 - **公告**：服務維護等重要消息會顯示在偏好設定最上方，按「知道了」就不再顯示。
 
 ### 開啟跨裝置同步

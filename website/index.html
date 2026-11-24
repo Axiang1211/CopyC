@@ -326,25 +326,14 @@
               </a>
               <p class="arch-note store-note">自動更新，自動選擇 x64 或 ARM64 版本</p>
 
-              <!-- 安裝程式：ARM 電腦（Chromium 系瀏覽器）會由 main.js 自動換成 ARM64 版 -->
-              <details class="exe-more">
-                <summary>或直接下載 .exe 安裝程式<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
-                <div class="exe-more-body">
-              <a class="btn btn-ghost btn-block" id="win-download" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
-                <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-                <span>下載 .exe 安裝程式</span>
-              </a>
-              <p class="arch-note" id="arch-note">ARM 電腦（例如 Snapdragon）？<a id="arch-alt" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe" download data-arch="arm64">下載 ARM64 版</a></p>
-                </div>
-              </details>
             </article>
             <!-- 組件托盤：卡片不動，托盤向下抽出安裝說明 -->
             <div class="tray">
               <button class="tray-toggle" type="button" aria-expanded="false">安裝小提醒 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
               <div class="tray-body"><div class="tray-inner">
                 <ol>
-                  <li>執行安裝程式後，CopyC 會常駐在右下角系統匣，並在開機時自動啟動。</li>
-                  <li>若出現 SmartScreen「Windows 已保護您的電腦」，按「其他資訊 → 仍要執行」。</li>
+                  <li>從 Microsoft Store 安裝後，CopyC 會常駐在右下角系統匣，並在開機時自動啟動；之後由商店自動更新。</li>
+                  <li>以前裝過官網的 .exe 版？先裝好商店版，再到「設定 → 應用程式」解除安裝舊版，兩個版本才不會同時跳出提示。</li>
                   <li>右鍵點系統匣的杯子圖示，可以調整位置、停留秒數與隱私模式。</li>
                 </ol>
               </div></div>
@@ -401,8 +390,8 @@
               <li><b>1.2.2：</b>修正 Windows 上有「發送到…」的提示會一閃就消失、背後出現灰色大框；手機傳來的圖片收到後可以直接貼上；「傳送到」不再列出自己這台電腦。</li>
               <li><b>1.2.3：</b>Mac 傳 HEIC 照片給 Windows、Android 時自動多附一張 JPEG；Microsoft Store 版不會在每次更新後再跳出防火牆詢問。</li>
             </ul>
-            <p class="whats-new-links">直接下載 v1.2.3：<a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-windows-x64-setup.exe" download>Windows x64</a> · <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-windows-arm64-setup.exe" download>Windows ARM64</a> · <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-macos-universal.dmg" download>macOS</a></p>
-            <p class="whats-new-note">官網版 1.1.1 以上會自動在背景更新；Microsoft Store 版 1.2.1 起會提示新版本，按一下就由商店更新。</p>
+            <p class="whats-new-links">Windows 版請到 <a href="https://apps.microsoft.com/detail/9PGS1H8Z2N1P" target="_blank" rel="noopener">Microsoft Store</a> 安裝・直接下載 Mac 版 v1.2.3：<a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-macos-universal.dmg" download>macOS</a></p>
+            <p class="whats-new-note">Windows 版改由 Microsoft Store 提供、自動更新；官網的 .exe 版不再更新，請改裝商店版。Mac 版會自動在背景更新。</p>
           </article>
         </div>
 
@@ -430,7 +419,7 @@
           </details>
           <details>
             <summary>為什麼安裝時會看到安全性警告？</summary>
-            <p>目前的安裝包尚未取得付費程式碼簽章憑證，所以 Windows SmartScreen 與 macOS Gatekeeper 會提醒你。依照下載卡片裡的「安裝小提醒」操作即可。Windows 使用者也可以改從 Microsoft Store 安裝，就不會出現這個警告，之後也會自動更新。</p>
+            <p>Windows 版從 Microsoft Store 安裝，由微軟簽章，不會出現任何警告，之後也會自動更新。Mac 版尚未取得 Apple 的付費簽章，macOS Gatekeeper 會提醒你，依照下載卡片裡的「安裝小提醒」操作即可。</p>
           </details>
           <details>
             <summary>怎麼更新到新版本？</summary>

@@ -2,6 +2,39 @@
   "$comment": "遠端資料：修改後推上 GitHub，Actions 會簽章並放到官網（見 config/README.md）。App 會在啟動時與每 6 小時下載一次。",
   "notices": [
     {
+      "id": "windows-move-to-store",
+      "level": "warn",
+      "title": {
+        "zh-Hant": "Windows 版改由 Microsoft Store 提供",
+        "zh-HK": "Windows 版改由 Microsoft Store 提供",
+        "zh-Hans": "Windows 版改由 Microsoft Store 提供",
+        "en": "CopyC for Windows now comes from the Microsoft Store",
+        "ja": "Windows 版は Microsoft Store での提供に変わりました",
+        "ko": "Windows 버전은 이제 Microsoft Store에서 제공됩니다",
+        "fr": "CopyC pour Windows est désormais sur le Microsoft Store",
+        "ms": "CopyC untuk Windows kini daripada Microsoft Store"
+      },
+      "body": {
+        "zh-Hant": "這個從官網下載的版本之後不會再更新。請按「了解更多」到 Microsoft Store 免費安裝（之後自動更新），裝好後到「設定 → 應用程式」解除安裝這個舊版。用 Google 登入後，同步與備份的內容會回來。",
+        "zh-HK": "呢個由官網下載嘅版本之後唔會再更新。請撳「睇多啲」去 Microsoft Store 免費安裝（之後自動更新），裝好之後去「設定 → 應用程式」解除安裝呢個舊版。用 Google 登入之後，同步同備份嘅內容會返嚟。",
+        "zh-Hans": "这个从官网下载的版本之后不会再更新。请点“了解更多”到 Microsoft Store 免费安装（之后自动更新），装好后到“设置 → 应用”卸载这个旧版。用 Google 登录后，同步与备份的内容会回来。",
+        "en": "This version from the website won't get updates anymore. Click Learn more to install CopyC free from the Microsoft Store (it updates automatically), then uninstall this old version in Settings → Apps. Sign in with Google and your synced and backed-up history comes back.",
+        "ja": "公式サイトからダウンロードしたこの版は今後更新されません。「詳しく見る」から Microsoft Store で無料でインストールし（以後は自動更新）、「設定 → アプリ」でこの古い版をアンインストールしてください。Google でログインすれば同期・バックアップした内容が戻ります。",
+        "ko": "웹사이트에서 받은 이 버전은 더 이상 업데이트되지 않습니다. '자세히 보기'로 Microsoft Store에서 무료로 설치한 뒤(이후 자동 업데이트) '설정 → 앱'에서 이 이전 버전을 제거하세요. Google로 로그인하면 동기화·백업한 내용이 돌아옵니다.",
+        "fr": "Cette version téléchargée sur le site ne sera plus mise à jour. Cliquez sur En savoir plus pour installer CopyC gratuitement depuis le Microsoft Store (mises à jour automatiques), puis désinstallez l’ancienne version dans Paramètres → Applications. Connectez-vous avec Google pour retrouver votre historique synchronisé et sauvegardé.",
+        "ms": "Versi yang dimuat turun daripada laman web ini tidak akan dikemas kini lagi. Klik Ketahui lagi untuk memasang CopyC secara percuma daripada Microsoft Store (dikemas kini secara automatik), kemudian nyahpasang versi lama ini dalam Tetapan → Aplikasi. Log masuk dengan Google dan sejarah yang disegerak serta disandarkan akan kembali."
+      },
+      "url": "https://apps.microsoft.com/detail/9PGS1H8Z2N1P",
+      "until": 1830211200000,
+      "platforms": [
+        "windows"
+      ],
+      "channels": [
+        "web"
+      ],
+      "minVersion": "1.1.1"
+    },
+    {
       "id": "v1.2.0-store",
       "level": "info",
       "title": {

@@ -312,24 +312,13 @@
               </a>
               <p class="arch-note store-note">Updates automatically and picks x64 or ARM64 for you</p>
 
-              <!-- Installer: main.js switches to ARM64 on ARM PCs (Chromium browsers) -->
-              <details class="exe-more">
-                <summary>Or download the .exe installer<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
-                <div class="exe-more-body">
-              <a class="btn btn-ghost btn-block" id="win-download" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-x64-setup.exe" download data-asset="CopyC-windows-x64-setup.exe">
-                <svg class="ico icon-optical-download" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-                <span>Download .exe installer</span>
-              </a>
-              <p class="arch-note" id="arch-note">On an ARM PC (e.g. Snapdragon)? <a id="arch-alt" href="https://github.com/Axiang1211/CopyC/releases/latest/download/CopyC-windows-arm64-setup.exe" download data-arch="arm64">Get the ARM64 version</a></p>
-                </div>
-              </details>
             </article>
             <div class="tray">
               <button class="tray-toggle" type="button" aria-expanded="false">Install tips <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
               <div class="tray-body"><div class="tray-inner">
                 <ol>
-                  <li>After installing, CopyC lives in the system tray (bottom right) and starts with Windows.</li>
-                  <li>If SmartScreen says “Windows protected your PC”, click “More info → Run anyway”.</li>
+                  <li>Once installed from the Microsoft Store, CopyC lives in the system tray (bottom right), starts with Windows and is updated by the Store.</li>
+                  <li>Installed the .exe from this website before? Install the Store version first, then uninstall the old one in Settings → Apps so you don’t get two notifications.</li>
                   <li>Right-click the cup icon in the tray to change the position, duration and privacy mode.</li>
                 </ol>
               </div></div>
@@ -386,8 +375,8 @@
               <li><b>1.2.2:</b> fixes, on Windows, notifications with Send to… vanishing right away and a large gray box behind them; images received from a phone can be pasted right away; Send to no longer lists this computer itself.</li>
               <li><b>1.2.3:</b> a Mac sending HEIC photos to Windows or Android adds a JPEG copy; the Microsoft Store version no longer triggers the firewall question after every update.</li>
             </ul>
-            <p class="whats-new-links">Download v1.2.3 directly: <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-windows-x64-setup.exe" download>Windows x64</a> · <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-windows-arm64-setup.exe" download>Windows ARM64</a> · <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-macos-universal.dmg" download>macOS</a></p>
-            <p class="whats-new-note">The website version 1.1.1 and later updates itself in the background; from 1.2.1 the Microsoft Store version tells you about new versions and updates through the Store in one click.</p>
+            <p class="whats-new-links">Get the Windows version from the <a href="https://apps.microsoft.com/detail/9PGS1H8Z2N1P" target="_blank" rel="noopener">Microsoft Store</a> · Download the Mac version v1.2.3 directly: <a href="https://github.com/Axiang1211/CopyC/releases/download/v1.2.3/CopyC-macos-universal.dmg" download>macOS</a></p>
+            <p class="whats-new-note">The Windows version now comes from the Microsoft Store and updates automatically; the .exe from this website is no longer updated, so please switch to the Store version. The Mac version updates itself in the background.</p>
           </article>
         </div>
 
@@ -413,7 +402,7 @@
           </details>
           <details>
             <summary>Why do I see a security warning when installing?</summary>
-            <p>The installers aren’t signed with a paid code-signing certificate yet, so Windows SmartScreen and macOS Gatekeeper warn you. Follow the “Install tips” under each download card. On Windows you can also install from the Microsoft Store instead: no warning, and updates arrive automatically.</p>
+            <p>The Windows version comes from the Microsoft Store, signed by Microsoft: no warnings, and updates arrive automatically. The Mac version isn’t signed with a paid Apple certificate yet, so macOS Gatekeeper warns you — follow the “Install tips” under the download card.</p>
           </details>
           <details>
             <summary>How do I update to a new version?</summary>

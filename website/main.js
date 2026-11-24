@@ -77,6 +77,7 @@ if (os === 'windows') {
       if (architecture !== 'arm') return;
       const main = $('#win-download');
       const alt = $('#arch-alt');
+      if (!main || !alt) return; // Windows 只提供 Microsoft Store 版，已經沒有 .exe 下載
       const base = 'https://github.com/Axiang1211/CopyC/releases/latest/download/';
       main.href = base + 'CopyC-windows-arm64-setup.exe';
       main.dataset.asset = 'CopyC-windows-arm64-setup.exe';

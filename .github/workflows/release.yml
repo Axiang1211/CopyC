@@ -180,10 +180,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      # 只取公開安裝包（*-installer），.msix 不會出現在 Release
+      # 只公開 Mac 版。Windows 版只在 Microsoft Store 上架（.msix 不出現在 Release）；
+      # Windows 的 .exe 安裝檔只當內部測試用的 artifact，不附加到 Release，latest.json 也沒有 Windows，
+      # 舊的官網版不會再自動更新，改由遠端公告引導到 Microsoft Store。
       - uses: actions/download-artifact@v4
         with:
-          pattern: copyc-*-installer
+          pattern: copyc-macos-installer
           merge-multiple: true
           path: artifacts
       # 自動更新：列出各平台的更新檔與簽章
