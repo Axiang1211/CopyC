@@ -12,6 +12,10 @@ document.querySelectorAll('[data-i18n]').forEach((el) => {
 });
 document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => (el.placeholder = T[el.dataset.i18nPlaceholder]));
 document.querySelectorAll('[data-i18n-label]').forEach((el) => el.setAttribute('aria-label', T[el.dataset.i18nLabel]));
+// 頁尾顯示版本號（例如「CopyC for Android · v1.3.0」）
+invoke('plugin:app|version')
+  .then((v) => ($('#foot').textContent = `${T.foot} · v${v}`))
+  .catch(() => {});
 
 /* ---------------- 小工具 ---------------- */
 
